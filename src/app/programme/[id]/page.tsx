@@ -20,7 +20,20 @@ export default async function PublicProgramDetailPage({ params }: PageProps) {
     .eq('id', id)
     .maybeSingle()
 
-  if (!program || !program.is_published) {
+  const typedProgram = program as unknown as {
+    id: string
+    coach_id: string
+    title: string | null
+    description: string | null
+    goal: string | null
+    level: string | null
+    duration: string | null
+    image_url: string | null
+    is_published: boolean | null
+    created_at: string | null
+  } | null
+
+  if (!typedProgram || !typedProgram.is_published) {
     redirect('/programme')
   }
 
@@ -82,6 +95,28 @@ export default async function PublicProgramDetailPage({ params }: PageProps) {
   const typedExercises = (programExercises ?? []) as unknown as ProgramExerciseRow[]
 
   const storageBucket = 'exercise-media'
+  function normalizeStoragePath(p: string) {
+    let out = p.trim()
+    if (out.startsWith('/')) out = out.slice(1)
+    if (out.startsWith(`${storageBucket}/`)) out = out.slice(storageBucket.length + 1)
+    return out
+  }
+
+  function getStoragePathFromUrl(raw: string) {
+    try {
+      const u = new URL(raw)
+      const parts = u.pathname.split('/').filter(Boolean)
+      const idx = parts.findIndex((p) => p === 'object')
+      if (idx === -1) return null
+      const bucketIdx = idx + 2
+      if (!parts[bucketIdx] || parts[bucketIdx] !== storageBucket) return null
+      const internal = parts.slice(bucketIdx + 1).join('/')
+      return internal || null
+    } catch {
+      return null
+    }
+  }
+
   const uniquePaths = Array.from(
     new Set(
       typedExercises
@@ -93,11 +128,18 @@ export default async function PublicProgramDetailPage({ params }: PageProps) {
   const signedUrlByPath = new Map<string, string>()
   await Promise.all(
     uniquePaths.map(async (path) => {
-      if (/^https?:\/\//i.test(path)) {
+      const isHttp = /^https?:\/\//i.test(path)
+      const internalFromUrl = isHttp ? getStoragePathFromUrl(path) : null
+      const internalPath = internalFromUrl ?? (isHttp ? null : path)
+
+      if (!internalPath) {
         signedUrlByPath.set(path, path)
         return
       }
-      const { data } = await supabase.storage.from(storageBucket).createSignedUrl(path, 60 * 60)
+
+      const { data } = await supabase.storage
+        .from(storageBucket)
+        .createSignedUrl(normalizeStoragePath(internalPath), 60 * 60)
       if (data?.signedUrl) {
         signedUrlByPath.set(path, data.signedUrl)
       }
@@ -123,12 +165,12 @@ export default async function PublicProgramDetailPage({ params }: PageProps) {
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
             }}
-            title={program.title}
+            title={typedProgram.title ?? ''}
           >
-            {program.title}
+            {typedProgram.title}
           </h1>
           <div style={{ color: '#6b7280', marginTop: 6 }}>
-            Niveau : {program.level ?? '—'} · Durée : {program.duration ?? '—'}
+            Niveau : {typedProgram.level ?? '—'} · Durée : {typedProgram.duration ?? '—'}
           </div>
         </div>
 
@@ -146,24 +188,24 @@ export default async function PublicProgramDetailPage({ params }: PageProps) {
       </div>
 
       <section style={{ marginTop: 16, display: 'grid', gap: 10 }}>
-        {program.description ? (
+        {typedProgram.description ? (
           <div>
             <strong>Description</strong>
-            <div>{program.description}</div>
+            <div>{typedProgram.description}</div>
           </div>
         ) : null}
 
-        {program.goal ? (
+        {typedProgram.goal ? (
           <div>
             <strong>Objectif</strong>
-            <div>{program.goal}</div>
+            <div>{typedProgram.goal}</div>
           </div>
         ) : null}
       </section>
 
       <section style={{ marginTop: 18 }}>
         <PublicProgramStructureReadOnlyClient
-          programId={program.id}
+          programId={typedProgram.id}
           weeks={typedWeeks}
           sessions={typedSessions}
           programExercises={exercisesWithMedia}

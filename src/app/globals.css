@@ -40,3 +40,48 @@ html, body {
 body {
   margin: 0;
 }
+
+input.no-native-spin::-webkit-outer-spin-button,
+input.no-native-spin::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input.no-native-spin {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.dash-float {
+  animation-name: dashFloatTransform;
+  animation-timing-function: cubic-bezier(0.2, 0, 0.2, 0.4);
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+  will-change: transform;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+@keyframes dashFloatTransform {
+  0% {
+    transform: translate3d(
+      0,
+      calc(var(--base-y, 0px) + (var(--dash-float-top, 24px) * -1)),
+      0
+    );
+  }
+  100% {
+    transform: translate3d(
+      0,
+      calc(var(--base-y, 0px) + var(--dash-float-bottom, 24px)),
+      0
+    );
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dash-float {
+    animation: none !important;
+    transform: none !important;
+  }
+}

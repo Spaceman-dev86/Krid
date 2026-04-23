@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '../../../lib/supabase/client'
+import { Button, Card, Container, Input } from '../../../components/ui'
 
 export default function LoginClient() {
   const supabase = useMemo(() => createClient(), [])
@@ -38,7 +39,8 @@ export default function LoginClient() {
         .eq('id', data.user.id)
         .maybeSingle()
 
-      const role = profile?.role
+      const typedProfile = profile as unknown as { role: string | null } | null
+      const role = typedProfile?.role
       const normalizedRole = role === 'admin' || role === 'coach' ? role : null
       setUserRole(normalizedRole)
 
@@ -109,165 +111,152 @@ export default function LoginClient() {
   }
 
   return (
-    <main style={{ maxWidth: 420, margin: '0 auto', padding: 24 }}>
-      <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 16 }}>Connexion</h1>
+    <main className="min-h-[calc(100vh-4rem)] bg-[var(--bg)] text-[var(--text)]">
+      <Container className="py-10 md:py-14">
+        <div className="mx-auto max-w-xl">
+          <Card className="overflow-hidden rounded-[var(--radius-lg)] ring-1 ring-[var(--border)]">
+            <div className="bg-[var(--surface)] p-8 sm:p-10">
+              <div className="grid gap-2">
+                <h1 className="text-2xl font-extrabold tracking-tight text-[var(--brand)]">Connexion</h1>
+                <p className="text-sm text-[var(--muted)]">
+                  Accède au dashboard pour créer et consulter tes programmes.
+                </p>
+              </div>
 
-      {userEmail ? (
-        <section style={{ marginBottom: 16, display: 'grid', gap: 10 }}>
-          <p>Connecté en tant que: {userEmail}</p>
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            {redirectTo ? (
-              <Link
-                href={redirectTo}
-                style={{
-                  padding: '10px 12px',
-                  borderRadius: 8,
-                  border: '1px solid #111827',
-                  textDecoration: 'none',
-                  color: '#111827',
-                }}
-              >
-                Continuer
-              </Link>
-            ) : null}
+              {userEmail ? (
+                <div className="mt-6 rounded-[var(--radius-md)] bg-[var(--accent)] p-5 ring-1 ring-[var(--border)]">
+                  <div className="text-sm font-semibold text-[var(--brand)]">Connecté</div>
+                  <div className="mt-1 text-sm text-[var(--text)]">{userEmail}</div>
 
-            {!redirectTo ? (
-              <Link
-                href={userRole === 'admin' ? '/admin' : '/dashboard'}
-                style={{
-                  padding: '10px 12px',
-                  borderRadius: 8,
-                  border: '1px solid #111827',
-                  background: '#111827',
-                  textDecoration: 'none',
-                  color: '#ffffff',
-                }}
-              >
-                {userRole === 'admin' ? 'Aller à l’admin' : 'Aller au dashboard'}
-              </Link>
-            ) : null}
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    {redirectTo ? (
+                      <Button href={redirectTo} variant="secondary" className="h-12 px-6 text-sm">
+                        Continuer
+                      </Button>
+                    ) : null}
 
-            <button
-              type="button"
-              onClick={onSignOut}
-              style={{
-                padding: '10px 12px',
-                borderRadius: 8,
-                border: '1px solid #e5e7eb',
-                background: '#ffffff',
-                color: '#111827',
-                cursor: 'pointer',
-              }}
-            >
-              Se déconnecter
-            </button>
+                    {!redirectTo ? (
+                      <Button
+                        href={userRole === 'admin' ? '/admin' : '/dashboard'}
+                        variant="primary"
+                        className="h-12 px-6 text-sm"
+                      >
+                        {userRole === 'admin' ? 'Aller à l’admin' : 'Aller au dashboard'}
+                      </Button>
+                    ) : null}
+
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="h-12 px-6 text-sm"
+                      onClick={onSignOut}
+                    >
+                      Se déconnecter
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="mt-6">
+                <div className="inline-flex rounded-full bg-[var(--accent)] p-1 ring-1 ring-[var(--border)]">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode('coach')
+                      setError(null)
+                      setMessage(null)
+                    }}
+                    className={`h-11 rounded-full px-5 text-sm font-semibold transition ${
+                      mode === 'coach'
+                        ? 'bg-[var(--brand)] text-white'
+                        : 'text-[var(--brand)] hover:bg-white/70'
+                    }`}
+                  >
+                    Coach
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode('admin')
+                      setError(null)
+                      setMessage(null)
+                    }}
+                    className={`h-11 rounded-full px-5 text-sm font-semibold transition ${
+                      mode === 'admin'
+                        ? 'bg-[var(--brand)] text-white'
+                        : 'text-[var(--brand)] hover:bg-white/70'
+                    }`}
+                  >
+                    Admin
+                  </button>
+                </div>
+              </div>
+
+              <form onSubmit={onSubmit} className="mt-6 grid gap-4">
+                <label className="grid gap-2">
+                  <span className="text-sm font-semibold text-[var(--brand)]">Email</span>
+                  <Input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    autoComplete="email"
+                    placeholder="toi@exemple.com"
+                  />
+                </label>
+
+                {mode === 'admin' ? (
+                  <label className="grid gap-2">
+                    <span className="text-sm font-semibold text-[var(--brand)]">Mot de passe</span>
+                    <Input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      autoComplete="current-password"
+                    />
+                  </label>
+                ) : (
+                  <div className="text-sm text-[var(--muted)]">
+                    Un lien de connexion sera envoyé par email.
+                  </div>
+                )}
+
+                <Button type="submit" disabled={loading} className="h-14 rounded-[var(--radius-md)]">
+                  {loading
+                    ? mode === 'admin'
+                      ? 'Connexion…'
+                      : 'Envoi…'
+                    : mode === 'admin'
+                      ? 'Se connecter (admin)'
+                      : 'Envoyer le lien magique'}
+                </Button>
+
+                {error ? (
+                  <div className="rounded-[var(--radius-md)] bg-red-50 p-4 text-sm font-semibold text-red-800 ring-1 ring-red-100">
+                    {error}
+                  </div>
+                ) : message ? (
+                  <div className="rounded-[var(--radius-md)] bg-emerald-50 p-4 text-sm font-semibold text-emerald-800 ring-1 ring-emerald-100">
+                    {message}
+                  </div>
+                ) : null}
+              </form>
+
+              <div className="mt-6 text-sm text-[var(--muted)]">
+                En continuant, tu acceptes d’utiliser l’app en accès privé.
+              </div>
+            </div>
+          </Card>
+
+          <div className="mt-6 text-center">
+            <Link href="/" className="text-sm font-semibold text-[var(--brand)] underline underline-offset-2">
+              Retour à l’accueil
+            </Link>
           </div>
-        </section>
-      ) : null}
-
-      <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-        <button
-          type="button"
-          onClick={() => {
-            setMode('coach')
-            setError(null)
-            setMessage(null)
-          }}
-          style={{
-            padding: '10px 12px',
-            borderRadius: 8,
-            border: '1px solid #e5e7eb',
-            background: mode === 'coach' ? '#111827' : '#ffffff',
-            color: mode === 'coach' ? '#ffffff' : '#111827',
-            cursor: 'pointer',
-          }}
-        >
-          Coach (lien magique)
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            setMode('admin')
-            setError(null)
-            setMessage(null)
-          }}
-          style={{
-            padding: '10px 12px',
-            borderRadius: 8,
-            border: '1px solid #e5e7eb',
-            background: mode === 'admin' ? '#111827' : '#ffffff',
-            color: mode === 'admin' ? '#ffffff' : '#111827',
-            cursor: 'pointer',
-          }}
-        >
-          Admin (mot de passe)
-        </button>
-      </div>
-
-      <form onSubmit={onSubmit} style={{ display: 'grid', gap: 12 }}>
-        <label style={{ display: 'grid', gap: 6 }}>
-          <span>Email</span>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            autoComplete="email"
-            placeholder="toi@exemple.com"
-            style={{
-              padding: '10px 12px',
-              border: '1px solid #e5e7eb',
-              borderRadius: 8,
-            }}
-          />
-        </label>
-
-        {mode === 'admin' ? (
-          <label style={{ display: 'grid', gap: 6 }}>
-            <span>Mot de passe</span>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete="current-password"
-              style={{
-                padding: '10px 12px',
-                border: '1px solid #e5e7eb',
-                borderRadius: 8,
-              }}
-            />
-          </label>
-        ) : null}
-
-        <button
-          type="submit"
-          disabled={loading}
-          style={{
-            padding: '10px 12px',
-            borderRadius: 8,
-            border: '1px solid #111827',
-            background: '#111827',
-            color: '#ffffff',
-            cursor: loading ? 'not-allowed' : 'pointer',
-          }}
-        >
-          {loading
-            ? mode === 'admin'
-              ? 'Connexion…'
-              : 'Envoi…'
-            : mode === 'admin'
-              ? 'Se connecter (admin)'
-              : 'Envoyer le lien magique'}
-        </button>
-
-        {error ? (
-          <p style={{ color: '#b91c1c' }}>{error}</p>
-        ) : message ? (
-          <p style={{ color: '#065f46' }}>{message}</p>
-        ) : null}
-      </form>
+        </div>
+      </Container>
     </main>
   )
 }

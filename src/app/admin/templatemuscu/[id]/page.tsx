@@ -7,6 +7,31 @@ import EditableProgramTitleClient from '../../../../components/EditableProgramTi
 import ProgramStructureClient from '../../../../components/ProgramStructureClient'
 import SaveAllExercisesClient from '../../../../components/SaveAllExercisesClient'
 
+type UntypedSupabaseClient = {
+  auth: {
+    getUser: () => Promise<{ data: { user: { id: string } | null } }>
+  }
+  from: (table: string) => PostgrestBuilder
+}
+
+type PostgrestResponse = { data: unknown; error: { message: string } | null }
+
+type PostgrestBuilder = PromiseLike<PostgrestResponse> & {
+  select: (columns: string, options?: Record<string, unknown>) => PostgrestBuilder
+  eq: (column: string, value: unknown) => PostgrestBuilder
+  in: (column: string, values: unknown[]) => PostgrestBuilder
+  order: (column: string, options?: { ascending?: boolean }) => PostgrestBuilder
+  limit: (count: number) => PostgrestBuilder
+  maybeSingle: () => Promise<{ data: unknown; error: { message: string } | null }>
+  insert: (values: Record<string, unknown> | Record<string, unknown>[]) => PostgrestBuilder
+  update: (values: Record<string, unknown>) => PostgrestBuilder
+  delete: () => PostgrestBuilder
+}
+
+async function createUntypedClient(): Promise<UntypedSupabaseClient> {
+  return (await createClient()) as unknown as UntypedSupabaseClient
+}
+
 type WeekRow = {
   id: string
   title: string
@@ -48,7 +73,7 @@ type PageProps = {
 export default async function AdminTemplateMuscuDetailPage({ params, searchParams }: PageProps) {
   const { id } = await params
 
-  const supabase = await createClient()
+  const supabase = await createUntypedClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -57,7 +82,8 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
     redirect('/login')
   }
 
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
+  const { data: profileData } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
+  const profile = profileData as unknown as { role: string | null } | null
   if (profile?.role !== 'admin') {
     redirect('/dashboard')
   }
@@ -115,7 +141,7 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
   async function updateProgramTitle(formData: FormData) {
     'use server'
 
-    const supabase = await createClient()
+    const supabase = await createUntypedClient()
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -124,7 +150,8 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
       redirect('/login')
     }
 
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
+    const { data: profileData } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
+    const profile = profileData as unknown as { role: string | null } | null
     if (profile?.role !== 'admin') {
       redirect('/dashboard')
     }
@@ -148,7 +175,6 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
 
   async function noopAddExerciseToSession(_formData: FormData) {
     'use server'
-    return { insertedId: null, tmpId: null }
   }
 
   async function noopReplaceProgramExercise(_formData: FormData) {
@@ -162,7 +188,7 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
   async function saveAllExercises(formData: FormData) {
     'use server'
 
-    const supabase = await createClient()
+    const supabase = await createUntypedClient()
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -171,7 +197,8 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
       redirect('/login')
     }
 
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
+    const { data: profileData } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
+    const profile = profileData as unknown as { role: string | null } | null
     if (profile?.role !== 'admin') {
       redirect('/dashboard')
     }
@@ -254,7 +281,7 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
   async function addWeek(formData: FormData) {
     'use server'
 
-    const supabase = await createClient()
+    const supabase = await createUntypedClient()
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -263,20 +290,23 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
       redirect('/login')
     }
 
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
+    const { data: profileData } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
+    const profile = profileData as unknown as { role: string | null } | null
     if (profile?.role !== 'admin') {
       redirect('/dashboard')
     }
 
     const title = String(formData.get('title') ?? '').trim() || 'Semaine'
 
-    const { data: last } = await supabase
+    const { data: lastData } = await supabase
       .from('program_weeks')
       .select('week_order')
       .eq('program_id', id)
       .order('week_order', { ascending: false })
       .limit(1)
       .maybeSingle()
+
+    const last = lastData as unknown as { week_order: number | null } | null
 
     const nextOrder = (last?.week_order ?? 0) + 1
 
@@ -292,7 +322,7 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
   async function deleteWeek(formData: FormData) {
     'use server'
 
-    const supabase = await createClient()
+    const supabase = await createUntypedClient()
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -301,7 +331,8 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
       redirect('/login')
     }
 
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
+    const { data: profileData } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
+    const profile = profileData as unknown as { role: string | null } | null
     if (profile?.role !== 'admin') {
       redirect('/dashboard')
     }
@@ -323,7 +354,7 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
   async function duplicateWeek(formData: FormData) {
     'use server'
 
-    const supabase = await createClient()
+    const supabase = await createUntypedClient()
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -332,7 +363,8 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
       redirect('/login')
     }
 
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
+    const { data: profileData } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
+    const profile = profileData as unknown as { role: string | null } | null
     if (profile?.role !== 'admin') {
       redirect('/dashboard')
     }
@@ -342,17 +374,19 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
       redirect(`${basePath}/${id}?error=missing_week_id`)
     }
 
-    const { data: sourceWeek } = await supabase
+    const { data: sourceWeekData } = await supabase
       .from('program_weeks')
       .select('id,title')
       .eq('id', weekId)
       .maybeSingle()
 
+    const sourceWeek = sourceWeekData as unknown as { id: string; title: string } | null
+
     if (!sourceWeek) {
       redirect(`${basePath}/${id}?error=week_not_found`)
     }
 
-    const { data: last } = await supabase
+    const { data: lastData } = await supabase
       .from('program_weeks')
       .select('week_order')
       .eq('program_id', id)
@@ -360,13 +394,17 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
       .limit(1)
       .maybeSingle()
 
+    const last = lastData as unknown as { week_order: number | null } | null
+
     const nextOrder = (last?.week_order ?? 0) + 1
 
-    const { data: insertedWeek, error: weekInsertError } = await supabase
+    const { data: insertedWeekData, error: weekInsertError } = await supabase
       .from('program_weeks')
       .insert({ program_id: id, title: `${sourceWeek.title} (copie)`, week_order: nextOrder })
       .select('id')
       .maybeSingle()
+
+    const insertedWeek = insertedWeekData as unknown as { id: string } | null
 
     if (weekInsertError || !insertedWeek) {
       redirect(`${basePath}/${id}?error=${encodeURIComponent(weekInsertError?.message ?? 'duplicate_week_failed')}`)
@@ -378,9 +416,15 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
       .eq('week_id', weekId)
       .order('session_order', { ascending: true })
 
-    if ((sourceSessions ?? []).length > 0) {
+    const typedSourceSessions = (sourceSessions ?? []) as unknown as {
+      title: string
+      description: string | null
+      session_order: number
+    }[]
+
+    if (typedSourceSessions.length > 0) {
       await supabase.from('sessions').insert(
-        (sourceSessions ?? []).map((s) => ({
+        typedSourceSessions.map((s) => ({
           week_id: insertedWeek.id,
           title: s.title,
           description: s.description,
@@ -395,7 +439,7 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
   async function addSession(formData: FormData) {
     'use server'
 
-    const supabase = await createClient()
+    const supabase = await createUntypedClient()
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -404,7 +448,8 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
       redirect('/login')
     }
 
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
+    const { data: profileData } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
+    const profile = profileData as unknown as { role: string | null } | null
     if (profile?.role !== 'admin') {
       redirect('/dashboard')
     }
@@ -416,13 +461,15 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
 
     const title = String(formData.get('title') ?? '').trim() || 'Séance'
 
-    const { data: last } = await supabase
+    const { data: lastData } = await supabase
       .from('sessions')
       .select('session_order')
       .eq('week_id', weekId)
       .order('session_order', { ascending: false })
       .limit(1)
       .maybeSingle()
+
+    const last = lastData as unknown as { session_order: number | null } | null
 
     const nextOrder = (last?.session_order ?? 0) + 1
 
@@ -438,7 +485,7 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
   async function deleteSession(formData: FormData) {
     'use server'
 
-    const supabase = await createClient()
+    const supabase = await createUntypedClient()
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -447,7 +494,8 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
       redirect('/login')
     }
 
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
+    const { data: profileData } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
+    const profile = profileData as unknown as { role: string | null } | null
     if (profile?.role !== 'admin') {
       redirect('/dashboard')
     }
@@ -470,7 +518,7 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
   async function duplicateSession(formData: FormData) {
     'use server'
 
-    const supabase = await createClient()
+    const supabase = await createUntypedClient()
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -479,7 +527,8 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
       redirect('/login')
     }
 
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
+    const { data: profileData } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
+    const profile = profileData as unknown as { role: string | null } | null
     if (profile?.role !== 'admin') {
       redirect('/dashboard')
     }
@@ -490,18 +539,20 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
       redirect(`${basePath}/${id}?error=missing_session_id`)
     }
 
-    const { data: sourceSession } = await supabase
+    const { data: sourceSessionData } = await supabase
       .from('sessions')
       .select('id,week_id,title,description')
       .eq('id', sessionId)
       .eq('week_id', weekId)
       .maybeSingle()
 
+    const sourceSession = sourceSessionData as unknown as { id: string; week_id: string; title: string; description: string | null } | null
+
     if (!sourceSession) {
       redirect(`${basePath}/${id}?error=session_not_found`)
     }
 
-    const { data: last } = await supabase
+    const { data: lastData } = await supabase
       .from('sessions')
       .select('session_order')
       .eq('week_id', weekId)
@@ -509,9 +560,11 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
       .limit(1)
       .maybeSingle()
 
+    const last = lastData as unknown as { session_order: number | null } | null
+
     const nextOrder = (last?.session_order ?? 0) + 1
 
-    const { data: insertedSession, error: insertSessionError } = await supabase
+    const { data: insertedSessionData, error: insertSessionError } = await supabase
       .from('sessions')
       .insert({
         week_id: weekId,
@@ -521,6 +574,8 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
       })
       .select('id')
       .maybeSingle()
+
+    const insertedSession = insertedSessionData as unknown as { id: string } | null
 
     if (insertSessionError || !insertedSession) {
       redirect(`${basePath}/${id}?error=${encodeURIComponent(insertSessionError?.message ?? 'duplicate_session_failed')}`)
@@ -534,7 +589,7 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
   async function updateWeekTitle(formData: FormData) {
     'use server'
 
-    const supabase = await createClient()
+    const supabase = await createUntypedClient()
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -543,7 +598,8 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
       redirect('/login')
     }
 
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
+    const { data: profileData } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
+    const profile = profileData as unknown as { role: string | null } | null
     if (profile?.role !== 'admin') {
       redirect('/dashboard')
     }
@@ -567,7 +623,7 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
   async function updateSessionTitle(formData: FormData) {
     'use server'
 
-    const supabase = await createClient()
+    const supabase = await createUntypedClient()
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -576,7 +632,8 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
       redirect('/login')
     }
 
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
+    const { data: profileData } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
+    const profile = profileData as unknown as { role: string | null } | null
     if (profile?.role !== 'admin') {
       redirect('/dashboard')
     }
@@ -720,6 +777,15 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
         </div>
       </section>
 
+      {(() => {
+        const addWeekLegacy = async (fd: FormData) => {
+          await addWeek(fd)
+        }
+        const addSessionLegacy = async (fd: FormData) => {
+          await addSession(fd)
+        }
+
+        return (
       <ProgramStructureClient
         programId={id}
         readOnly={false}
@@ -731,10 +797,10 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
         openSession={openSession}
         replaceExerciseId={replaceExerciseId ?? undefined}
         uniqueMuscles={uniqueMuscles}
-        addWeekAction={addWeek}
+        addWeekAction={addWeekLegacy}
         deleteWeekAction={deleteWeek}
         duplicateWeekAction={duplicateWeek}
-        addSessionAction={addSession}
+        addSessionAction={addSessionLegacy}
         deleteSessionAction={deleteSession}
         duplicateSessionAction={duplicateSession}
         updateWeekTitleAction={updateWeekTitle}
@@ -743,6 +809,8 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
         replaceProgramExerciseAction={noopReplaceProgramExercise}
         deleteProgramExerciseAction={noopDeleteProgramExercise}
       />
+        )
+      })()}
 
       <div style={{ position: 'fixed', right: 16, bottom: 16, display: 'flex', gap: 10, alignItems: 'center' }}>
         <SaveAllExercisesClient action={saveAllExercises} openWeek={openWeek ?? ''} openSession={openSession ?? ''} />

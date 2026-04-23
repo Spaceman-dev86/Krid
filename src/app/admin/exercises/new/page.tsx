@@ -3,6 +3,11 @@ import { redirect } from 'next/navigation'
 
 import { createClient } from '../../../../lib/supabase/server'
 
+type UntypedInsertResult = { error: { message?: string } | null }
+type UntypedInsertQuery = {
+  insert: (values: Record<string, unknown>) => Promise<UntypedInsertResult>
+}
+
 export default async function NewExercisePage() {
   async function createExercise(formData: FormData) {
     'use server'
@@ -22,7 +27,8 @@ export default async function NewExercisePage() {
       .eq('id', user.id)
       .maybeSingle()
 
-    if (profile?.role !== 'admin') {
+    const typedProfile = profile as unknown as { role: string | null } | null
+    if (typedProfile?.role !== 'admin') {
       redirect('/dashboard')
     }
 
@@ -41,7 +47,9 @@ export default async function NewExercisePage() {
       redirect('/admin/exercises/new?error=missing_name')
     }
 
-    const { error } = await supabase.from('exercise_library').insert({
+    const { error } = await (supabase as unknown as { from: (t: string) => UntypedInsertQuery })
+      .from('exercise_library')
+      .insert({
       name,
       description: description || null,
       muscle_group: muscleGroup || null,
@@ -53,7 +61,7 @@ export default async function NewExercisePage() {
     })
 
     if (error) {
-      redirect(`/admin/exercises/new?error=${encodeURIComponent(error.message)}`)
+      redirect(`/admin/exercises/new?error=${encodeURIComponent(error.message ?? 'unknown_error')}`)
     }
 
     redirect('/admin/exercises')

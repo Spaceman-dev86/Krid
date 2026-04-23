@@ -115,7 +115,7 @@ export default function MonAppPage() {
                 subtitle="Un produit premium, pensé pour professionnaliser ton activité et monétiser tes programmes."
               />
               <div className="flex flex-col gap-3 sm:flex-row">
-                <Button href="/contact">Demander une clé</Button>
+                <Button href="/login">Demander une clé</Button>
                 <Button href="/login" variant="secondary">
                   tester la création de programme
                 </Button>
@@ -172,7 +172,7 @@ export default function MonAppPage() {
           />
 
           <div className="mt-8">
-            <Button href="/contact">Demander une clé</Button>
+            <Button href="/login">Demander une clé</Button>
           </div>
         </Container>
       </section>

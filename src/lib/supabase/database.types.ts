@@ -57,6 +57,7 @@ export type Database = {
           sets: number | null
           reps: number | null
           rest_time: string | null
+          rpe: number | null
           tempo: string | null
           load: string | null
           notes: string | null

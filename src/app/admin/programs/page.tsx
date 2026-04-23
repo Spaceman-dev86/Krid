@@ -19,7 +19,8 @@ export default async function AdminProgramsPage({
   }
 
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
-  if (profile?.role !== 'admin') {
+  const typedProfile = profile as unknown as { role: string | null } | null
+  if (typedProfile?.role !== 'admin') {
     redirect('/dashboard')
   }
 
@@ -42,7 +43,8 @@ export default async function AdminProgramsPage({
     query = query.eq('is_template', true)
   }
 
-  const { data: programs } = await query
+  const { data: programsRaw } = await query
+  const programs = programsRaw as unknown as { id: string; title: string | null; is_template: boolean | null; is_published: boolean | null }[] | null
 
   const tabs = [
     { key: 'all', label: 'Tous', href: '/admin/programs' },
@@ -64,7 +66,7 @@ export default async function AdminProgramsPage({
             <div className="mt-3">
               <Link
                 className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[var(--brand)] text-base font-extrabold text-white"
-                href="/dashboard/programs/new?scope=public"
+                href="/admin/new?scope=private"
                 aria-label="Créer un programme"
                 title="Créer un programme"
               >

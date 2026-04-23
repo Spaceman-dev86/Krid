@@ -3,6 +3,21 @@ import { redirect } from 'next/navigation'
 
 import { createClient } from '../../../../lib/supabase/server'
 
+type UntypedMaybeSingleResult = { data: unknown; error: { message?: string } | null }
+type UntypedMutationResult = { error: { message?: string } | null }
+
+type UntypedMutationChain = {
+  eq: (col: string, val: string) => Promise<UntypedMutationResult>
+}
+
+type UntypedQuery = {
+  select: (columns: string) => UntypedQuery
+  eq: (col: string, val: string) => UntypedQuery
+  maybeSingle: () => Promise<UntypedMaybeSingleResult>
+  update: (values: Record<string, unknown>) => UntypedMutationChain
+  delete: () => UntypedMutationChain
+}
+
 type PageProps = {
   params: Promise<{ id: string }>
 }
@@ -25,11 +40,12 @@ export default async function EditExercisePage({ params }: PageProps) {
     .eq('id', user.id)
     .maybeSingle()
 
-  if (profile?.role !== 'admin') {
+  const typedProfile = profile as unknown as { role: string | null } | null
+  if (typedProfile?.role !== 'admin') {
     redirect('/dashboard')
   }
 
-  const { data: exercise, error } = await supabase
+  const { data: exercise, error } = await (supabase as unknown as { from: (t: string) => UntypedQuery })
     .from('exercise_library')
     .select(
       'id,name,description,muscle_group,difficulty,video_url,common_mistakes,demo_media_path,replacement_exercise_id,created_at'
@@ -45,13 +61,26 @@ export default async function EditExercisePage({ params }: PageProps) {
 
   let demoMediaUrl: string | null = null
   let demoMediaError: string | null = null
-  if (exercise.demo_media_path) {
-    if (/^https?:\/\//i.test(exercise.demo_media_path)) {
-      demoMediaUrl = exercise.demo_media_path
+  const typedExercise = exercise as unknown as {
+    id: string
+    name: string
+    description: string | null
+    muscle_group: string | null
+    difficulty: string | null
+    video_url: string | null
+    common_mistakes: string | null
+    demo_media_path: string | null
+    replacement_exercise_id: string | null
+    created_at: string | null
+  }
+
+  if (typedExercise.demo_media_path) {
+    if (/^https?:\/\//i.test(typedExercise.demo_media_path)) {
+      demoMediaUrl = typedExercise.demo_media_path
     } else {
       const { data, error } = await supabase.storage
         .from(storageBucket)
-        .createSignedUrl(exercise.demo_media_path, 60 * 60)
+        .createSignedUrl(typedExercise.demo_media_path, 60 * 60)
       demoMediaUrl = data?.signedUrl ?? null
       demoMediaError = error?.message ?? null
     }
@@ -61,22 +90,23 @@ export default async function EditExercisePage({ params }: PageProps) {
   let replacementMediaUrl: string | null = null
   let replacementMediaError: string | null = null
 
-  if (exercise.replacement_exercise_id) {
-    const { data: rep } = await supabase
+  if (typedExercise.replacement_exercise_id) {
+    const { data: rep } = await (supabase as unknown as { from: (t: string) => UntypedQuery })
       .from('exercise_library')
       .select('id,name,demo_media_path')
-      .eq('id', exercise.replacement_exercise_id)
+      .eq('id', typedExercise.replacement_exercise_id)
       .maybeSingle()
 
-    if (rep) {
-      replacement = rep
-      if (rep.demo_media_path) {
-        if (/^https?:\/\//i.test(rep.demo_media_path)) {
-          replacementMediaUrl = rep.demo_media_path
+    const typedRep = rep as unknown as { id: string; name: string; demo_media_path: string | null } | null
+    if (typedRep) {
+      replacement = typedRep
+      if (typedRep.demo_media_path) {
+        if (/^https?:\/\//i.test(typedRep.demo_media_path)) {
+          replacementMediaUrl = typedRep.demo_media_path
         } else {
           const { data, error } = await supabase.storage
             .from(storageBucket)
-            .createSignedUrl(rep.demo_media_path, 60 * 60)
+            .createSignedUrl(typedRep.demo_media_path, 60 * 60)
           replacementMediaUrl = data?.signedUrl ?? null
           replacementMediaError = error?.message ?? null
         }
@@ -102,7 +132,8 @@ export default async function EditExercisePage({ params }: PageProps) {
       .eq('id', user.id)
       .maybeSingle()
 
-    if (profile?.role !== 'admin') {
+    const typedProfile = profile as unknown as { role: string | null } | null
+    if (typedProfile?.role !== 'admin') {
       redirect('/dashboard')
     }
 
@@ -121,7 +152,7 @@ export default async function EditExercisePage({ params }: PageProps) {
       redirect(`/admin/exercises/${id}?error=missing_name`)
     }
 
-    const { error } = await supabase
+    const { error } = await (supabase as unknown as { from: (t: string) => UntypedQuery })
       .from('exercise_library')
       .update({
         name,
@@ -136,7 +167,7 @@ export default async function EditExercisePage({ params }: PageProps) {
       .eq('id', id)
 
     if (error) {
-      redirect(`/admin/exercises/${id}?error=${encodeURIComponent(error.message)}`)
+      redirect(`/admin/exercises/${id}?error=${encodeURIComponent(error.message ?? 'unknown_error')}`)
     }
 
     redirect('/admin/exercises')
@@ -160,14 +191,18 @@ export default async function EditExercisePage({ params }: PageProps) {
       .eq('id', user.id)
       .maybeSingle()
 
-    if (profile?.role !== 'admin') {
+    const typedProfile = profile as unknown as { role: string | null } | null
+    if (typedProfile?.role !== 'admin') {
       redirect('/dashboard')
     }
 
-    const { error } = await supabase.from('exercise_library').delete().eq('id', id)
+    const { error } = await (supabase as unknown as { from: (t: string) => UntypedQuery })
+      .from('exercise_library')
+      .delete()
+      .eq('id', id)
 
     if (error) {
-      redirect(`/admin/exercises/${id}?error=${encodeURIComponent(error.message)}`)
+      redirect(`/admin/exercises/${id}?error=${encodeURIComponent(error.message ?? 'unknown_error')}`)
     }
 
     redirect('/admin/exercises')
@@ -182,9 +217,9 @@ export default async function EditExercisePage({ params }: PageProps) {
         </Link>
       </div>
 
-      {exercise.video_url ? (
+      {typedExercise.video_url ? (
         <p style={{ marginTop: 12 }}>
-          <a href={exercise.video_url} target="_blank" rel="noreferrer" style={{ color: '#111827' }}>
+          <a href={typedExercise.video_url} target="_blank" rel="noreferrer" style={{ color: '#111827' }}>
             Ouvrir la vidéo
           </a>
         </p>
@@ -194,13 +229,13 @@ export default async function EditExercisePage({ params }: PageProps) {
         <div style={{ marginTop: 12 }}>
           <img
             src={demoMediaUrl}
-            alt={exercise.name}
+            alt={typedExercise.name}
             style={{ maxWidth: 420, width: '100%', height: 'auto', borderRadius: 8, border: '1px solid #e5e7eb' }}
           />
         </div>
-      ) : exercise.demo_media_path ? (
+      ) : typedExercise.demo_media_path ? (
         <p style={{ marginTop: 12, color: '#b91c1c' }}>
-          Impossible de charger le média ({exercise.demo_media_path})
+          Impossible de charger le média ({typedExercise.demo_media_path})
           {demoMediaError ? `: ${demoMediaError}` : ''}
         </p>
       ) : null}
@@ -211,7 +246,7 @@ export default async function EditExercisePage({ params }: PageProps) {
           <input
             name="name"
             required
-            defaultValue={exercise.name}
+            defaultValue={typedExercise.name}
             style={{ padding: '10px 12px', border: '1px solid #e5e7eb', borderRadius: 8 }}
           />
         </label>
@@ -221,7 +256,7 @@ export default async function EditExercisePage({ params }: PageProps) {
           <textarea
             name="description"
             rows={3}
-            defaultValue={exercise.description ?? ''}
+            defaultValue={typedExercise.description ?? ''}
             style={{ padding: '10px 12px', border: '1px solid #e5e7eb', borderRadius: 8 }}
           />
         </label>
@@ -230,7 +265,7 @@ export default async function EditExercisePage({ params }: PageProps) {
           <span>Groupe musculaire</span>
           <select
             name="muscle_group"
-            defaultValue={exercise.muscle_group ?? ''}
+            defaultValue={typedExercise.muscle_group ?? ''}
             style={{ padding: '10px 12px', border: '1px solid #e5e7eb', borderRadius: 8 }}
           >
             <option value="">Sélectionner…</option>
@@ -253,7 +288,7 @@ export default async function EditExercisePage({ params }: PageProps) {
           <span>Difficulté</span>
           <select
             name="difficulty"
-            defaultValue={exercise.difficulty ?? ''}
+            defaultValue={typedExercise.difficulty ?? ''}
             style={{ padding: '10px 12px', border: '1px solid #e5e7eb', borderRadius: 8 }}
           >
             <option value="">Sélectionner…</option>
@@ -268,7 +303,7 @@ export default async function EditExercisePage({ params }: PageProps) {
             <span>URL vidéo</span>
             <input
               name="video_url"
-              defaultValue={exercise.video_url ?? ''}
+              defaultValue={typedExercise.video_url ?? ''}
               style={{ padding: '10px 12px', border: '1px solid #e5e7eb', borderRadius: 8 }}
             />
           </label>
@@ -277,7 +312,7 @@ export default async function EditExercisePage({ params }: PageProps) {
             <span>Chemin média (Storage)</span>
             <input
               name="demo_media_path"
-              defaultValue={exercise.demo_media_path ?? ''}
+              defaultValue={typedExercise.demo_media_path ?? ''}
               style={{ padding: '10px 12px', border: '1px solid #e5e7eb', borderRadius: 8 }}
             />
           </label>
@@ -288,7 +323,7 @@ export default async function EditExercisePage({ params }: PageProps) {
           <textarea
             name="common_mistakes"
             rows={3}
-            defaultValue={exercise.common_mistakes ?? ''}
+            defaultValue={typedExercise.common_mistakes ?? ''}
             style={{ padding: '10px 12px', border: '1px solid #e5e7eb', borderRadius: 8 }}
           />
         </label>
@@ -297,7 +332,7 @@ export default async function EditExercisePage({ params }: PageProps) {
           <span>ID exercice de remplacement (optionnel)</span>
           <input
             name="replacement_exercise_id"
-            defaultValue={exercise.replacement_exercise_id ?? ''}
+            defaultValue={typedExercise.replacement_exercise_id ?? ''}
             style={{ padding: '10px 12px', border: '1px solid #e5e7eb', borderRadius: 8 }}
           />
         </label>

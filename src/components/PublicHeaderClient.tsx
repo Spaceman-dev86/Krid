@@ -35,7 +35,7 @@ export default function PublicHeaderClient() {
         .eq('id', user.id)
         .maybeSingle()
 
-      const r = profile?.role
+      const r = (profile as unknown as { role?: string | null } | null)?.role
       setRole(r === 'admin' || r === 'coach' ? r : null)
     }
 
@@ -96,7 +96,7 @@ export default function PublicHeaderClient() {
         .eq('id', user.id)
         .maybeSingle()
 
-      const role = profile?.role
+      const role = (profile as unknown as { role?: string | null } | null)?.role
       if (role === 'admin') {
         router.push('/admin')
         return
@@ -121,13 +121,19 @@ export default function PublicHeaderClient() {
   }
 
   return (
-    <header className="fixed left-0 right-0 top-0 z-50 border-b border-black/10 bg-white/80 backdrop-blur">
-      <div className="mx-auto flex w-full max-w-none items-center justify-between gap-3 px-6 py-3 sm:px-8 lg:px-12" ref={menuRef}>
+    <header className="fixed left-0 right-0 top-0 z-50 h-16 border-b border-black/10 bg-white md:bg-white/80 md:backdrop-blur">
+      <div
+        className="mx-auto flex h-full w-full max-w-none items-center justify-between gap-3 px-6 py-3 sm:px-8 lg:px-12"
+        ref={menuRef}
+      >
         <Link href="/" className="text-base font-extrabold tracking-tight text-[#341c44]">
           Trainly
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex">
+          <Link href="/" className="rounded-full px-3 py-2 text-sm font-semibold text-black/80 hover:bg-[#f5f5f5]">
+            Acceuil
+          </Link>
           <Link href="/mon-app" className="rounded-full px-3 py-2 text-sm font-semibold text-black/80 hover:bg-[#f5f5f5]">
             Mon app
           </Link>
@@ -161,7 +167,7 @@ export default function PublicHeaderClient() {
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-[#341c44] ring-1 ring-black/10 hover:bg-[#f5f5f5]"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-[#341c44] ring-1 ring-black/10 hover:bg-[#f5f5f5] md:hidden"
             aria-label={open ? 'Fermer le menu' : 'Ouvrir le menu'}
             title={open ? 'Fermer le menu' : 'Ouvrir le menu'}
           >
@@ -173,15 +179,35 @@ export default function PublicHeaderClient() {
             onClick={role ? onSignOut : onLoginClick}
             title={role ? 'Déconnexion' : 'Connexion'}
             aria-label={role ? 'Déconnexion' : 'Connexion'}
-            className="hidden h-10 w-10 items-center justify-center rounded-2xl bg-white text-[#341c44] ring-1 ring-black/10 hover:bg-[#f5f5f5] md:inline-flex"
+            className="hidden h-10 w-10 items-center justify-center rounded-full bg-white text-[#341c44] ring-2 ring-[#341c44] hover:bg-[#f5f5f5] md:inline-flex"
             disabled={pending}
           >
-            ⎋
+            <svg
+              viewBox="0 0 24 24"
+              width={22}
+              height={22}
+              aria-hidden
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M7.5 18c1.3-3 3.7-4.6 4.5-4.6s3.2 1.6 4.5 4.6" />
+              <circle cx="12" cy="9.2" r="4.2" />
+            </svg>
           </button>
 
           {open ? (
             <div className="absolute right-0 top-[calc(100%+10px)] w-64 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-black/10">
               <div className="grid gap-2 p-2">
+                <Link
+                  href="/"
+                  className="rounded-2xl bg-[#f5f5f5] px-4 py-3 text-sm font-semibold text-[#341c44]"
+                  onClick={() => setOpen(false)}
+                >
+                  Acceuil
+                </Link>
                 <Link
                   href="/mon-app"
                   className="rounded-2xl bg-[#f5f5f5] px-4 py-3 text-sm font-semibold text-[#341c44]"

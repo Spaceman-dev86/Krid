@@ -4,6 +4,27 @@ import { redirect } from 'next/navigation'
 import { createClient } from '../../../../../lib/supabase/server'
 import type { Database } from '../../../../../lib/supabase/database.types'
 
+type UntypedMutationResult = { error: { message?: string } | null }
+type UntypedUpdateChain = {
+  eq: (col: string, val: string | number) => Promise<UntypedMutationResult>
+}
+
+type UntypedQuery = {
+  select: (columns: string) => UntypedQuery
+  eq: (col: string, val: string | number) => UntypedQuery
+  maybeSingle: () => Promise<{ data: unknown; error: { message?: string } | null }>
+  update: (values: Record<string, unknown>) => UntypedUpdateChain
+}
+
+type UntypedListQuery = {
+  select: (columns: string) => UntypedListQuery
+  order: (col: string, opts?: { ascending?: boolean }) => UntypedListQuery
+  limit: (n: number) => UntypedListQuery
+  ilike: (col: string, pattern: string) => UntypedListQuery
+  eq: (col: string, val: string | number) => UntypedListQuery
+  then: never
+}
+
 type PageProps = {
   params: Promise<{ id: string }>
   searchParams: Promise<{ q?: string; muscle?: string }>
@@ -33,7 +54,8 @@ export default async function AddExerciseToSessionPage({ params, searchParams }:
     .eq('id', user.id)
     .maybeSingle()
 
-  const isAdmin = profile?.role === 'admin'
+  const typedProfile = profile as unknown as { role: string | null } | null
+  const isAdmin = typedProfile?.role === 'admin'
 
   const { data: session } = await supabase
     .from('sessions')
@@ -121,7 +143,8 @@ export default async function AddExerciseToSessionPage({ params, searchParams }:
       .eq('id', user.id)
       .maybeSingle()
 
-    const isAdmin = profile?.role === 'admin'
+    const typedProfile = profile as unknown as { role: string | null } | null
+    const isAdmin = typedProfile?.role === 'admin'
 
     const sessionId = String(formData.get('session_id') ?? '')
     const exerciseId = String(formData.get('exercise_id') ?? '')
@@ -167,7 +190,8 @@ export default async function AddExerciseToSessionPage({ params, searchParams }:
       .eq('id', user.id)
       .maybeSingle()
 
-    const isAdmin = profile?.role === 'admin'
+    const typedProfile = profile as unknown as { role: string | null } | null
+    const isAdmin = typedProfile?.role === 'admin'
 
     const sessionId = String(formData.get('session_id') ?? '')
     const programExerciseId = String(formData.get('program_exercise_id') ?? '')
@@ -177,91 +201,101 @@ export default async function AddExerciseToSessionPage({ params, searchParams }:
       redirect(`/dashboard/sessions/${sessionId}/add-exercise?error=invalid_move_params`)
     }
 
-    const { data: session } = await supabase
+    const { data: session } = await (supabase as unknown as { from: (t: string) => UntypedQuery })
       .from('sessions')
       .select('id,week_id')
       .eq('id', sessionId)
       .maybeSingle()
 
-    if (!session) {
+    const typedSession = session as unknown as { id: string; week_id: string } | null
+
+    if (!typedSession) {
       redirect('/dashboard/programs')
     }
 
-    const { data: week } = await supabase
+    const { data: week } = await (supabase as unknown as { from: (t: string) => UntypedQuery })
       .from('program_weeks')
       .select('id,program_id')
-      .eq('id', session.week_id)
+      .eq('id', typedSession.week_id)
       .maybeSingle()
 
-    if (!week) {
+    const typedWeek = week as unknown as { id: string; program_id: string } | null
+
+    if (!typedWeek) {
       redirect('/dashboard/programs')
     }
 
-    const { data: program } = await supabase
+    const { data: program } = await (supabase as unknown as { from: (t: string) => UntypedQuery })
       .from('programs')
       .select('id,coach_id')
-      .eq('id', week.program_id)
+      .eq('id', typedWeek.program_id)
       .maybeSingle()
 
-    if (!program) {
+    const typedProgram = program as unknown as { id: string; coach_id: string } | null
+
+    if (!typedProgram) {
       redirect('/dashboard/programs')
     }
 
-    if (!isAdmin && program.coach_id !== user.id) {
+    if (!isAdmin && typedProgram.coach_id !== user.id) {
       redirect('/dashboard/programs')
     }
 
-    const { data: current } = await supabase
+    const { data: current } = await (supabase as unknown as { from: (t: string) => UntypedQuery })
       .from('program_exercises')
       .select('id,exercise_order')
       .eq('id', programExerciseId)
       .eq('session_id', sessionId)
       .maybeSingle()
 
-    if (!current) {
+    const typedCurrent = current as unknown as { id: string; exercise_order: number } | null
+
+    if (!typedCurrent) {
       redirect(`/dashboard/sessions/${sessionId}/add-exercise?error=exercise_not_found`)
     }
 
-    const neighborOrder = direction === 'up' ? current.exercise_order - 1 : current.exercise_order + 1
+    const neighborOrder = direction === 'up' ? typedCurrent.exercise_order - 1 : typedCurrent.exercise_order + 1
 
-    const { data: neighbor } = await supabase
+    const { data: neighbor } = await (supabase as unknown as { from: (t: string) => UntypedQuery })
       .from('program_exercises')
       .select('id,exercise_order')
       .eq('session_id', sessionId)
       .eq('exercise_order', neighborOrder)
       .maybeSingle()
 
-    if (!neighbor) {
+    const typedNeighbor = neighbor as unknown as { id: string; exercise_order: number } | null
+
+    if (!typedNeighbor) {
       redirect(`/dashboard/sessions/${sessionId}/add-exercise`)
     }
 
     const tempOrder = -1
 
-    const { error: e1 } = await supabase
+    const { error: e1 } = await (supabase as unknown as { from: (t: string) => UntypedQuery })
       .from('program_exercises')
       .update({ exercise_order: tempOrder })
-      .eq('id', current.id)
+      .eq('id', typedCurrent.id)
 
     if (e1) {
-      redirect(`/dashboard/sessions/${sessionId}/add-exercise?error=${encodeURIComponent(e1.message)}`)
+      redirect(`/dashboard/sessions/${sessionId}/add-exercise?error=${encodeURIComponent(e1.message ?? 'unknown_error')}`)
     }
 
-    const { error: e2 } = await supabase
+    const { error: e2 } = await (supabase as unknown as { from: (t: string) => UntypedQuery })
       .from('program_exercises')
-      .update({ exercise_order: current.exercise_order })
-      .eq('id', neighbor.id)
+      .update({ exercise_order: typedCurrent.exercise_order })
+      .eq('id', typedNeighbor.id)
 
     if (e2) {
-      redirect(`/dashboard/sessions/${sessionId}/add-exercise?error=${encodeURIComponent(e2.message)}`)
+      redirect(`/dashboard/sessions/${sessionId}/add-exercise?error=${encodeURIComponent(e2.message ?? 'unknown_error')}`)
     }
 
-    const { error: e3 } = await supabase
+    const { error: e3 } = await (supabase as unknown as { from: (t: string) => UntypedQuery })
       .from('program_exercises')
-      .update({ exercise_order: neighbor.exercise_order })
-      .eq('id', current.id)
+      .update({ exercise_order: typedNeighbor.exercise_order })
+      .eq('id', typedCurrent.id)
 
     if (e3) {
-      redirect(`/dashboard/sessions/${sessionId}/add-exercise?error=${encodeURIComponent(e3.message)}`)
+      redirect(`/dashboard/sessions/${sessionId}/add-exercise?error=${encodeURIComponent(e3.message ?? 'unknown_error')}`)
     }
 
     redirect(`/dashboard/sessions/${sessionId}/add-exercise`)
@@ -270,7 +304,7 @@ export default async function AddExerciseToSessionPage({ params, searchParams }:
   const qFilter = normalizeFilter(q)
   const muscleFilter = normalizeFilter(muscle)
 
-  let query = supabase
+  let query = (supabase as unknown as { from: (t: string) => UntypedListQuery })
     .from('exercise_library')
     .select('id,name,muscle_group,difficulty')
     .order('name', { ascending: true })
@@ -285,7 +319,7 @@ export default async function AddExerciseToSessionPage({ params, searchParams }:
   }
 
   type ExerciseRow = Pick<Database['public']['Tables']['exercise_library']['Row'], 'id' | 'name' | 'muscle_group' | 'difficulty'>
-  const { data: exercisesData } = await query
+  const { data: exercisesData } = (await (query as unknown as Promise<{ data: unknown }>))
   const exercises = (exercisesData ?? []) as unknown as ExerciseRow[]
 
   const { data: muscleGroups } = await supabase
@@ -294,8 +328,10 @@ export default async function AddExerciseToSessionPage({ params, searchParams }:
     .not('muscle_group', 'is', null)
     .order('muscle_group', { ascending: true })
 
+  const typedMuscleGroups = muscleGroups as unknown as { muscle_group: string | null }[] | null
+
   const uniqueMuscles = Array.from(
-    new Set((muscleGroups ?? []).map((m) => m.muscle_group).filter((m): m is string => !!m))
+    new Set((typedMuscleGroups ?? []).map((m) => m.muscle_group).filter((m): m is string => !!m))
   )
 
   return (

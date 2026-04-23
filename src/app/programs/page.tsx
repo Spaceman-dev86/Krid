@@ -1,18 +1,67 @@
-import Link from 'next/link'
-
 import { createClient } from '../../lib/supabase/server'
-import { Card, Container, ImagePlaceholder, SectionHeading } from '../../components/marketing'
+import { Container, SectionHeading } from '../../components/marketing'
+import ProgramsGridClient from './ProgramsGridClient'
 
 export default async function ProgramsMarketingPage() {
   const supabase = await createClient()
 
+  const { data: fallbackImage } = supabase.storage.from('home_page').getPublicUrl('muscu.jpg')
+  const defaultImageUrl = (fallbackImage as unknown as { publicUrl?: string } | null)?.publicUrl ?? null
+
   const { data: programs } = await supabase
     .from('programs')
-    .select('id,title,level,duration,created_at')
+    .select('id,title,description,goal,level,duration,image_url,created_at')
     .eq('is_published', true)
     .eq('is_template', false)
     .order('created_at', { ascending: false })
     .limit(24)
+
+  const typedPrograms = programs as unknown as {
+    id: string
+    title: string | null
+    description: string | null
+    goal: string | null
+    level: string | null
+    duration: string | null
+    image_url: string | null
+  }[] | null
+
+  const programIds = (typedPrograms ?? []).map((p) => p.id)
+
+  const { data: weeksRaw } = programIds.length
+    ? await supabase.from('program_weeks').select('id,program_id').in('program_id', programIds)
+    : { data: [] as unknown[] }
+
+  const typedWeeks = (weeksRaw ?? []) as unknown as { id: string; program_id: string }[]
+  const weekIds = typedWeeks.map((w) => w.id)
+
+  const { data: sessionsRaw } = weekIds.length
+    ? await supabase.from('sessions').select('id,week_id').in('week_id', weekIds)
+    : { data: [] as unknown[] }
+
+  const typedSessions = (sessionsRaw ?? []) as unknown as { id: string; week_id: string }[]
+
+  const weeksCountByProgramId = new Map<string, number>()
+  const programIdByWeekId = new Map<string, string>()
+  for (const w of typedWeeks) {
+    programIdByWeekId.set(w.id, w.program_id)
+    weeksCountByProgramId.set(w.program_id, (weeksCountByProgramId.get(w.program_id) ?? 0) + 1)
+  }
+
+  const sessionsCountByProgramId = new Map<string, number>()
+  for (const s of typedSessions) {
+    const programId = programIdByWeekId.get(s.week_id)
+    if (!programId) continue
+    sessionsCountByProgramId.set(programId, (sessionsCountByProgramId.get(programId) ?? 0) + 1)
+  }
+
+  const items = (typedPrograms ?? []).map((p) => {
+    return {
+      ...p,
+      weeksCount: weeksCountByProgramId.get(p.id) ?? 0,
+      sessionsCount: sessionsCountByProgramId.get(p.id) ?? 0,
+    }
+  })
 
   return (
     <main className="bg-white">
@@ -28,28 +77,8 @@ export default async function ProgramsMarketingPage() {
 
       <section>
         <Container className="py-12 md:py-16">
-          {(programs ?? []).length > 0 ? (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {(programs ?? []).map((p) => (
-                <Link key={p.id} href={`/programme/${p.id}`} className="block">
-                  <Card className="overflow-hidden hover:shadow-md transition">
-                    <div className="p-4">
-                      <ImagePlaceholder label="Image placeholder · programme" className="h-40" />
-                    </div>
-                    <div className="px-5 pb-5">
-                      <div className="text-sm font-extrabold text-[#341c44] truncate">{p.title}</div>
-                      <div className="mt-2 text-sm text-black/70 grid gap-1">
-                        <div>Niveau : {p.level ?? '—'}</div>
-                        <div>Durée : {p.duration ?? '—'}</div>
-                      </div>
-                      <div className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#341c44]">
-                        Découvrir <span aria-hidden>→</span>
-                      </div>
-                    </div>
-                  </Card>
-                </Link>
-              ))}
-            </div>
+          {items.length > 0 ? (
+            <ProgramsGridClient items={items} defaultImageUrl={defaultImageUrl} />
           ) : (
             <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-black/5">
               <div className="text-sm font-semibold text-[#341c44]">Aucun programme public.</div>

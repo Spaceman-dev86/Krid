@@ -39,7 +39,8 @@ export default async function AdminExercisesPage() {
     .eq('id', user.id)
     .maybeSingle()
 
-  if (profile?.role !== 'admin') {
+  const typedProfile = profile as unknown as { role: string | null } | null
+  if (typedProfile?.role !== 'admin') {
     redirect('/dashboard')
   }
 

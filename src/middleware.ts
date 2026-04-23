@@ -49,14 +49,7 @@ export async function middleware(request: NextRequest) {
 
   const role = !error ? profile?.role : null
 
-  if (pathname.startsWith('/dashboard') && role === 'admin') {
-    const redirectUrl = request.nextUrl.clone()
-    redirectUrl.pathname = '/admin'
-    redirectUrl.search = ''
-    return NextResponse.redirect(redirectUrl)
-  }
-
-  if (pathname.startsWith('/dashboard') && role !== 'coach') {
+  if (pathname.startsWith('/dashboard') && role !== 'coach' && role !== 'admin') {
     const redirectUrl = request.nextUrl.clone()
     redirectUrl.pathname = '/login'
     redirectUrl.search = ''

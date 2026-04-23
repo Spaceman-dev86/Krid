@@ -36,11 +36,12 @@ export default async function AdminIndexPage() {
 
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
 
-  if (profile?.role !== 'admin') {
+  const typedProfile = profile as unknown as { role: string | null } | null
+  if (typedProfile?.role !== 'admin') {
     redirect('/dashboard')
   }
 
-  const { data: program4Weeks } = await supabase
+  const { data: program4WeeksRaw } = await supabase
     .from('programs')
     .select('id,title')
     .eq('is_published', true)
@@ -50,7 +51,9 @@ export default async function AdminIndexPage() {
     .limit(1)
     .maybeSingle()
 
-  const { data: privatePrograms } = await supabase
+  const program4Weeks = program4WeeksRaw as unknown as { id: string; title: string | null } | null
+
+  const { data: privateProgramsRaw } = await supabase
     .from('programs')
     .select('id,title,created_at,is_template')
     .eq('coach_id', user.id)
@@ -58,11 +61,15 @@ export default async function AdminIndexPage() {
     .eq('is_template', false)
     .order('created_at', { ascending: false })
 
-  const { data: templates } = await supabase
+  const privatePrograms = privateProgramsRaw as unknown as { id: string; title: string | null }[] | null
+
+  const { data: templatesRaw } = await supabase
     .from('programs')
     .select('id,title,created_at')
     .eq('is_template', true)
     .order('created_at', { ascending: false })
+
+  const templates = templatesRaw as unknown as { id: string; title: string | null }[] | null
 
   const templateMuscu = (templates ?? []).find((t) => (t.title ?? '').toLowerCase().includes('muscu')) ?? (templates ?? [])[0]
 
@@ -85,9 +92,9 @@ export default async function AdminIndexPage() {
               </div>
               <Link
                 className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[var(--brand)] text-white"
-                href="/admin/exercises/new"
-                aria-label="Créer un exercice"
-                title="Créer un exercice"
+                href="/admin/new?scope=public"
+                aria-label="Créer un programme public"
+                title="Créer un programme public"
               >
                 <PlusIcon />
               </Link>
@@ -113,9 +120,9 @@ export default async function AdminIndexPage() {
               </div>
               <Link
                 className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[var(--brand)] text-white"
-                href="/admin/exercises/new"
-                aria-label="Créer un exercice"
-                title="Créer un exercice"
+                href="/admin/new?scope=private"
+                aria-label="Créer un programme privé"
+                title="Créer un programme privé"
               >
                 <PlusIcon />
               </Link>
@@ -143,6 +150,17 @@ export default async function AdminIndexPage() {
         </div>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-3">
+          <Card className="rounded-[var(--radius-lg)] p-8 ring-1 ring-[var(--border)]">
+            <h2 className="text-lg font-extrabold tracking-tight">Dashboard coach</h2>
+            <p className="mt-1 text-sm text-[var(--muted)]">Accéder à l’interface coach (démo).</p>
+            <div className="mt-6">
+              <Button href="/dashboard" variant="primary" className="w-full justify-between">
+                <span>Ouvrir le dashboard</span>
+                <span aria-hidden>→</span>
+              </Button>
+            </div>
+          </Card>
+
           <Card className="rounded-[var(--radius-lg)] p-8 ring-1 ring-[var(--border)]">
             <h2 className="text-lg font-extrabold tracking-tight">Templates</h2>
             <p className="mt-1 text-sm text-[var(--muted)]">Modèles réutilisables.</p>

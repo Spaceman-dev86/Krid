@@ -14,7 +14,8 @@ export default async function AdminTemplateMuscuListPage() {
   }
 
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
-  if (profile?.role !== 'admin') {
+  const typedProfile = profile as unknown as { role: string | null } | null
+  if (typedProfile?.role !== 'admin') {
     redirect('/dashboard')
   }
 
@@ -25,7 +26,9 @@ export default async function AdminTemplateMuscuListPage() {
     .eq('is_template', true)
     .order('created_at', { ascending: false })
 
-  const firstTemplate = (templates ?? [])[0]
+  const typedTemplates = templates as unknown as { id: string; title: string | null }[] | null
+
+  const firstTemplate = (typedTemplates ?? [])[0]
   if (firstTemplate?.id) {
     redirect(`/admin/templatemuscu/${firstTemplate.id}`)
   }

@@ -4,9 +4,35 @@ import { redirect } from 'next/navigation'
 import { createClient } from '../../lib/supabase/server'
 import { Card, Container } from '../../components/marketing'
 import SubmitButtonWithProgressClient from '../../components/SubmitButtonWithProgressClient'
+import ProgramLimitPopupClient from '../../components/ProgramLimitPopupClient'
 
-export default async function DashboardIndexPage() {
+ type PostgrestErrorLike = { message?: string }
+
+ type UntypedResult = { data: unknown; error: PostgrestErrorLike | null }
+
+ type UntypedQuery = PromiseLike<UntypedResult> & {
+   select: (columns: string) => UntypedQuery
+   insert: (values: unknown) => UntypedQuery
+   eq: (column: string, value: unknown) => UntypedQuery
+   ilike: (column: string, pattern: string) => UntypedQuery
+   or: (filters: string) => UntypedQuery
+   in: (column: string, values: unknown[]) => UntypedQuery
+   order: (column: string, opts: { ascending: boolean }) => UntypedQuery
+   limit: (count: number) => UntypedQuery
+   maybeSingle: () => Promise<UntypedResult>
+ }
+
+ type UntypedSupabase = {
+   from: (table: string) => UntypedQuery
+ }
+
+export default async function DashboardIndexPage({
+  searchParams,
+}: {
+  searchParams?: { error?: string | string[] }
+}) {
   const supabase = await createClient()
+  const supabaseUntyped = supabase as unknown as UntypedSupabase
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -15,19 +41,7 @@ export default async function DashboardIndexPage() {
     redirect('/login')
   }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .maybeSingle()
-
-  const role = profile?.role
-
-  if (role === 'admin') {
-    redirect('/admin')
-  }
-
-  const { data: publicProgram4Weeks } = await supabase
+  const { data: publicProgram4Weeks } = await supabaseUntyped
     .from('programs')
     .select('id,title')
     .eq('is_published', true)
@@ -37,10 +51,16 @@ export default async function DashboardIndexPage() {
     .limit(1)
     .maybeSingle()
 
+  const publicProgram4WeeksTyped = publicProgram4Weeks as unknown as { id: string; title: string | null } | null
+
+  const { data: duoPhoneImage } = supabase.storage.from('home_page').getPublicUrl('duo_phone.png')
+  const duoPhoneUrl = (duoPhoneImage as unknown as { publicUrl?: string } | null)?.publicUrl ?? null
+
   async function forkPublicProgram(formData: FormData) {
     'use server'
 
     const supabase = await createClient()
+    const supabaseUntyped = supabase as unknown as UntypedSupabase
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -49,12 +69,23 @@ export default async function DashboardIndexPage() {
       redirect('/login')
     }
 
+    const { data: existingPrograms } = await supabaseUntyped
+      .from('programs')
+      .select('id')
+      .eq('coach_id', user.id)
+      .limit(2)
+
+    const typedExistingPrograms = (existingPrograms ?? []) as unknown as { id: string }[]
+    if (typedExistingPrograms.length >= 1) {
+      redirect('/dashboard?error=program_limit')
+    }
+
     const programId = String(formData.get('program_id') ?? '')
     if (!programId) {
       redirect('/dashboard?error=missing_program_id')
     }
 
-    const { data: sourceProgram } = await supabase
+    const { data: sourceProgram } = await supabaseUntyped
       .from('programs')
       .select('id,title,description,goal,level,duration,image_url,is_published')
       .eq('id', programId)
@@ -76,7 +107,7 @@ export default async function DashboardIndexPage() {
       redirect('/dashboard?error=not_public')
     }
 
-    const { data: insertedProgram, error: insertProgramError } = await supabase
+    const { data: insertedProgram, error: insertProgramError } = await supabaseUntyped
       .from('programs')
       .insert({
         coach_id: user.id,
@@ -91,27 +122,29 @@ export default async function DashboardIndexPage() {
       .select('id')
       .maybeSingle()
 
-    if (insertProgramError || !insertedProgram?.id) {
+    const insertedProgramTyped = insertedProgram as unknown as { id?: string } | null
+
+    if (insertProgramError || !insertedProgramTyped?.id) {
       const msg = insertProgramError?.message ?? 'insert_program_failed'
       redirect(`/dashboard?error=${encodeURIComponent(msg)}`)
     }
 
-    const newProgramId = insertedProgram.id as unknown as string
+    const newProgramId = String(insertedProgramTyped.id)
 
-    const { data: sourceWeeks, error: sourceWeeksError } = await supabase
+    const { data: sourceWeeks, error: sourceWeeksError } = await supabaseUntyped
       .from('program_weeks')
       .select('id,title,week_order')
       .eq('program_id', typedSourceProgram.id)
       .order('week_order', { ascending: true })
 
     if (sourceWeeksError) {
-      redirect(`/dashboard?error=${encodeURIComponent(sourceWeeksError.message)}`)
+      redirect(`/dashboard?error=${encodeURIComponent(sourceWeeksError.message ?? 'source_weeks_failed')}`)
     }
 
     type SourceWeekRow = { id: string; title: string; week_order: number }
     const typedSourceWeeks = (sourceWeeks ?? []) as unknown as SourceWeekRow[]
 
-    const { data: insertedWeeks, error: weeksInsertError } = await supabase
+    const { data: insertedWeeks, error: weeksInsertError } = await supabaseUntyped
       .from('program_weeks')
       .insert(
         typedSourceWeeks.map((w) => ({
@@ -122,12 +155,12 @@ export default async function DashboardIndexPage() {
       )
       .select('id,week_order')
 
-    if (weeksInsertError || !insertedWeeks || insertedWeeks.length !== typedSourceWeeks.length) {
+    const insertedWeeksTyped = (insertedWeeks ?? []) as unknown as { id: string; week_order: number }[]
+
+    if (weeksInsertError || insertedWeeksTyped.length !== typedSourceWeeks.length) {
       const msg = weeksInsertError?.message ?? 'insert_weeks_failed'
       redirect(`/dashboard?error=${encodeURIComponent(msg)}`)
     }
-
-    const insertedWeeksTyped = insertedWeeks as unknown as { id: string; week_order: number }[]
 
     const weekIdMap = new Map<string, string>()
     const newWeekIdByOrder = new Map<number, string>()
@@ -139,7 +172,7 @@ export default async function DashboardIndexPage() {
 
     const sourceWeekIds = typedSourceWeeks.map((w) => w.id)
     const { data: sourceSessions, error: sourceSessionsError } = sourceWeekIds.length
-      ? await supabase
+      ? await supabaseUntyped
           .from('sessions')
           .select('id,week_id,title,description,session_order')
           .in('week_id', sourceWeekIds)
@@ -147,7 +180,7 @@ export default async function DashboardIndexPage() {
       : { data: [], error: null }
 
     if (sourceSessionsError) {
-      redirect(`/dashboard?error=${encodeURIComponent(sourceSessionsError.message)}`)
+      redirect(`/dashboard?error=${encodeURIComponent(sourceSessionsError.message ?? 'source_sessions_failed')}`)
     }
 
     type SourceSessionRow = {
@@ -173,15 +206,15 @@ export default async function DashboardIndexPage() {
       .filter((v): v is { week_id: string; title: string; description: string | null; session_order: number } => !!v)
 
     const { data: insertedSessions, error: sessionsInsertError } = sessionsToInsert.length
-      ? await supabase.from('sessions').insert(sessionsToInsert).select('id,week_id,session_order')
+      ? await supabaseUntyped.from('sessions').insert(sessionsToInsert).select('id,week_id,session_order')
       : { data: [] as { id: string; week_id: string; session_order: number }[] | null, error: null }
 
-    if (sessionsInsertError || !insertedSessions || insertedSessions.length !== sessionsToInsert.length) {
+    const insertedSessionsTyped = (insertedSessions ?? []) as unknown as { id: string; week_id: string; session_order: number }[]
+
+    if (sessionsInsertError || insertedSessionsTyped.length !== sessionsToInsert.length) {
       const msg = sessionsInsertError?.message ?? 'insert_sessions_failed'
       redirect(`/dashboard?error=${encodeURIComponent(msg)}`)
     }
-
-    const insertedSessionsTyped = insertedSessions as unknown as { id: string; week_id: string; session_order: number }[]
 
     const sessionIdMap = new Map<string, string>()
     const newSessionIdByWeekAndOrder = new Map<string, Map<number, string>>()
@@ -199,7 +232,7 @@ export default async function DashboardIndexPage() {
 
     const sourceSessionIds = typedSourceSessions.map((s) => s.id)
     const { data: sourceExercises, error: sourceExercisesError } = sourceSessionIds.length
-      ? await supabase
+      ? await supabaseUntyped
           .from('program_exercises')
           .select(
             'session_id,name,description,sets,reps,rest_time,tempo,load,video_url,notes,exercise_order,exercise_id'
@@ -209,7 +242,7 @@ export default async function DashboardIndexPage() {
       : { data: [], error: null }
 
     if (sourceExercisesError) {
-      redirect(`/dashboard?error=${encodeURIComponent(sourceExercisesError.message)}`)
+      redirect(`/dashboard?error=${encodeURIComponent(sourceExercisesError.message ?? 'source_exercises_failed')}`)
     }
 
     type SourceExerciseRow = {
@@ -268,102 +301,244 @@ export default async function DashboardIndexPage() {
       )
 
     const { error: exInsertError } = exercisesToInsert.length
-      ? await supabase.from('program_exercises').insert(exercisesToInsert)
+      ? await supabaseUntyped.from('program_exercises').insert(exercisesToInsert)
       : { error: null }
 
     if (exInsertError) {
-      redirect(`/dashboard?error=${encodeURIComponent(exInsertError.message)}`)
+      redirect(`/dashboard?error=${encodeURIComponent(exInsertError.message ?? 'unknown_error')}`)
     }
 
     redirect('/dashboard')
   }
 
-  const { data: myPrograms } = await supabase
+  const { data: myPrograms } = await supabaseUntyped
     .from('programs')
     .select('id,title,created_at')
     .eq('coach_id', user.id)
     .order('created_at', { ascending: false })
 
+  type MyProgramRow = { id: string; title: string | null }
+  const myProgramsTyped = (myPrograms ?? []) as unknown as MyProgramRow[]
+
+  const errorParam = searchParams?.error
+  const errorValue = Array.isArray(errorParam) ? errorParam[0] : errorParam
+  const showProgramLimitError = errorValue === 'program_limit'
+
   return (
     <main className="min-h-screen bg-[#f5f5f5]">
       <Container className="py-10">
-        <div className="grid gap-2">
-          <h1 className="text-2xl font-extrabold tracking-tight text-[#341c44]">Dashboard</h1>
-          <p className="text-sm text-black/60">Coach</p>
-        </div>
+        <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_420px] md:items-start md:gap-8">
+          <div>
+            {showProgramLimitError ? (
+              <div className="mb-4 rounded-2xl bg-white p-4 text-sm font-semibold text-[#341c44] ring-1 ring-black/10">
+                Limite atteinte : tu ne peux avoir qu’un seul programme.
+              </div>
+            ) : null}
 
-        <div className="mt-6 grid gap-4">
-          <Card>
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 className="text-sm font-extrabold text-[#341c44]">Programmes publics</h2>
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="grid gap-2">
+                <h1 className="text-2xl font-extrabold tracking-tight text-[#341c44]">
+                  Voici un exemple de Dashboard fonctionnel qu&apos;on pourrait créeer enssemble
+                </h1>
+                <p className="text-sm text-black/60">Coach</p>
+              </div>
             </div>
 
-            <div className="mt-3 flex flex-wrap gap-2">
-              {publicProgram4Weeks ? (
-                <>
-                  <Link
-                    href={`/dashboard/programs/${publicProgram4Weeks.id}`}
-                    className="inline-flex items-center rounded-full bg-white px-4 py-2 text-sm font-semibold text-[#341c44] ring-1 ring-black/10 hover:bg-[#f5f5f5]"
-                  >
-                    {publicProgram4Weeks.title || 'Programme 4 semaines'}
-                  </Link>
-                  <form action={forkPublicProgram}>
-                    <input type="hidden" name="program_id" value={publicProgram4Weeks.id} />
-                    <SubmitButtonWithProgressClient
-                      label="Dupliquer"
-                      iconOnly
-                      icon="⧉"
-                      style={{
-                        width: 44,
-                        height: 44,
-                        borderRadius: 16,
-                        border: '1px solid #00000000',
-                        background: '#341c44',
-                        color: '#ffffff',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        textDecoration: 'none',
-                        flex: '0 0 auto',
-                      }}
+            <div className="mt-6 grid gap-4">
+              <Card>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <h2 className="text-sm font-extrabold text-[#341c44]">Programmes publics</h2>
+                </div>
+
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {publicProgram4WeeksTyped ? (
+                    <>
+                      <Link
+                        href={`/dashboard/programs/${publicProgram4WeeksTyped.id}`}
+                        className="inline-flex items-center rounded-full bg-white px-4 py-2 text-sm font-semibold text-[#341c44] ring-1 ring-black/10 hover:bg-[#f5f5f5]"
+                      >
+                        {publicProgram4WeeksTyped.title || 'Programme 4 semaines'}
+                      </Link>
+                      {myProgramsTyped.length >= 1 ? (
+                        <ProgramLimitPopupClient
+                          title="Limite atteinte"
+                          message="Tu ne peux pas dupliquer un programme si tu en as déjà un en édition."
+                          triggerClassName="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[#341c44] text-white shadow-sm opacity-60"
+                          triggerAriaLabel="Dupliquer"
+                          triggerTitle="Dupliquer"
+                          trigger={
+                            <svg
+                              viewBox="0 0 24 24"
+                              width={22}
+                              height={22}
+                              aria-hidden
+                              style={{ display: 'block', overflow: 'visible' }}
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth={2}
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <rect x="9" y="9" width="11" height="11" rx="2" />
+                              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                            </svg>
+                          }
+                        />
+                      ) : (
+                        <form action={forkPublicProgram}>
+                          <input type="hidden" name="program_id" value={publicProgram4WeeksTyped.id} />
+                          <SubmitButtonWithProgressClient
+                            label="Dupliquer"
+                            iconOnly
+                            icon={
+                              <svg
+                                viewBox="0 0 24 24"
+                                width={22}
+                                height={22}
+                                aria-hidden
+                                style={{ display: 'block', overflow: 'visible' }}
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth={2}
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <rect x="9" y="9" width="11" height="11" rx="2" />
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                              </svg>
+                            }
+                            style={{
+                              width: 44,
+                              height: 44,
+                              borderRadius: 16,
+                              border: '1px solid #00000000',
+                              background: '#341c44',
+                              color: '#ffffff',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              textDecoration: 'none',
+                              flex: '0 0 auto',
+                            }}
+                          />
+                        </form>
+                      )}
+                    </>
+                  ) : (
+                    <div className="text-sm text-black/60">Aucun programme public.</div>
+                  )}
+                </div>
+              </Card>
+
+              <Card>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <h2 className="text-sm font-extrabold text-[#341c44]">Mes programmes</h2>
+                  {myProgramsTyped.length >= 1 ? (
+                    <ProgramLimitPopupClient
+                      title="Limite atteinte"
+                      message="Tu ne peux pas créer un nouveau programme tant que tu en as déjà un."
+                      triggerClassName="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[#341c44] text-lg font-black text-white opacity-60"
+                      triggerAriaLabel="Créer un nouveau programme"
+                      triggerTitle="Créer un nouveau programme"
+                      trigger={<span aria-hidden>+</span>}
                     />
-                  </form>
-                </>
-              ) : (
-                <div className="text-sm text-black/60">Aucun programme public.</div>
-              )}
-            </div>
-          </Card>
+                  ) : (
+                    <Link
+                      href="/dashboard/programs/new"
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[#341c44] text-lg font-black text-white shadow-sm hover:opacity-90"
+                      aria-label="Créer un nouveau programme"
+                      title="Créer un nouveau programme"
+                    >
+                      +
+                    </Link>
+                  )}
+                </div>
 
-          <Card>
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 className="text-sm font-extrabold text-[#341c44]">Mes programmes</h2>
-              <Link
-                href="/dashboard/programs/new"
-                className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[#341c44] text-lg font-black text-white shadow-sm hover:opacity-90"
-                aria-label="Créer un nouveau programme"
-                title="Créer un nouveau programme"
-              >
-                +
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {myProgramsTyped.length > 0 ? (
+                    myProgramsTyped.map((p) => (
+                      <Link
+                        key={p.id}
+                        href={`/dashboard/programs/${p.id}`}
+                        className="inline-flex items-center rounded-full bg-white px-4 py-2 text-sm font-semibold text-[#341c44] ring-1 ring-black/10 hover:bg-[#f5f5f5]"
+                      >
+                        {p.title || 'Programme'}
+                      </Link>
+                    ))
+                  ) : (
+                    <div className="text-sm text-black/60">Aucun programme.</div>
+                  )}
+                </div>
+              </Card>
+
+              <Link href="/dashboard/exercises" className="block" aria-label="Ouvrir la bibliothèque d'exercices">
+                <Card className="hover:bg-[#f5f5f5]">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <h2 className="text-sm font-extrabold text-[#341c44]">Bibliotheque d&apos;exercice</h2>
+                  </div>
+                  <div className="mt-2 text-sm font-semibold text-[#341c44]">
+                    Accéder à tes exercices, variantes, médias et tags.
+                  </div>
+                </Card>
               </Link>
-            </div>
 
-            <div className="mt-3 flex flex-wrap gap-2">
-              {myPrograms && myPrograms.length > 0 ? (
-                myPrograms.map((p) => (
-                  <Link
-                    key={p.id}
-                    href={`/dashboard/programs/${p.id}`}
-                    className="inline-flex items-center rounded-full bg-white px-4 py-2 text-sm font-semibold text-[#341c44] ring-1 ring-black/10 hover:bg-[#f5f5f5]"
-                  >
-                    {p.title || 'Programme'}
-                  </Link>
-                ))
-              ) : (
-                <div className="text-sm text-black/60">Aucun programme.</div>
-              )}
+              <Link href="/dashboard/nutrition" className="block" aria-label="Ouvrir le plan nutritionnel">
+                <Card className="hover:bg-[#f5f5f5]">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <h2 className="text-sm font-extrabold text-[#341c44]">Plan nutritionel</h2>
+                  </div>
+                  <div className="mt-2 text-sm text-black/60">Créer et suivre des plans nutritionnels pour tes clients.</div>
+                </Card>
+              </Link>
+
+              <Link href="/dashboard/chat" className="block" aria-label="Ouvrir le chat client">
+                <Card className="hover:bg-[#f5f5f5]">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <h2 className="text-sm font-extrabold text-[#341c44]">Chat client</h2>
+                  </div>
+                  <div className="mt-2 text-sm font-semibold text-[#341c44]">
+                    Échanger avec tes clients et centraliser leurs retours.
+                  </div>
+                </Card>
+              </Link>
+
+              <Card>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <h2 className="text-sm font-extrabold text-[#341c44]">Calendrier</h2>
+                </div>
+                <Link
+                  href="/dashboard/calendar"
+                  className="mt-2 inline-flex text-sm font-semibold text-[#341c44]"
+                  aria-label="Ouvrir le calendrier"
+                >
+                  Planifier les séances, bilans et rendez-vous.
+                </Link>
+              </Card>
+
+              <div className="flex justify-center pt-2">
+                <Link
+                  href="/contact"
+                  className="inline-flex h-11 items-center justify-center rounded-2xl bg-[#341c44] px-6 text-sm font-extrabold text-white shadow-sm hover:opacity-90"
+                >
+                  commander mon app
+                </Link>
+              </div>
             </div>
-          </Card>
+          </div>
+
+          <aside className="hidden md:block">
+            <div className="sticky top-24">
+              <div className="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-black/10">
+                {duoPhoneUrl ? (
+                  <img src={duoPhoneUrl} alt="" className="h-auto w-full" loading="lazy" />
+                ) : (
+                  <div className="grid aspect-[4/5] place-items-center bg-[#f5f5f5] text-sm font-semibold text-black/60">
+                    Image indisponible
+                  </div>
+                )}
+              </div>
+            </div>
+          </aside>
         </div>
       </Container>
     </main>

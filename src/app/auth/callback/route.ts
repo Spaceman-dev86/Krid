@@ -2,6 +2,11 @@ import { NextResponse } from 'next/server'
 
 import { createClient } from '../../../lib/supabase/server'
 
+type UntypedInsertResult = { error: { message?: string } | null }
+type UntypedInsertQuery = {
+  insert: (values: Record<string, unknown>) => Promise<UntypedInsertResult>
+}
+
 type SupportedOtpType = 'signup' | 'invite' | 'magiclink' | 'recovery' | 'email_change'
 
 function isSupportedOtpType(value: string): value is SupportedOtpType {
@@ -63,7 +68,7 @@ export async function GET(request: Request) {
 
   if (userId) {
     try {
-      await supabase.from('login_logs').insert({
+      await (supabase as unknown as { from: (t: string) => UntypedInsertQuery }).from('login_logs').insert({
         user_id: userId,
         email,
       })
@@ -79,8 +84,10 @@ export async function GET(request: Request) {
       .eq('id', userId)
       .maybeSingle()
 
-    if (isAppRole(profile?.role)) {
-      role = profile.role
+    const typedProfile = profile as unknown as { role: string | null } | null
+
+    if (isAppRole(typedProfile?.role)) {
+      role = typedProfile.role
     }
   }
 

@@ -59,7 +59,7 @@ export default function BlogPage() {
                   <div className="text-sm font-extrabold text-[#341c44]">{a.title}</div>
                   <div className="mt-2 text-sm text-black/70">{a.desc}</div>
                   <div className="mt-4">
-                    <Button href="/contact" variant="secondary" className="w-full">
+                    <Button href="/login" variant="secondary" className="w-full">
                       Demander une clé
                     </Button>
                   </div>
@@ -83,7 +83,7 @@ export default function BlogPage() {
           </div>
 
           <div className="mt-8">
-            <Button href="/contact">Demander une clé</Button>
+            <Button href="/login">Demander une clé</Button>
           </div>
         </Container>
       </section>

@@ -15,7 +15,7 @@ export default function EcommercePage() {
 
               <div className="flex flex-col gap-3 sm:flex-row">
                 <Button href="/programs">Voir les programmes</Button>
-                <Button href="/contact" variant="secondary">
+                <Button href="/login" variant="secondary">
                   Demander une clé
                 </Button>
               </div>
