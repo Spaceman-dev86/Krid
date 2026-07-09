@@ -81,8 +81,6 @@ function SessionCardInner({ sessionId, mobileDrag }: Props) {
       style={{ backgroundColor: EDITOR_SESSION_BG }}
     >
       <div
-        role="button"
-        tabIndex={0}
         ref={mobileDrag?.activatorRef}
         className={[
           'flex w-full cursor-pointer items-start justify-between gap-2 text-left transition duration-150 hover:bg-black/[0.04]',
@@ -91,7 +89,7 @@ function SessionCardInner({ sessionId, mobileDrag }: Props) {
           mobileDrag?.dragClass ?? '',
           mobileDrag ? 'select-none max-[767px]:cursor-grab' : '',
         ].join(' ')}
-        {...(mobileDrag?.attributes ?? {})}
+        {...(mobileDrag?.attributes ?? { role: 'button', tabIndex: 0 })}
         {...(mobileDrag?.listeners ?? {})}
         {...(mobileDrag ? { title: MOBILE_DRAG_LABEL, 'aria-label': MOBILE_DRAG_LABEL } : {})}
         onClick={onHeaderClick}

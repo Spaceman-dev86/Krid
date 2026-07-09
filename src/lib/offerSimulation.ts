@@ -25,7 +25,7 @@ export function computeSimulationOffer(answers: SimulationAnswers): SimulationOf
     return null
   }
 
-  const included = [...BASE_FEATURES]
+  const included: string[] = [...BASE_FEATURES]
   let monthlyPrice = 39
   let setupFee = 0
   let planName: 'Starter' | 'Business' | 'Scale' | 'Studio' = 'Starter'

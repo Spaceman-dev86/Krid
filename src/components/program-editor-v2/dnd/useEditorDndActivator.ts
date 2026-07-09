@@ -51,8 +51,7 @@ function chainListener<E>(
   original: ((event: E) => void) | undefined,
   before?: (event: E) => void,
   after?: (event: E) => void
-) {
-  if (!original && !before && !after) return undefined
+): (event: E) => void {
   return (event: E) => {
     before?.(event)
     original?.(event)
@@ -94,18 +93,33 @@ export function useMobileDragHold({ enabled, isDragging, attributes, listeners }
     return {
       ...listeners,
       onPointerDown: chainListener<ReactPointerEvent<Element>>(
-        listeners.onPointerDown,
+        listeners.onPointerDown as ((event: ReactPointerEvent<Element>) => void) | undefined,
         startHoldTimer
       ),
-      onPointerUp: chainListener<ReactPointerEvent<Element>>(listeners.onPointerUp, undefined, endHold),
-      onPointerCancel: chainListener<ReactPointerEvent<Element>>(
-        listeners.onPointerCancel,
+      onPointerUp: chainListener<ReactPointerEvent<Element>>(
+        listeners.onPointerUp as ((event: ReactPointerEvent<Element>) => void) | undefined,
         undefined,
         endHold
       ),
-      onTouchStart: chainListener<React.TouchEvent<Element>>(listeners.onTouchStart, startHoldTimer),
-      onTouchEnd: chainListener<React.TouchEvent<Element>>(listeners.onTouchEnd, undefined, endHold),
-      onTouchCancel: chainListener<React.TouchEvent<Element>>(listeners.onTouchCancel, undefined, endHold),
+      onPointerCancel: chainListener<ReactPointerEvent<Element>>(
+        listeners.onPointerCancel as ((event: ReactPointerEvent<Element>) => void) | undefined,
+        undefined,
+        endHold
+      ),
+      onTouchStart: chainListener<React.TouchEvent<Element>>(
+        listeners.onTouchStart as ((event: React.TouchEvent<Element>) => void) | undefined,
+        startHoldTimer
+      ),
+      onTouchEnd: chainListener<React.TouchEvent<Element>>(
+        listeners.onTouchEnd as ((event: React.TouchEvent<Element>) => void) | undefined,
+        undefined,
+        endHold
+      ),
+      onTouchCancel: chainListener<React.TouchEvent<Element>>(
+        listeners.onTouchCancel as ((event: React.TouchEvent<Element>) => void) | undefined,
+        undefined,
+        endHold
+      ),
     } satisfies DraggableSyntheticListeners
   }, [enabled, listeners])
 

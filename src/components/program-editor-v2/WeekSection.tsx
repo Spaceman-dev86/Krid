@@ -92,8 +92,6 @@ function WeekSectionInner({ week, mobileDrag }: Props) {
       className={`overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] ${EDITOR_PANEL_SHADOW_CLASS}`}
     >
       <div
-        role="button"
-        tabIndex={0}
         ref={mobileDrag?.activatorRef}
         className={[
           'flex cursor-pointer items-start justify-between gap-2 text-left transition duration-150',
@@ -103,7 +101,7 @@ function WeekSectionInner({ week, mobileDrag }: Props) {
           mobileDrag?.dragClass ?? '',
           mobileDrag ? 'select-none max-[767px]:cursor-grab' : '',
         ].join(' ')}
-        {...(mobileDrag?.attributes ?? {})}
+        {...(mobileDrag?.attributes ?? { role: 'button', tabIndex: 0 })}
         {...(mobileDrag?.listeners ?? {})}
         {...(mobileDrag ? { title: MOBILE_DRAG_LABEL, 'aria-label': MOBILE_DRAG_LABEL } : {})}
         onClick={onHeaderClick}

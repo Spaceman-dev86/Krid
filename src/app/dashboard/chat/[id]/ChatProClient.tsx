@@ -14,6 +14,7 @@ type MessageRow = {
 type Props = {
   messages: MessageRow[]
   sendMessageAction: (formData: FormData) => void | Promise<void>
+  fixedComposer?: boolean
 }
 
 export default function ChatProClient({ messages, sendMessageAction, fixedComposer = false }: Props) {
