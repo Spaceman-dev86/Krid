@@ -5,6 +5,8 @@ import { useMemo, useState } from 'react'
 import Link from 'next/link'
 
 import { Card, ImagePlaceholder } from '../../components/marketing'
+import { Button } from '../../components/ui'
+import { formatProgramDurationLabel, formatProgramGoalLabel } from '../../lib/formatProgramDuration'
 
 type ProgramItem = {
   id: string
@@ -36,8 +38,12 @@ export default function ProgramsGridClient({
     return fallback || null
   }
 
-  function hasDurationLabel(p: { duration: string | null }) {
-    return Boolean(String(p.duration ?? '').trim())
+  function programDurationLabel(p: ProgramItem) {
+    return formatProgramDurationLabel({ duration: p.duration, weeksCount: p.weeksCount })
+  }
+
+  function programGoalLabel(p: ProgramItem) {
+    return formatProgramGoalLabel(p.goal)
   }
 
   return (
@@ -48,48 +54,40 @@ export default function ProgramsGridClient({
             key={p.id}
             type="button"
             onClick={() => setOpenId(p.id)}
-            className="block text-left"
+            className="group block text-left"
           >
-            <Card className="overflow-hidden p-0 transition hover:shadow-md">
-              <div className="relative">
-                {resolveImageUrl(p.image_url) ? (
-                  <img
-                    src={resolveImageUrl(p.image_url) ?? ''}
-                    alt=""
-                    className="h-56 w-full object-cover"
-                    loading="lazy"
-                  />
-                ) : (
-                  <ImagePlaceholder label="Image placeholder · programme" className="h-56 rounded-none" />
-                )}
+            <div className="relative overflow-hidden rounded-3xl shadow-sm ring-1 ring-black/10 transition group-hover:-translate-y-0.5 group-hover:shadow-md">
+              {resolveImageUrl(p.image_url) ? (
+                <img
+                  src={resolveImageUrl(p.image_url) ?? ''}
+                  alt=""
+                  className="h-72 w-full object-cover sm:h-80"
+                  loading="lazy"
+                />
+              ) : (
+                <ImagePlaceholder label="Image placeholder · programme" className="h-72 rounded-3xl sm:h-80" />
+              )}
 
-                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
 
-                <div className="absolute inset-x-0 bottom-0 p-5">
-                  <div className="truncate text-base font-extrabold text-white">{p.title ?? 'Programme'}</div>
-                  <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-semibold text-white/85">
-                    <div>{p.level ? `Niveau ${p.level}` : 'Niveau —'}</div>
-                    <div aria-hidden>·</div>
-                    <div>{hasDurationLabel(p) ? p.duration : 'Durée —'}</div>
-                    {!hasDurationLabel(p) ? (
-                      <>
-                        <div aria-hidden>·</div>
-                        <div>
-                          {p.weeksCount} semaine{p.weeksCount > 1 ? 's' : ''}
-                        </div>
-                      </>
-                    ) : null}
-                    <div aria-hidden>·</div>
-                    <div>
-                      {p.sessionsCount} séance{p.sessionsCount > 1 ? 's' : ''}
-                    </div>
-                  </div>
-                  <div className="mt-3 inline-flex items-center gap-2 text-sm font-extrabold text-white">
-                    Découvrir <span aria-hidden>→</span>
+              <div className="absolute inset-x-0 bottom-0 p-5">
+                <div className="truncate text-base font-extrabold text-white">{p.title ?? 'Programme'}</div>
+                <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-semibold text-white/85">
+                  <div>{p.level ? `Niveau ${p.level}` : 'Niveau —'}</div>
+                  <div aria-hidden>·</div>
+                  <div>{programGoalLabel(p)}</div>
+                  <div aria-hidden>·</div>
+                  <div>{programDurationLabel(p)}</div>
+                  <div aria-hidden>·</div>
+                  <div>
+                    {p.sessionsCount} séance{p.sessionsCount > 1 ? 's' : ''}
                   </div>
                 </div>
+                <div className="mt-3 inline-flex items-center gap-2 text-sm font-extrabold text-white">
+                  Découvrir <span aria-hidden>→</span>
+                </div>
               </div>
-            </Card>
+            </div>
           </button>
         ))}
       </div>
@@ -129,15 +127,9 @@ export default function ProgramsGridClient({
                         <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-semibold text-white/85">
                           <div>{active.level ? `Niveau ${active.level}` : 'Niveau —'}</div>
                           <div aria-hidden>·</div>
-                          <div>{hasDurationLabel(active) ? active.duration : 'Durée —'}</div>
-                          {!hasDurationLabel(active) ? (
-                            <>
-                              <div aria-hidden>·</div>
-                              <div>
-                                {active.weeksCount} semaine{active.weeksCount > 1 ? 's' : ''}
-                              </div>
-                            </>
-                          ) : null}
+                          <div>{programGoalLabel(active)}</div>
+                          <div aria-hidden>·</div>
+                          <div>{programDurationLabel(active)}</div>
                           <div aria-hidden>·</div>
                           <div>
                             {active.sessionsCount} séance{active.sessionsCount > 1 ? 's' : ''}
@@ -157,12 +149,9 @@ export default function ProgramsGridClient({
                         </div>
 
                         <div className="pointer-events-auto mt-6 flex flex-wrap items-center gap-2">
-                          <Link
-                            href="/login"
-                            className="inline-flex h-11 items-center justify-center rounded-2xl bg-white px-5 text-sm font-extrabold text-[#341c44] shadow-sm hover:bg-white/90"
-                          >
+                          <Button href="/login" variant="gradient" className="h-11 rounded-2xl px-5 text-sm font-extrabold">
                             Demander une clé
-                          </Link>
+                          </Button>
                         </div>
                       </div>
                     </div>

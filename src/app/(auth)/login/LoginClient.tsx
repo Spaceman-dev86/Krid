@@ -6,12 +6,17 @@ import { useSearchParams } from 'next/navigation'
 import { createClient } from '../../../lib/supabase/client'
 import { Button, Card, Container, Input } from '../../../components/ui'
 
-export default function LoginClient() {
+type LoginVariant = 'coach' | 'admin'
+
+type Props = {
+  variant: LoginVariant
+}
+
+export default function LoginClient({ variant }: Props) {
   const supabase = useMemo(() => createClient(), [])
   const searchParams = useSearchParams()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [mode, setMode] = useState<'coach' | 'admin'>('coach')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -19,6 +24,7 @@ export default function LoginClient() {
   const [userRole, setUserRole] = useState<'admin' | 'coach' | null>(null)
 
   const redirectTo = searchParams.get('redirectTo')
+  const isAdmin = variant === 'admin'
 
   useEffect(() => {
     let mounted = true
@@ -44,7 +50,17 @@ export default function LoginClient() {
       const normalizedRole = role === 'admin' || role === 'coach' ? role : null
       setUserRole(normalizedRole)
 
-      if (normalizedRole === 'admin') {
+      if (isAdmin && normalizedRole === 'admin') {
+        window.location.replace('/admin')
+        return
+      }
+
+      if (!isAdmin && normalizedRole === 'coach') {
+        window.location.replace('/dashboard')
+        return
+      }
+
+      if (!isAdmin && normalizedRole === 'admin') {
         window.location.replace('/admin')
       }
     }
@@ -59,7 +75,7 @@ export default function LoginClient() {
       mounted = false
       subscription.subscription.unsubscribe()
     }
-  }, [supabase])
+  }, [supabase, isAdmin])
 
   async function onSignOut() {
     await supabase.auth.signOut()
@@ -73,7 +89,7 @@ export default function LoginClient() {
     setError(null)
     setMessage(null)
 
-    if (mode === 'admin') {
+    if (isAdmin) {
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -110,6 +126,15 @@ export default function LoginClient() {
     setLoading(false)
   }
 
+  const title = isAdmin
+    ? 'Connexion admin'
+    : 'Connecte-toi et accède à une démo gratuite d’une application de coach sportif'
+  const description = isAdmin
+    ? 'Accès réservé à l’administration de la plateforme.'
+    : 'Pas besoin de mot de passe, ton mail suffit.'
+  const defaultDestination = isAdmin ? '/admin' : '/dashboard'
+  const destinationLabel = isAdmin ? 'Aller à l’admin' : 'Aller au dashboard'
+
   return (
     <main className="min-h-[calc(100vh-4rem)] bg-[var(--bg)] text-[var(--text)]">
       <Container className="py-10 md:py-14">
@@ -117,10 +142,8 @@ export default function LoginClient() {
           <Card className="overflow-hidden rounded-[var(--radius-lg)] ring-1 ring-[var(--border)]">
             <div className="bg-[var(--surface)] p-8 sm:p-10">
               <div className="grid gap-2">
-                <h1 className="text-2xl font-extrabold tracking-tight text-[var(--brand)]">Connexion</h1>
-                <p className="text-sm text-[var(--muted)]">
-                  Accède au dashboard pour créer et consulter tes programmes.
-                </p>
+                <h1 className="text-2xl font-extrabold tracking-tight text-[var(--brand)]">{title}</h1>
+                <p className="text-sm text-[var(--muted)]">{description}</p>
               </div>
 
               {userEmail ? (
@@ -128,70 +151,45 @@ export default function LoginClient() {
                   <div className="text-sm font-semibold text-[var(--brand)]">Connecté</div>
                   <div className="mt-1 text-sm text-[var(--text)]">{userEmail}</div>
 
+                  {isAdmin && userRole === 'coach' ? (
+                    <div className="mt-3 text-sm text-[var(--muted)]">
+                      Ce compte coach n’a pas accès à l’administration.
+                    </div>
+                  ) : null}
+
+                  {!isAdmin && userRole === 'admin' ? (
+                    <div className="mt-3 text-sm text-[var(--muted)]">
+                      Compte admin détecté —{' '}
+                      <Link href="/loginadmin" className="font-semibold text-[var(--brand)] underline underline-offset-2">
+                        connexion admin
+                      </Link>
+                      .
+                    </div>
+                  ) : null}
+
                   <div className="mt-4 flex flex-wrap gap-3">
-                    {redirectTo ? (
+                    {redirectTo && (isAdmin ? userRole === 'admin' : userRole === 'coach' || userRole === 'admin') ? (
                       <Button href={redirectTo} variant="secondary" className="h-12 px-6 text-sm">
                         Continuer
                       </Button>
                     ) : null}
 
-                    {!redirectTo ? (
+                    {!redirectTo && (isAdmin ? userRole === 'admin' : userRole === 'coach' || userRole === 'admin') ? (
                       <Button
-                        href={userRole === 'admin' ? '/admin' : '/dashboard'}
+                        href={userRole === 'admin' && !isAdmin ? '/admin' : defaultDestination}
                         variant="primary"
                         className="h-12 px-6 text-sm"
                       >
-                        {userRole === 'admin' ? 'Aller à l’admin' : 'Aller au dashboard'}
+                        {userRole === 'admin' && !isAdmin ? 'Aller à l’admin' : destinationLabel}
                       </Button>
                     ) : null}
 
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className="h-12 px-6 text-sm"
-                      onClick={onSignOut}
-                    >
+                    <Button type="button" variant="ghost" className="h-12 px-6 text-sm" onClick={onSignOut}>
                       Se déconnecter
                     </Button>
                   </div>
                 </div>
               ) : null}
-
-              <div className="mt-6">
-                <div className="inline-flex rounded-full bg-[var(--accent)] p-1 ring-1 ring-[var(--border)]">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMode('coach')
-                      setError(null)
-                      setMessage(null)
-                    }}
-                    className={`h-11 rounded-full px-5 text-sm font-semibold transition ${
-                      mode === 'coach'
-                        ? 'bg-[var(--brand)] text-white'
-                        : 'text-[var(--brand)] hover:bg-white/70'
-                    }`}
-                  >
-                    Coach
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMode('admin')
-                      setError(null)
-                      setMessage(null)
-                    }}
-                    className={`h-11 rounded-full px-5 text-sm font-semibold transition ${
-                      mode === 'admin'
-                        ? 'bg-[var(--brand)] text-white'
-                        : 'text-[var(--brand)] hover:bg-white/70'
-                    }`}
-                  >
-                    Admin
-                  </button>
-                </div>
-              </div>
 
               <form onSubmit={onSubmit} className="mt-6 grid gap-4">
                 <label className="grid gap-2">
@@ -206,7 +204,7 @@ export default function LoginClient() {
                   />
                 </label>
 
-                {mode === 'admin' ? (
+                {isAdmin ? (
                   <label className="grid gap-2">
                     <span className="text-sm font-semibold text-[var(--brand)]">Mot de passe</span>
                     <Input
@@ -218,18 +216,16 @@ export default function LoginClient() {
                     />
                   </label>
                 ) : (
-                  <div className="text-sm text-[var(--muted)]">
-                    Un lien de connexion sera envoyé par email.
-                  </div>
+                  <div className="text-sm text-[var(--muted)]">Un lien de connexion sera envoyé par email.</div>
                 )}
 
                 <Button type="submit" disabled={loading} className="h-14 rounded-[var(--radius-md)]">
                   {loading
-                    ? mode === 'admin'
+                    ? isAdmin
                       ? 'Connexion…'
                       : 'Envoi…'
-                    : mode === 'admin'
-                      ? 'Se connecter (admin)'
+                    : isAdmin
+                      ? 'Se connecter'
                       : 'Envoyer le lien magique'}
                 </Button>
 

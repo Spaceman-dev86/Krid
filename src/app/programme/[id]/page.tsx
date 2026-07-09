@@ -4,6 +4,8 @@ import { redirect } from 'next/navigation'
 import { createClient } from '../../../lib/supabase/server'
 import PublicProgramStructureReadOnlyClient from '../../../components/PublicProgramStructureReadOnlyClient'
 import { IconBack } from '../../../components/ui/icons'
+import PhoneMockupFrameClient from '../../../components/PhoneMockupFrameClient'
+import { fetchProgramPreviewStructure } from '../../../lib/fetchProgramPreviewStructure'
 
 type PageProps = {
   params: Promise<{ id: string }>
@@ -37,123 +39,20 @@ export default async function PublicProgramDetailPage({ params }: PageProps) {
     redirect('/programme')
   }
 
-  const { data: weeks } = await supabase
-    .from('program_weeks')
-    .select('id,title,week_order')
-    .eq('program_id', id)
-    .order('week_order', { ascending: true })
+  const structure = await fetchProgramPreviewStructure(supabase, id)
 
-  type WeekRow = { id: string; title: string; week_order: number }
-  const typedWeeks = (weeks ?? []) as unknown as WeekRow[]
-
-  const weekIds = typedWeeks.map((w) => w.id)
-
-  const { data: sessions } = weekIds.length
-    ? await supabase
-        .from('sessions')
-        .select('id,week_id,title,description,session_order')
-        .in('week_id', weekIds)
-        .order('session_order', { ascending: true })
-    : { data: [] as unknown[] }
-
-  type SessionRow = {
-    id: string
-    week_id: string
-    title: string
-    description: string | null
-    session_order: number
-  }
-  const typedSessions = (sessions ?? []) as unknown as SessionRow[]
-
-  const sessionIds = typedSessions.map((s) => s.id)
-
-  const { data: programExercises } = sessionIds.length
-    ? await supabase
-        .from('program_exercises')
-        .select(
-          'id,session_id,exercise_id,name,exercise_order,sets,reps,rest_time,tempo,load,notes,exercise_library(name,demo_media_path)'
-        )
-        .in('session_id', sessionIds)
-        .order('exercise_order', { ascending: true })
-    : { data: [] as unknown[] }
-
-  type ProgramExerciseRow = {
-    id: string
-    session_id: string
-    exercise_id: string | null
-    name: string | null
-    exercise_order: number
-    sets: number | null
-    reps: number | null
-    rest_time: string | null
-    tempo: string | null
-    load: string | null
-    notes: string | null
-    exercise_library: { name: string; demo_media_path?: string | null } | null
-    demo_media_url?: string | null
-  }
-  const typedExercises = (programExercises ?? []) as unknown as ProgramExerciseRow[]
-
-  const storageBucket = 'exercise-media'
-  function normalizeStoragePath(p: string) {
-    let out = p.trim()
-    if (out.startsWith('/')) out = out.slice(1)
-    if (out.startsWith(`${storageBucket}/`)) out = out.slice(storageBucket.length + 1)
-    return out
+  const structureProps = {
+    programId: typedProgram.id,
+    weeks: structure.weeks,
+    sessions: structure.sessions,
+    sessionItems: structure.sessionItems,
+    sessionBlocks: structure.sessionBlocks,
+    blockExercises: structure.blockExercises,
+    programExercises: structure.programExercises,
   }
 
-  function getStoragePathFromUrl(raw: string) {
-    try {
-      const u = new URL(raw)
-      const parts = u.pathname.split('/').filter(Boolean)
-      const idx = parts.findIndex((p) => p === 'object')
-      if (idx === -1) return null
-      const bucketIdx = idx + 2
-      if (!parts[bucketIdx] || parts[bucketIdx] !== storageBucket) return null
-      const internal = parts.slice(bucketIdx + 1).join('/')
-      return internal || null
-    } catch {
-      return null
-    }
-  }
-
-  const uniquePaths = Array.from(
-    new Set(
-      typedExercises
-        .map((e) => e.exercise_library?.demo_media_path ?? null)
-        .filter((p): p is string => Boolean(p))
-    )
-  )
-
-  const signedUrlByPath = new Map<string, string>()
-  await Promise.all(
-    uniquePaths.map(async (path) => {
-      const isHttp = /^https?:\/\//i.test(path)
-      const internalFromUrl = isHttp ? getStoragePathFromUrl(path) : null
-      const internalPath = internalFromUrl ?? (isHttp ? null : path)
-
-      if (!internalPath) {
-        signedUrlByPath.set(path, path)
-        return
-      }
-
-      const { data } = await supabase.storage
-        .from(storageBucket)
-        .createSignedUrl(normalizeStoragePath(internalPath), 60 * 60)
-      if (data?.signedUrl) {
-        signedUrlByPath.set(path, data.signedUrl)
-      }
-    })
-  )
-
-  const exercisesWithMedia = typedExercises.map((e) => {
-    const path = e.exercise_library?.demo_media_path ?? null
-    const url = path ? signedUrlByPath.get(path) ?? null : null
-    return { ...e, demo_media_url: url }
-  })
-
-  return (
-    <main style={{ maxWidth: 900, margin: '0 auto', padding: 24, paddingBottom: 96 }}>
+  const mobileContent = (
+    <>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, flexWrap: 'wrap' }}>
         <div style={{ minWidth: 0 }}>
           <h1
@@ -204,12 +103,7 @@ export default async function PublicProgramDetailPage({ params }: PageProps) {
       </section>
 
       <section style={{ marginTop: 18 }}>
-        <PublicProgramStructureReadOnlyClient
-          programId={typedProgram.id}
-          weeks={typedWeeks}
-          sessions={typedSessions}
-          programExercises={exercisesWithMedia}
-        />
+        <PublicProgramStructureReadOnlyClient {...structureProps} />
       </section>
 
       <Link
@@ -224,8 +118,8 @@ export default async function PublicProgramDetailPage({ params }: PageProps) {
           textAlign: 'center',
           padding: '14px 16px',
           borderRadius: 14,
-          border: '1px solid #111827',
-          background: '#111827',
+          border: '1px solid #341c44',
+          background: 'linear-gradient(90deg, #d6c4e8, #9b6bb8, #341c44)',
           color: '#ffffff',
           fontWeight: 900,
           textDecoration: 'none',
@@ -236,6 +130,60 @@ export default async function PublicProgramDetailPage({ params }: PageProps) {
       >
         Accéder à l’app
       </Link>
+    </>
+  )
+
+  const desktopPhoneContent = (
+    <div className="px-3 py-4">
+      <div className="rounded-2xl bg-white p-3 shadow-sm ring-1 ring-black/5">
+        <div className="text-xs font-extrabold text-[var(--brand)]">Programme</div>
+        <div className="mt-1 text-lg font-extrabold text-gray-900">{typedProgram.title ?? 'Programme'}</div>
+        <div className="mt-1 text-sm font-semibold text-black/50">
+          Niveau : {typedProgram.level ?? '—'} · Durée : {typedProgram.duration ?? '—'}
+        </div>
+        {typedProgram.goal ? <div className="mt-3 text-sm text-gray-800">{typedProgram.goal}</div> : null}
+      </div>
+
+      <div className="mt-4">
+        <PublicProgramStructureReadOnlyClient {...structureProps} />
+      </div>
+
+      <div className="mt-5 flex justify-center">
+        <Link
+          href="/login"
+          className="inline-flex h-11 items-center justify-center rounded-2xl bg-gradient-to-r from-[#d6c4e8] via-[#9b6bb8] to-[#341c44] px-6 text-sm font-extrabold text-white shadow-[0_8px_24px_rgba(52,28,68,0.28)] hover:opacity-95"
+        >
+          Accéder à l’app
+        </Link>
+      </div>
+    </div>
+  )
+
+  return (
+    <main className="min-h-screen bg-[#f5f5f5]">
+      <div className="mx-auto w-full max-w-6xl px-5 py-8 sm:px-6">
+        <div className="md:hidden" style={{ maxWidth: 900, margin: '0 auto', padding: 0, paddingBottom: 96 }}>
+          {mobileContent}
+        </div>
+
+        <div className="hidden md:block">
+          <div className="mb-6 flex items-center justify-between gap-3">
+            <Link
+              href="/programme"
+              className="inline-flex h-10 items-center justify-center rounded-xl bg-white px-4 text-sm font-semibold text-[#341c44] ring-1 ring-black/10 hover:bg-[#f5f5f5]"
+            >
+              ← Retour
+            </Link>
+          </div>
+
+          <PhoneMockupFrameClient
+            ariaLabel="Programme (aperçu iPhone)"
+            viewportStyle={{ top: '7%', bottom: '6.0%', left: '4.7%', right: '4.7%' }}
+          >
+            {desktopPhoneContent}
+          </PhoneMockupFrameClient>
+        </div>
+      </div>
     </main>
   )
 }

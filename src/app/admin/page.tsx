@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 
 import { createClient } from '../../lib/supabase/server'
 import { Button, Card, Container } from '../../components/ui'
+import { ProgramEditorLink } from '../../components/ProgramEditorNavigationClient'
 
 function PlusIcon() {
   return (
@@ -31,7 +32,7 @@ export default async function AdminIndexPage() {
   } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect('/login')
+    redirect('/loginadmin')
   }
 
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
@@ -41,17 +42,14 @@ export default async function AdminIndexPage() {
     redirect('/dashboard')
   }
 
-  const { data: program4WeeksRaw } = await supabase
+  const { data: publicProgramsRaw } = await supabase
     .from('programs')
-    .select('id,title')
+    .select('id,title,created_at')
     .eq('is_published', true)
-    .ilike('title', '%semaine%')
-    .or('title.ilike.%4%,title.ilike.%quatre%')
+    .eq('is_template', false)
     .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
 
-  const program4Weeks = program4WeeksRaw as unknown as { id: string; title: string | null } | null
+  const publicPrograms = publicProgramsRaw as unknown as { id: string; title: string | null }[] | null
 
   const { data: privateProgramsRaw } = await supabase
     .from('programs')
@@ -63,18 +61,8 @@ export default async function AdminIndexPage() {
 
   const privatePrograms = privateProgramsRaw as unknown as { id: string; title: string | null }[] | null
 
-  const { data: templatesRaw } = await supabase
-    .from('programs')
-    .select('id,title,created_at')
-    .eq('is_template', true)
-    .order('created_at', { ascending: false })
-
-  const templates = templatesRaw as unknown as { id: string; title: string | null }[] | null
-
-  const templateMuscu = (templates ?? []).find((t) => (t.title ?? '').toLowerCase().includes('muscu')) ?? (templates ?? [])[0]
-
   return (
-    <main className="bg-[var(--bg)] text-[var(--text)]">
+    <main className="bg-transparent text-[var(--text)]">
       <Container className="py-10 md:py-12">
         <div className="flex items-start justify-between gap-6">
           <div className="min-w-0">
@@ -88,26 +76,29 @@ export default async function AdminIndexPage() {
             <div className="flex items-start justify-between gap-6">
               <div className="min-w-0">
                 <h2 className="text-lg font-extrabold tracking-tight">Programme public</h2>
-                <p className="mt-1 text-sm text-[var(--muted)]">Accès rapide au programme phare (4 semaines).</p>
+                <p className="mt-1 text-sm text-[var(--muted)]">Programmes publiés visibles sur la vitrine.</p>
               </div>
-              <Link
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[var(--brand)] text-white"
-                href="/admin/new?scope=public"
-                aria-label="Créer un programme public"
-                title="Créer un programme public"
-              >
-                <PlusIcon />
-              </Link>
             </div>
 
             <div className="mt-6">
-              {program4Weeks ? (
-                <Button href={`/admin/programs/${program4Weeks.id}`} variant="primary" className="w-full justify-between">
-                  <span>{program4Weeks.title || 'Programme 4 semaines'}</span>
-                  <span aria-hidden>→</span>
-                </Button>
+              {publicPrograms && publicPrograms.length > 0 ? (
+                <ul className="grid gap-3">
+                  {publicPrograms.map((p) => (
+                    <li key={p.id} className="flex items-center justify-between gap-3">
+                      <ProgramEditorLink
+                        className="min-w-0 truncate text-base font-semibold text-[var(--brand)] disabled:opacity-60"
+                        href={`/admin/programs/${p.id}`}
+                      >
+                        {p.title || 'Programme public'}
+                      </ProgramEditorLink>
+                      <span className="shrink-0 rounded-full bg-[var(--brand)] px-3 py-1 text-xs font-semibold text-white">
+                        Public
+                      </span>
+                    </li>
+                  ))}
+                </ul>
               ) : (
-                <p className="text-sm text-[var(--muted)]">Aucun programme public trouvé.</p>
+                <p className="text-sm text-[var(--muted)]">Aucun programme public.</p>
               )}
             </div>
           </Card>
@@ -133,9 +124,12 @@ export default async function AdminIndexPage() {
                 <ul className="grid gap-3">
                   {privatePrograms.map((p) => (
                     <li key={p.id} className="flex items-center justify-between gap-3">
-                      <Link className="min-w-0 truncate text-base font-semibold text-[var(--brand)]" href={`/admin/programs/${p.id}`}>
+                      <ProgramEditorLink
+                        className="min-w-0 truncate text-base font-semibold text-[var(--brand)] disabled:opacity-60"
+                        href={`/admin/programs/${p.id}`}
+                      >
                         {p.title || 'Programme privé'}
-                      </Link>
+                      </ProgramEditorLink>
                       <span className="shrink-0 rounded-full bg-[var(--accent)] px-3 py-1 text-xs font-semibold text-[var(--brand)]">
                         Brouillon
                       </span>
@@ -158,35 +152,6 @@ export default async function AdminIndexPage() {
                 <span>Ouvrir le dashboard</span>
                 <span aria-hidden>→</span>
               </Button>
-            </div>
-          </Card>
-
-          <Card className="rounded-[var(--radius-lg)] p-8 ring-1 ring-[var(--border)]">
-            <h2 className="text-lg font-extrabold tracking-tight">Templates</h2>
-            <p className="mt-1 text-sm text-[var(--muted)]">Modèles réutilisables.</p>
-            <div className="mt-6">
-              {templateMuscu ? (
-                <Button href={`/admin/programs/${templateMuscu.id}`} variant="primary" className="w-full justify-between">
-                  <span>{templateMuscu.title || 'Template muscu'}</span>
-                  <span aria-hidden>→</span>
-                </Button>
-              ) : null}
-
-              {templates && templates.length > 0 ? (
-                <ul className="mt-3 grid gap-3">
-                  {templates
-                    .filter((t) => t.id !== templateMuscu?.id)
-                    .map((t) => (
-                      <li key={t.id}>
-                        <Link className="text-base font-semibold text-[var(--brand)]" href={`/admin/programs/${t.id}`}>
-                          {t.title || 'Template'}
-                        </Link>
-                      </li>
-                    ))}
-                </ul>
-              ) : (
-                <p className="text-sm text-[var(--muted)]">Aucun template.</p>
-              )}
             </div>
           </Card>
 

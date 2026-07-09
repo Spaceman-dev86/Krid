@@ -16,7 +16,7 @@ type Props = {
   sendMessageAction: (formData: FormData) => void | Promise<void>
 }
 
-export default function ChatProClient({ messages, sendMessageAction }: Props) {
+export default function ChatProClient({ messages, sendMessageAction, fixedComposer = false }: Props) {
   const router = useRouter()
   const [, startTransition] = useTransition()
   const [replyToId, setReplyToId] = useState<string | null>(null)
@@ -75,7 +75,7 @@ export default function ChatProClient({ messages, sendMessageAction }: Props) {
 
   return (
     <>
-      <div className="grid gap-3 pb-28">
+      <div className={fixedComposer ? 'grid gap-3 pb-32' : 'grid gap-3 pb-28'}>
         {displayedMessages.length > 0 ? (
           displayedMessages.map((m) => {
             const isCoach = m.sender === 'coach'
@@ -305,9 +305,15 @@ export default function ChatProClient({ messages, sendMessageAction }: Props) {
         )}
       </div>
 
-      <div className="sticky bottom-0 z-30 -mx-2 mt-5 bg-white/95 px-2 pb-2 pt-2 md:backdrop-blur">
+      <div
+        className={
+          fixedComposer
+            ? 'fixed inset-x-0 bottom-0 z-30 border-t border-black/5 bg-white/95 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur'
+            : 'sticky bottom-0 z-30 -mx-2 mt-5 bg-white/95 px-2 pb-2 pt-2 md:backdrop-blur'
+        }
+      >
         <form
-          className="relative flex items-center gap-2"
+          className={['relative flex items-center gap-2', fixedComposer ? 'mx-auto w-full max-w-6xl px-5 sm:px-6' : ''].join(' ')}
           onSubmit={(e) => {
             e.preventDefault()
             const form = e.currentTarget

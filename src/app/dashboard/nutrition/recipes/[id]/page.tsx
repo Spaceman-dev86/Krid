@@ -1,6 +1,7 @@
 import Link from 'next/link'
 
 import { Card, Container } from '../../../../../components/marketing'
+import { coachDashboardCardClass } from '../../../../../lib/coachDashboardUi'
 import { createClient } from '../../../../../lib/supabase/server'
 import StickyHeader from '../../StickyHeader'
 
@@ -87,9 +88,9 @@ export default async function DashboardNutritionRecipeDetailPage(props: PageProp
   })()
 
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-transparent">
       <Container className="py-6 sm:py-10">
-        <StickyHeader className="sticky top-16 z-40 -mx-4 bg-white/95 px-4 py-4 md:backdrop-blur sm:-mx-6 sm:px-6">
+        <StickyHeader opaquePageBackdrop>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="min-w-0">
               <h1 className="text-2xl font-extrabold tracking-tight text-[#341c44]">Page recette</h1>
@@ -117,9 +118,9 @@ export default async function DashboardNutritionRecipeDetailPage(props: PageProp
           </div>
         </StickyHeader>
 
-        <div className="mt-5 grid gap-4 lg:grid-cols-[260px_minmax(0,1fr)]">
-          <Card className="p-0 overflow-hidden !bg-black/5">
-            <div className="flex items-center justify-between gap-3 border-b border-black/10 !bg-[#f3f3f3] px-4 py-3">
+        <div className="relative z-0 mt-5 grid gap-4 lg:grid-cols-[260px_minmax(0,1fr)]">
+          <Card className={`${coachDashboardCardClass} overflow-hidden p-0`}>
+            <div className="border-b border-black/10 bg-white px-4 py-3">
               <div className="text-sm font-extrabold text-[#341c44]">Liste de recette</div>
             </div>
             <div className="p-3">
@@ -145,7 +146,7 @@ export default async function DashboardNutritionRecipeDetailPage(props: PageProp
             </div>
           </Card>
 
-          <Card className="shadow-md ring-black/10">
+          <Card className={coachDashboardCardClass}>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="min-w-0">
                 <div className="text-xl font-extrabold tracking-tight text-[#341c44]">

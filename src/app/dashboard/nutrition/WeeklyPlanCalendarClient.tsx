@@ -1,6 +1,7 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 
 import { createClient } from '../../../lib/supabase/client'
 
@@ -52,11 +53,20 @@ type PickerIngredientRow = {
   ingredient: { id: string; name: string } | null
 }
 
+const DAY_SHORT = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'] as const
+
+const scrollBandClass =
+  'flex gap-2 overflow-x-auto overflow-y-hidden overscroll-x-contain px-3 py-2.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
+
+function isoDayOfWeek(d = new Date()) {
+  return ((d.getDay() + 6) % 7) + 1
+}
+
 const MEALS = [
-  { key: 'Petit-déj', label: 'Petit-déjeuner', icon: 'breakfast' },
-  { key: 'Snack', label: 'Goûter', icon: 'snack' },
-  { key: 'Midi', label: 'Déjeuner', icon: 'lunch' },
-  { key: 'Soir', label: 'Dîner', icon: 'dinner' },
+  { key: 'Petit-déj', label: 'Petit-déjeuner', iconPath: 'nutrition/coffee.png' },
+  { key: 'Snack', label: 'Goûter', iconPath: 'nutrition/apple.png' },
+  { key: 'Midi', label: 'Déjeuner', iconPath: 'nutrition/plate.png' },
+  { key: 'Soir', label: 'Dîner', iconPath: 'nutrition/dinner.png' },
 ] as const
 
 function mealToCategory(mealKey: string) {
@@ -65,55 +75,11 @@ function mealToCategory(mealKey: string) {
   return 'repas'
 }
 
-function Icon({ name }: { name: (typeof MEALS)[number]['icon'] }) {
-  const common = {
-    stroke: 'currentColor',
-    strokeWidth: 2,
-    strokeLinecap: 'round' as const,
-    strokeLinejoin: 'round' as const,
-  }
-
-  if (name === 'breakfast') {
-    return (
-      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden>
-        <path d="M4 8h10v5a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V8Z" {...common} />
-        <path d="M14 9h3a3 3 0 0 1 0 6h-3" {...common} />
-        <path d="M7 3v3" {...common} />
-        <path d="M11 3v3" {...common} />
-      </svg>
-    )
-  }
-
-  if (name === 'snack') {
-    return (
-      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden>
-        <path d="M7 12c0 4 2 8 5 8s5-4 5-8" {...common} />
-        <path d="M5 12h14" {...common} />
-        <path d="M8 6c0 1.5 1 2.5 2.5 2.5S13 7.5 13 6" {...common} />
-        <path d="M14 6c0 1.5 1 2.5 2.5 2.5S19 7.5 19 6" {...common} />
-      </svg>
-    )
-  }
-
-  if (name === 'lunch') {
-    return (
-      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden>
-        <path d="M4 15h16" {...common} />
-        <path d="M6 15v3" {...common} />
-        <path d="M18 15v3" {...common} />
-        <path d="M7 11c1.2-3 3.2-5 5-5s3.8 2 5 5" {...common} />
-      </svg>
-    )
-  }
-
+function MealIcon({ src, alt, size }: { src: string; alt: string; size: 'sm' | 'md' }) {
+  const imgClass = size === 'sm' ? 'h-8 w-8' : 'h-10 w-10'
   return (
-    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden>
-      <path d="M7 7h10" {...common} />
-      <path d="M6 10h12" {...common} />
-      <path d="M5 13h14" {...common} />
-      <path d="M6 13v6" {...common} />
-      <path d="M18 13v6" {...common} />
-    </svg>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={src} alt={alt} className={`${imgClass} object-contain`} loading="lazy" />
   )
 }
 
@@ -127,17 +93,28 @@ export default function WeeklyPlanCalendarClient(props: {
   const supabase = useMemo(() => createClient(), [])
   const supabaseUntyped = supabase as unknown as SupabaseUntypedLike
 
+  const mealIconUrls = useMemo(() => {
+    const bucket = supabase.storage.from('home_page')
+    return Object.fromEntries(
+      MEALS.map((meal) => [meal.key, bucket.getPublicUrl(meal.iconPath).data.publicUrl])
+    ) as Record<(typeof MEALS)[number]['key'], string>
+  }, [supabase])
+
   const supabaseTotals = supabase as unknown as {
     from: (table: 'nutrition_recipe_totals') => PostgrestTotalsTableLike
   }
 
   const [picker, setPicker] = useState<null | { day: number; mealKey: string; currentRecipeId: string | null; currentRecipeTitle: string | null }>(null)
+  const [selectedDay, setSelectedDay] = useState(() => isoDayOfWeek())
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [recipes, setRecipes] = useState<RecipeListItem[] | null>(null)
   const [recipeQuery, setRecipeQuery] = useState('')
   const [pickerTotals, setPickerTotals] = useState<null | { calories: number; protein_g: number; carbs_g: number; fat_g: number }>(null)
   const [pickerIngredients, setPickerIngredients] = useState<null | { recipeId: string; items: PickerIngredientRow[] }>(null)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => setMounted(true), [])
 
   const entriesBySlot = useMemo(() => {
     const m = new Map<string, Entry>()
@@ -284,9 +261,124 @@ export default function WeeklyPlanCalendarClient(props: {
     }
   }
 
+  async function openPickerForSlot(day: number, mealKey: string) {
+    const slot = entriesBySlot.get(`${day}-${mealKey}`) ?? null
+    setPicker({
+      day,
+      mealKey,
+      currentRecipeId: slot?.recipe_id ?? null,
+      currentRecipeTitle: slot?.recipe?.title ?? null,
+    })
+    setRecipeQuery('')
+    await loadPickerTotals(slot?.recipe_id ?? null)
+    await loadPickerIngredients(slot?.recipe_id ?? null)
+    await ensureRecipesLoaded()
+  }
+
+  function renderMealSlot(day: number, meal: (typeof MEALS)[number], rowIdx: number, mobile = false) {
+    const slot = entriesBySlot.get(`${day}-${meal.key}`) ?? null
+    const kcal = slot ? (totalsByRecipeId[slot.recipe_id]?.calories ?? 0) * Number(slot.servings ?? 1) : 0
+    const dayLabel = days[day - 1] ?? `Jour ${day}`
+
+    if (mobile) {
+      return (
+        <button
+          key={`mobile-${day}-${meal.key}`}
+          type="button"
+          onClick={() => void openPickerForSlot(day, meal.key)}
+          className={
+            (rowIdx === 0 ? '' : 'border-t border-black/10 ') +
+            'flex w-full items-center gap-3 px-4 py-4 text-left hover:bg-[#f5f5f5]'
+          }
+          aria-label={slot ? `Modifier ${meal.label} ${dayLabel}` : `Ajouter ${meal.label} ${dayLabel}`}
+          disabled={loading}
+        >
+          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white shadow-sm ring-1 ring-black/10">
+            <MealIcon src={mealIconUrls[meal.key]} alt={meal.label} size="sm" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-xs font-extrabold text-black/50">{meal.label}</div>
+            {slot ? (
+              <>
+                <div className="mt-0.5 text-sm font-extrabold leading-snug text-[#341c44] line-clamp-2">{slot.recipe?.title ?? 'Recette'}</div>
+                <div className="mt-1 text-xs font-semibold text-black/50">{Math.round(kcal)} kcal</div>
+              </>
+            ) : (
+              <div className="mt-1 text-sm font-extrabold text-black/30">--</div>
+            )}
+          </div>
+        </button>
+      )
+    }
+
+    return (
+      <button
+        key={`${day}-${meal.key}`}
+        type="button"
+        onClick={() => void openPickerForSlot(day, meal.key)}
+        className={(rowIdx === 0 ? '' : 'border-t border-black/10 ') + 'h-full w-full px-4 py-4 text-left hover:bg-[#f5f5f5]'}
+        aria-label={slot ? `Modifier ${meal.label} ${dayLabel}` : `Ajouter ${meal.label} ${dayLabel}`}
+        disabled={loading}
+      >
+        {slot ? (
+          <div className="py-1">
+            <div className="min-w-0 text-sm font-extrabold leading-snug text-[#341c44] line-clamp-2">{slot.recipe?.title ?? 'Recette'}</div>
+            <div className="mt-1 text-xs font-semibold text-black/50">{Math.round(kcal)} kcal</div>
+          </div>
+        ) : (
+          <div className="flex py-1">
+            <div className="w-full translate-x-2 text-center text-sm font-extrabold text-black/30">--</div>
+          </div>
+        )}
+      </button>
+    )
+  }
+
   return (
-    <div>
-      <div className="overflow-hidden rounded-2xl bg-white ring-1 ring-black/10">
+    <div className="min-w-0">
+      <div className="md:hidden">
+        <section className="min-w-0 overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-black/10">
+          <div className={scrollBandClass} style={{ WebkitOverflowScrolling: 'touch' }}>
+            {days.map((d, idx) => {
+              const day = idx + 1
+              const active = day === selectedDay
+              return (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => setSelectedDay(day)}
+                  className={[
+                    'shrink-0 rounded-full px-4 py-2 text-left transition',
+                    active
+                      ? 'bg-[#341c44] text-white shadow-sm'
+                      : 'bg-[#f5f5f5] text-[#341c44] ring-1 ring-black/10 hover:bg-white',
+                  ].join(' ')}
+                >
+                  <div className="text-sm font-extrabold">{DAY_SHORT[idx] ?? d.slice(0, 3)}</div>
+                  <div className={active ? 'text-[11px] font-semibold text-white/80' : 'text-[11px] font-semibold text-black/45'}>
+                    {Math.round(dayTotals[day]?.calories ?? 0)} kcal
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        </section>
+
+        <div className="mt-3 min-w-0 overflow-hidden rounded-2xl bg-white ring-1 ring-black/10">
+          <div className="border-b border-black/10 px-4 py-3">
+            <div className="text-sm font-extrabold text-[#341c44]">{days[selectedDay - 1] ?? `Jour ${selectedDay}`}</div>
+            <div className="mt-0.5 text-xs font-extrabold text-black/50">{Math.round(dayTotals[selectedDay]?.calories ?? 0)} kcal</div>
+            <div className="mt-1 text-[11px] font-semibold text-black/40">
+              {Math.round(dayTotals[selectedDay]?.protein_g ?? 0)}P · {Math.round(dayTotals[selectedDay]?.fat_g ?? 0)}L ·{' '}
+              {Math.round(dayTotals[selectedDay]?.carbs_g ?? 0)}G
+            </div>
+          </div>
+
+          <div>{MEALS.map((meal, rowIdx) => renderMealSlot(selectedDay, meal, rowIdx, true))}</div>
+        </div>
+      </div>
+
+      <div className="hidden overflow-hidden rounded-2xl bg-white ring-1 ring-black/10 md:block">
         <div className="grid grid-cols-[80px_repeat(7,minmax(0,1fr))] border-b border-black/10">
           <div className="bg-[#f5f5f5]" />
           {days.map((d, idx) => {
@@ -312,107 +404,80 @@ export default function WeeklyPlanCalendarClient(props: {
                   ' flex flex-col items-center justify-center gap-2 bg-[#f5f5f5] py-5'
                 }
               >
-                <div className="grid h-14 w-14 place-items-center rounded-3xl bg-[#341c44] text-white shadow-sm">
-                  <Icon name={meal.icon} />
+                <div className="grid h-14 w-14 place-items-center rounded-3xl bg-white shadow-sm ring-1 ring-black/10">
+                  <MealIcon src={mealIconUrls[meal.key]} alt={meal.label} size="md" />
                 </div>
                 <div className="text-[11px] font-extrabold leading-none text-[#341c44]">{meal.key}</div>
               </div>
 
               {days.map((d, idx) => {
                 const day = idx + 1
-                const slot = entriesBySlot.get(`${day}-${meal.key}`) ?? null
-                const kcal = slot ? (totalsByRecipeId[slot.recipe_id]?.calories ?? 0) * Number(slot.servings ?? 1) : 0
-
-                return (
-                  <button
-                    key={`${d}-${meal.key}`}
-                    type="button"
-                    onClick={async () => {
-                      setPicker({
-                        day,
-                        mealKey: meal.key,
-                        currentRecipeId: slot?.recipe_id ?? null,
-                        currentRecipeTitle: slot?.recipe?.title ?? null,
-                      })
-                      setRecipeQuery('')
-                      await loadPickerTotals(slot?.recipe_id ?? null)
-                      await loadPickerIngredients(slot?.recipe_id ?? null)
-                      await ensureRecipesLoaded()
-                    }}
-                    className={(rowIdx === 0 ? '' : 'border-t border-black/10 ') + 'h-full w-full px-4 py-4 text-left hover:bg-[#f5f5f5]'}
-                    aria-label={slot ? `Modifier ${meal.label} ${d}` : `Ajouter ${meal.label} ${d}`}
-                    disabled={loading}
-                  >
-                    {slot ? (
-                      <div className="py-1">
-                        <div className="min-w-0 text-sm font-extrabold leading-snug text-[#341c44] line-clamp-2">{slot.recipe?.title ?? 'Recette'}</div>
-                        <div className="mt-1 text-xs font-semibold text-black/50">{Math.round(kcal)} kcal</div>
-                      </div>
-                    ) : (
-                      <div className="flex py-1">
-                        <div className="w-full translate-x-2 text-center text-sm font-extrabold text-black/30">--</div>
-                      </div>
-                    )}
-                  </button>
-                )
+                return renderMealSlot(day, meal, rowIdx)
               })}
             </div>
           ))}
         </div>
       </div>
 
-      {picker ? (
-        <div className="fixed inset-0 z-[10000]">
-          <button type="button" className="absolute inset-0 bg-black/30" onClick={() => (loading ? null : setPicker(null))} aria-label="Fermer" />
-          <div className="absolute left-1/2 top-24 z-10 w-[min(520px,calc(100vw-2rem))] -translate-x-1/2">
-            <div className="overflow-hidden rounded-2xl bg-white ring-1 ring-black/10 shadow-md">
-              <div className="flex items-center justify-between gap-3 border-b border-black/10 px-4 py-3">
-                <div className="min-w-0">
-                  <div className="text-sm font-extrabold text-[#341c44]">
-                    {picker.currentRecipeTitle ? picker.currentRecipeTitle : 'Choisir une recette'}
-                  </div>
-                  <div className="mt-0.5 text-xs font-semibold text-black/50">
-                    {days[picker.day - 1]} · {picker.mealKey}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {picker.currentRecipeId ? (
-                    <button
-                      type="button"
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-white text-red-600 ring-1 ring-black/10 hover:bg-[#f5f5f5]"
-                      onClick={() => {
-                        if (loading) return
-                        const slot = { day: picker.day, mealKey: picker.mealKey }
-                        setPicker(null)
-                        void clearSlotRecipe(slot)
-                      }}
-                      aria-label="Supprimer la recette"
-                      title="Supprimer"
-                    >
-                      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden fill="none">
-                        <path d="M3 6h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                        <path d="M8 6V4h8v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                        <path d="M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                        <path d="M10 11v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                        <path d="M14 11v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </button>
-                  ) : null}
+      {mounted && picker
+        ? createPortal(
+            <div className="fixed inset-0 z-[9999]">
+              <button
+                type="button"
+                className="absolute inset-0 bg-black/30"
+                onClick={() => (loading ? null : setPicker(null))}
+                aria-label="Fermer"
+              />
+              <div className="absolute left-1/2 top-24 z-10 w-[min(520px,calc(100vw-2rem))] -translate-x-1/2">
+                <div className="overflow-hidden rounded-2xl bg-white ring-1 ring-black/10 shadow-md">
+                  <div className="flex items-center justify-between gap-3 border-b border-black/10 px-4 py-3">
+                    <div className="min-w-0">
+                      <div className="text-sm font-extrabold text-[#341c44]">
+                        {picker.currentRecipeTitle ? picker.currentRecipeTitle : 'Choisir une recette'}
+                      </div>
+                      <div className="mt-0.5 text-xs font-semibold text-black/50">
+                        {days[picker.day - 1]} · {picker.mealKey}
+                      </div>
+                    </div>
 
-                  <button
-                    type="button"
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-white text-[#341c44] ring-1 ring-black/10 hover:bg-[#f5f5f5]"
-                    onClick={() => (loading ? null : setPicker(null))}
-                    aria-label="Fermer"
-                    title="Fermer"
-                  >
-                    ×
-                  </button>
-                </div>
-              </div>
+                    <div className="flex items-center gap-2">
+                      {picker.currentRecipeId ? (
+                        <button
+                          type="button"
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-white text-red-600 ring-1 ring-black/10 hover:bg-[#f5f5f5]"
+                          onClick={() => {
+                            if (loading) return
+                            const slot = { day: picker.day, mealKey: picker.mealKey }
+                            setPicker(null)
+                            void clearSlotRecipe(slot)
+                          }}
+                          aria-label="Supprimer la recette"
+                          title="Supprimer"
+                        >
+                          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden fill="none">
+                            <path d="M3 6h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            <path d="M8 6V4h8v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            <path d="M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            <path d="M10 11v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            <path d="M14 11v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </button>
+                      ) : null}
 
-              <div className="p-3">
-                {error ? <div className="mb-2 text-sm font-semibold text-red-600">{error}</div> : null}
+                      <button
+                        type="button"
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-white text-[#341c44] ring-1 ring-black/10 hover:bg-[#f5f5f5]"
+                        onClick={() => (loading ? null : setPicker(null))}
+                        aria-label="Fermer"
+                        title="Fermer"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="p-3">
+                    {error ? <div className="mb-2 text-sm font-semibold text-red-600">{error}</div> : null}
 
                 {(() => {
                   const currentPhotoUrl = recipes?.find((r) => r.id === picker.currentRecipeId)?.photo_url ?? null
@@ -502,7 +567,10 @@ export default function WeeklyPlanCalendarClient(props: {
                         void loadPickerIngredients(r.id)
                         void setSlotRecipe(slot, r.id)
                       }}
-                      className={(idx === 0 ? '' : 'border-t border-black/10 ') + 'flex w-full items-center justify-between px-3 py-3 text-left text-sm font-extrabold text-[#341c44] hover:bg-[#f5f5f5]'}
+                      className={
+                        (idx === 0 ? '' : 'border-t border-black/10 ') +
+                        'flex w-full items-center justify-between px-3 py-3 text-left text-sm font-extrabold text-[#341c44] hover:bg-[#f5f5f5]'
+                      }
                     >
                       <span className="min-w-0 truncate">{r.title}</span>
                       <span className="ml-3 text-black/30">›</span>
@@ -510,14 +578,18 @@ export default function WeeklyPlanCalendarClient(props: {
                   ))}
 
                   {filteredRecipes.length === 0 ? (
-                    <div className="px-3 py-3 text-sm font-semibold text-black/50">Aucune recette dans cette catégorie.</div>
+                    <div className="px-3 py-3 text-sm font-semibold text-black/50">
+                      Aucune recette dans cette catégorie.
+                    </div>
                   ) : null}
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      ) : null}
+        </div>,
+            document.body
+          )
+        : null}
     </div>
   )
 }

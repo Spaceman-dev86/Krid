@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '../../../../lib/supabase/server'
+import { filterSelectableLibraryExercises } from '../../../../lib/exerciseLibraryVisibility'
 
 type ExerciseLibraryRow = {
   id: string
@@ -30,7 +31,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: error.message, exercises: [] }, { status: 500 })
     }
 
-    const exercises = ((data ?? []) as ExerciseLibraryRow[]).map((row) => ({
+    const exercises = filterSelectableLibraryExercises((data ?? []) as ExerciseLibraryRow[]).map((row) => ({
       id: row.id,
       name: row.name ?? '',
       muscle_group: row.muscle_group,

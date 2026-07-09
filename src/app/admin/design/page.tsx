@@ -46,7 +46,7 @@ function IconTile({ label, children }: { label: string; children: ReactNode }) {
 
 export default function AdminDesignPage() {
   return (
-    <main className="bg-[var(--bg)] text-[var(--text)]">
+    <main className="bg-transparent text-[var(--text)]">
       <Container className="py-8 md:py-10">
         <div className="flex items-center justify-between gap-4">
           <h1 className="text-3xl font-extrabold tracking-tight text-[var(--brand)]">Design</h1>
@@ -271,6 +271,12 @@ export default function AdminDesignPage() {
                 <rect x="6" y="6" width="12" height="12" rx="3" />
                 <circle cx="12" cy="12" r="3" />
                 <circle cx="16" cy="8" r="0.8" />
+              </Icon>
+            </IconTile>
+            <IconTile label="Connexion / Déconnexion">
+              <Icon>
+                <path d="M20 21a8 8 0 1 0-16 0" />
+                <path d="M12 13a4 4 0 1 0-4-4 4 4 0 0 0 4 4z" />
               </Icon>
             </IconTile>
           </div>

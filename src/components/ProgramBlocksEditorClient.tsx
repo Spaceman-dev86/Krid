@@ -57,6 +57,10 @@ type Props = {
   deleteBlockExerciseAction?: (formData: FormData) => Promise<void>
 }
 
+function canonBlockId(id: string | null | undefined): string {
+  return String(id ?? '').trim().toLowerCase()
+}
+
 export default function ProgramBlocksEditorClient(props: Props) {
   const [pendingAction, setPendingAction] = useState<null | 'saveBlock' | 'addExercise'>(null)
   const [, startTransition] = useTransition()
@@ -65,6 +69,17 @@ export default function ProgramBlocksEditorClient(props: Props) {
 
   const [addExerciseQuery, setAddExerciseQuery] = useState<string>('')
   const [addExerciseMuscle, setAddExerciseMuscle] = useState<string>('')
+  const [addExercisePickerOpen, setAddExercisePickerOpen] = useState(false)
+
+  const filteredAddExerciseLibrary = useMemo(() => {
+    const q = addExerciseQuery.trim().toLowerCase()
+    return props.exerciseLibrary.filter((ex) => {
+      const nameOk = !q || String(ex.name ?? '').toLowerCase().includes(q)
+      if (!nameOk) return false
+      if (!addExerciseMuscle) return true
+      return String(ex.muscle_group ?? '').trim() === addExerciseMuscle
+    })
+  }, [addExerciseQuery, addExerciseMuscle, props.exerciseLibrary])
 
   const saveFormRef = useRef<HTMLFormElement | null>(null)
 
@@ -102,7 +117,8 @@ export default function ProgramBlocksEditorClient(props: Props) {
 
   const forcedOpenBlock = useMemo(() => {
     if (!effectiveOpenBlockId) return null
-    const fromList = props.sessionBlocks.find((b) => b.id === effectiveOpenBlockId) ?? null
+    const fromList =
+      props.sessionBlocks.find((b) => canonBlockId(b.id) === canonBlockId(effectiveOpenBlockId)) ?? null
     if (fromList) return fromList
 
     if (typeof window === 'undefined') return null
@@ -148,12 +164,21 @@ export default function ProgramBlocksEditorClient(props: Props) {
   const itemsForSelectedBlock = useMemo(() => {
     if (!effectiveSelectedBlockId) return []
 
-    const base = (optimisticBlockExercisesOverrideByBlockId[effectiveSelectedBlockId] ?? props.blockExercises)
-      .filter((be) => be.session_block_id === effectiveSelectedBlockId)
+    const sel = canonBlockId(effectiveSelectedBlockId)
+    let overrideList: BlockExerciseRow[] | undefined
+    for (const [k, v] of Object.entries(optimisticBlockExercisesOverrideByBlockId)) {
+      if (canonBlockId(k) === sel) {
+        overrideList = v
+        break
+      }
+    }
+
+    const base = (overrideList ?? props.blockExercises)
+      .filter((be) => canonBlockId(be.session_block_id) === sel)
       .filter((be) => !optimisticDeletedBlockExerciseIds[be.id])
 
     const optimistic = optimisticInsertedBlockExercises
-      .filter((be) => be.session_block_id === effectiveSelectedBlockId)
+      .filter((be) => canonBlockId(be.session_block_id) === sel)
       .filter((be) => !optimisticDeletedBlockExerciseIds[be.id])
 
     const merged = base.concat(optimistic)
@@ -179,6 +204,10 @@ export default function ProgramBlocksEditorClient(props: Props) {
   }, [itemsForSelectedBlock, optimisticBlockExerciseNotesById])
 
   useEffect(() => {
+    setAddExerciseQuery('')
+    setAddExerciseMuscle('')
+    setAddExercisePickerOpen(false)
+
     if (typeof window === 'undefined') return
     const blockId = String(effectiveSelectedBlockId ?? '').trim()
     if (!blockId) return
@@ -190,6 +219,13 @@ export default function ProgramBlocksEditorClient(props: Props) {
       if (!Array.isArray(parsed)) return
       const rows = parsed as BlockExerciseRow[]
       setOptimisticBlockExercisesOverrideByBlockId((prev) => ({ ...prev, [blockId]: rows }))
+      if (rows.length) {
+        window.dispatchEvent(
+          new CustomEvent('program:block-editor:block-exercises-snapshot', {
+            detail: { blockId, rows: rows.slice() },
+          })
+        )
+      }
     } catch {
       // ignore
     }
@@ -207,6 +243,9 @@ export default function ProgramBlocksEditorClient(props: Props) {
     (exerciseId: string, notes: string) => {
       if (props.readOnly) return
       if (!effectiveSelectedBlockId) return
+      setAddExerciseQuery('')
+      setAddExerciseMuscle('')
+      setAddExercisePickerOpen(false)
       const tmpId = `tmp-be-${Date.now()}-${Math.random().toString(16).slice(2)}`
       const nextPos = itemsForSelectedBlock.length
       const name = exerciseNameById.get(exerciseId) || 'Exercice'
@@ -512,6 +551,7 @@ export default function ProgramBlocksEditorClient(props: Props) {
                 name="title"
                 value={draftTitle}
                 onChange={(e) => setDraftTitle(e.target.value)}
+                onPointerDown={(e) => e.stopPropagation()}
                 disabled={props.readOnly || pendingAction === 'saveBlock'}
                 className="h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm disabled:opacity-50"
               />
@@ -524,6 +564,7 @@ export default function ProgramBlocksEditorClient(props: Props) {
               name="notes"
               value={draftNotes}
               onChange={(e) => setDraftNotes(e.target.value)}
+              onPointerDown={(e) => e.stopPropagation()}
               disabled={props.readOnly || pendingAction === 'saveBlock'}
               rows={3}
               className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm disabled:opacity-50"
@@ -547,7 +588,12 @@ export default function ProgramBlocksEditorClient(props: Props) {
               <span className="sr-only">Rechercher un exercice</span>
               <input
                 value={addExerciseQuery}
-                onChange={(e) => setAddExerciseQuery(e.target.value)}
+                onChange={(e) => {
+                  setAddExerciseQuery(e.target.value)
+                  setAddExercisePickerOpen(true)
+                }}
+                onFocus={() => setAddExercisePickerOpen(true)}
+                onPointerDown={(e) => e.stopPropagation()}
                 placeholder="Rechercher un exercice…"
                 disabled={props.readOnly || pendingAction === 'addExercise'}
                 className="h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm disabled:opacity-50"
@@ -558,7 +604,12 @@ export default function ProgramBlocksEditorClient(props: Props) {
               <span className="sr-only">Muscle</span>
               <select
                 value={addExerciseMuscle}
-                onChange={(e) => setAddExerciseMuscle(e.target.value)}
+                onChange={(e) => {
+                  setAddExerciseMuscle(e.target.value)
+                  setAddExercisePickerOpen(true)
+                }}
+                onFocus={() => setAddExercisePickerOpen(true)}
+                onPointerDown={(e) => e.stopPropagation()}
                 disabled={props.readOnly || pendingAction === 'addExercise'}
                 className="h-10 w-full rounded-xl border border-gray-200 bg-white px-3 pr-8 text-sm disabled:opacity-50"
               >
@@ -580,35 +631,26 @@ export default function ProgramBlocksEditorClient(props: Props) {
             </label>
           </div>
 
-          {addExerciseQuery.trim() || addExerciseMuscle.trim() ? (
-            <div className="grid gap-1">
-              {props.exerciseLibrary
-                .filter((ex) => {
-                  const q = addExerciseQuery.trim().toLowerCase()
-                  const nameOk = !q || String(ex.name ?? '').toLowerCase().includes(q)
-                  if (!nameOk) return false
-                  if (!addExerciseMuscle) return true
-                  return String(ex.muscle_group ?? '').trim() === addExerciseMuscle
-                })
-                .slice(0, 8)
-                .map((ex) => (
-                  <button
-                    key={ex.id}
-                    type="button"
-                    disabled={props.readOnly || pendingAction === 'addExercise'}
-                    className="flex h-10 items-center rounded-xl border border-gray-200 bg-white px-3 text-left text-sm font-semibold text-[var(--brand)] hover:bg-gray-50 disabled:opacity-50"
-                    onClick={() => {
-                      if (props.readOnly) return
-                      if (pendingAction) return
-                      const exerciseId = String(ex.id)
-                      addExerciseOptimistic(exerciseId, '')
-                      setAddExerciseQuery('')
-                      setAddExerciseMuscle('')
-                    }}
-                  >
-                    <div className="min-w-0 truncate">{String(ex.name ?? '').trim() || '—'}</div>
-                  </button>
-                ))}
+          {addExercisePickerOpen ? (
+            <div className="grid max-h-72 gap-1 overflow-y-auto overscroll-contain rounded-lg border border-gray-100 p-1">
+              {filteredAddExerciseLibrary.length === 0 ? (
+                <div className="py-3 text-center text-sm text-gray-500">Aucun exercice ne correspond.</div>
+              ) : null}
+              {filteredAddExerciseLibrary.map((ex) => (
+                <button
+                  key={ex.id}
+                  type="button"
+                  disabled={props.readOnly || pendingAction === 'addExercise'}
+                  className="flex h-10 items-center rounded-xl border border-gray-200 bg-white px-3 text-left text-sm font-semibold text-[var(--brand)] hover:bg-gray-50 disabled:opacity-50"
+                  onClick={() => {
+                    if (props.readOnly) return
+                    if (pendingAction) return
+                    addExerciseOptimistic(String(ex.id), '')
+                  }}
+                >
+                  <div className="min-w-0 truncate">{String(ex.name ?? '').trim() || '—'}</div>
+                </button>
+              ))}
             </div>
           ) : null}
         </form>
@@ -633,6 +675,7 @@ export default function ProgramBlocksEditorClient(props: Props) {
                       const next = e.target.value
                       setOptimisticBlockExerciseNotesById((p) => ({ ...p, [row.id]: next }))
                     }}
+                    onPointerDown={(e) => e.stopPropagation()}
                     onBlur={() => {
                       if (props.readOnly) return
                       if (!props.updateBlockExerciseAction) return

@@ -1,4 +1,5 @@
 import { Button, Card, Container, ImagePlaceholder, SectionHeading, Timeline } from '../../components/marketing'
+import DashboardPreviewSection from '../../components/marketing/DashboardPreviewSection'
 
 export default function MonSitePage() {
   return (
@@ -25,6 +26,8 @@ export default function MonSitePage() {
           </div>
         </Container>
       </section>
+
+      <DashboardPreviewSection />
 
       <section>
         <Container className="py-10 md:py-14">

@@ -5,7 +5,7 @@ import LoginClient from './LoginClient'
 export default function LoginPage() {
   return (
     <Suspense>
-      <LoginClient />
+      <LoginClient variant="coach" />
     </Suspense>
   )
 }

@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import AppHeaderGateClient from "../components/AppHeaderGateClient";
+import AppShellClient from "../components/AppShellClient";
+import { ProgramEditorNavigationProvider } from "../components/ProgramEditorNavigationClient";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,8 +30,9 @@ export default function RootLayout({
         suppressHydrationWarning
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AppHeaderGateClient />
-        <div className="pt-16">{children}</div>
+        <ProgramEditorNavigationProvider>
+          <AppShellClient>{children}</AppShellClient>
+        </ProgramEditorNavigationProvider>
       </body>
     </html>
   );

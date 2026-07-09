@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 
 import { Card, Container } from '../../../components/marketing'
 import { createClient } from '../../../lib/supabase/server'
+import StickyHeader from '../nutrition/StickyHeader'
 
 type ClientRow = {
   id: string
@@ -208,9 +209,9 @@ export default async function DashboardChatPage() {
   }
 
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-transparent">
       <Container className="py-6 sm:py-10">
-        <div className="sticky top-16 z-40 -mx-4 bg-white/95 px-4 py-4 md:backdrop-blur sm:-mx-6 sm:px-6">
+        <StickyHeader opaquePageBackdrop>
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               <h1 className="text-2xl font-extrabold tracking-tight text-[#341c44]">Chat client</h1>
@@ -225,7 +226,7 @@ export default async function DashboardChatPage() {
               ←
             </Link>
           </div>
-        </div>
+        </StickyHeader>
 
         <div className="mt-5 grid gap-3 pt-2">
           {ordered.length > 0 ? (

@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 
 import { createClient } from '../../../lib/supabase/server'
 import { Button, Card, Container } from '../../../components/ui'
+import { ProgramEditorLink } from '../../../components/ProgramEditorNavigationClient'
 
 export default async function AdminProgramsPage({
   searchParams,
@@ -15,7 +16,7 @@ export default async function AdminProgramsPage({
   } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect('/login')
+    redirect('/loginadmin')
   }
 
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
@@ -54,7 +55,7 @@ export default async function AdminProgramsPage({
   ] as const
 
   return (
-    <main className="bg-[var(--bg)] text-[var(--text)]">
+    <main className="bg-transparent text-[var(--text)]">
       <Container className="py-14 md:py-16">
         <div className="flex flex-wrap items-start justify-between gap-6">
           <div className="min-w-0">
@@ -92,9 +93,12 @@ export default async function AdminProgramsPage({
               <ul className="grid gap-4">
                 {(programs ?? []).map((p) => (
                   <li key={p.id} className="flex flex-wrap items-center justify-between gap-3">
-                    <Link className="text-sm font-semibold text-[var(--brand)]" href={`/admin/programs/${p.id}`}>
+                    <ProgramEditorLink
+                      className="text-sm font-semibold text-[var(--brand)] disabled:opacity-60"
+                      href={`/admin/programs/${p.id}`}
+                    >
                       {p.title || 'Programme'}
-                    </Link>
+                    </ProgramEditorLink>
                     <span className="text-xs font-semibold text-[var(--muted)]">
                       {p.is_template ? 'Template' : p.is_published ? 'Public' : 'Brouillon'}
                     </span>

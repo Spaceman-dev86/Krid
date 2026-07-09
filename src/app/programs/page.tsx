@@ -1,11 +1,12 @@
 import { createClient } from '../../lib/supabase/server'
 import { Container, SectionHeading } from '../../components/marketing'
+import { resolveProgramCoverUrls } from '../../lib/resolveProgramCoverUrl'
 import ProgramsGridClient from './ProgramsGridClient'
 
 export default async function ProgramsMarketingPage() {
   const supabase = await createClient()
 
-  const { data: fallbackImage } = supabase.storage.from('home_page').getPublicUrl('muscu.jpg')
+  const { data: fallbackImage } = supabase.storage.from('home_page').getPublicUrl('3-programs/muscu.jpg')
   const defaultImageUrl = (fallbackImage as unknown as { publicUrl?: string } | null)?.publicUrl ?? null
 
   const { data: programs } = await supabase
@@ -55,9 +56,12 @@ export default async function ProgramsMarketingPage() {
     sessionsCountByProgramId.set(programId, (sessionsCountByProgramId.get(programId) ?? 0) + 1)
   }
 
+  const coverUrlByProgramId = await resolveProgramCoverUrls(supabase, typedPrograms ?? [])
+
   const items = (typedPrograms ?? []).map((p) => {
     return {
       ...p,
+      image_url: coverUrlByProgramId.get(p.id) ?? p.image_url,
       weeksCount: weeksCountByProgramId.get(p.id) ?? 0,
       sessionsCount: sessionsCountByProgramId.get(p.id) ?? 0,
     }
@@ -69,6 +73,7 @@ export default async function ProgramsMarketingPage() {
         <Container className="py-12 md:py-16">
           <SectionHeading
             eyebrow="Programmes"
+            eyebrowClassName="text-[#341c44]"
             title="Voici des exemples de programmes que tu peux créer avec ton app"
             subtitle="Une vitrine claire, des cartes premium, et une page de présentation pour chaque programme."
           />

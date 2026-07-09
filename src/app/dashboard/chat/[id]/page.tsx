@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 
 import { Container } from '../../../../components/marketing'
 import { createClient } from '../../../../lib/supabase/server'
+import StickyHeader from '../../nutrition/StickyHeader'
 import ChatProClient from './ChatProClient'
 import ScheduleSessionFromChatClient from './ScheduleSessionFromChatClient'
 
@@ -361,9 +362,9 @@ export default async function DashboardChatConversationPage(props: PageProps) {
   }
 
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-transparent">
       <Container className="py-6 sm:py-10">
-        <div className="sticky top-16 z-40 -mx-4 bg-white/95 px-4 py-4 md:backdrop-blur sm:-mx-6 sm:px-6">
+        <StickyHeader opaquePageBackdrop>
           <div className="flex items-start justify-between gap-4">
             <div className="flex min-w-0 items-start gap-3">
               {avatarUrl ? (
@@ -395,11 +396,11 @@ export default async function DashboardChatConversationPage(props: PageProps) {
               </Link>
             </div>
           </div>
-        </div>
+        </StickyHeader>
 
         <div className="mt-5">
           <div className="mt-5 grid gap-3">
-            <ChatProClient messages={messages} sendMessageAction={sendMessage} />
+            <ChatProClient messages={messages} sendMessageAction={sendMessage} fixedComposer />
           </div>
         </div>
       </Container>

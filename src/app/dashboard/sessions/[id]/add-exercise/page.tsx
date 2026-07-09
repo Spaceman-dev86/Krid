@@ -67,7 +67,7 @@ export default async function AddExerciseToSessionPage({ params, searchParams }:
   const typedSession = session as unknown as SessionRow | null
 
   if (!typedSession) {
-    redirect('/dashboard/programs')
+    redirect('/dashboard')
   }
 
   const { data: week } = await supabase
@@ -80,7 +80,7 @@ export default async function AddExerciseToSessionPage({ params, searchParams }:
   const typedWeek = week as unknown as WeekRow | null
 
   if (!typedWeek) {
-    redirect('/dashboard/programs')
+    redirect('/dashboard')
   }
 
   const { data: program } = await supabase
@@ -93,11 +93,11 @@ export default async function AddExerciseToSessionPage({ params, searchParams }:
   const typedProgram = program as unknown as ProgramRow | null
 
   if (!typedProgram) {
-    redirect('/dashboard/programs')
+    redirect('/dashboard')
   }
 
   if (!isAdmin && typedProgram.coach_id !== user.id) {
-    redirect('/dashboard/programs')
+    redirect('/dashboard')
   }
 
   type SessionExerciseRow = {
@@ -210,7 +210,7 @@ export default async function AddExerciseToSessionPage({ params, searchParams }:
     const typedSession = session as unknown as { id: string; week_id: string } | null
 
     if (!typedSession) {
-      redirect('/dashboard/programs')
+      redirect('/dashboard')
     }
 
     const { data: week } = await (supabase as unknown as { from: (t: string) => UntypedQuery })
@@ -222,7 +222,7 @@ export default async function AddExerciseToSessionPage({ params, searchParams }:
     const typedWeek = week as unknown as { id: string; program_id: string } | null
 
     if (!typedWeek) {
-      redirect('/dashboard/programs')
+      redirect('/dashboard')
     }
 
     const { data: program } = await (supabase as unknown as { from: (t: string) => UntypedQuery })
@@ -234,11 +234,11 @@ export default async function AddExerciseToSessionPage({ params, searchParams }:
     const typedProgram = program as unknown as { id: string; coach_id: string } | null
 
     if (!typedProgram) {
-      redirect('/dashboard/programs')
+      redirect('/dashboard')
     }
 
     if (!isAdmin && typedProgram.coach_id !== user.id) {
-      redirect('/dashboard/programs')
+      redirect('/dashboard')
     }
 
     const { data: current } = await (supabase as unknown as { from: (t: string) => UntypedQuery })
@@ -343,7 +343,7 @@ export default async function AddExerciseToSessionPage({ params, searchParams }:
             Séance : {typedSession.title} — Programme : {typedProgram.title}
           </p>
         </div>
-        <Link href="/dashboard/programs" style={{ textDecoration: 'none', color: '#111827' }}>
+        <Link href="/dashboard" style={{ textDecoration: 'none', color: '#111827' }}>
           Retour
         </Link>
       </div>

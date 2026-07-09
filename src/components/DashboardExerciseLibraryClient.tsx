@@ -16,9 +16,15 @@ type Item = {
 type Props = {
   items: Item[]
   returnTo: string
+  /** Base path for exercise detail links (default: dashboard). */
+  exerciseBasePath?: string
 }
 
-export default function DashboardExerciseLibraryClient({ items, returnTo }: Props) {
+export default function DashboardExerciseLibraryClient({
+  items,
+  returnTo,
+  exerciseBasePath = '/dashboard/exercises',
+}: Props) {
   const [query, setQuery] = useState('')
   const [muscle, setMuscle] = useState('')
 
@@ -87,7 +93,7 @@ export default function DashboardExerciseLibraryClient({ items, returnTo }: Prop
       <div className="mt-4 grid gap-3">
         {filtered.length > 0 ? (
           filtered.map((e) => {
-            const href = `/dashboard/exercises/${e.id}?returnTo=${encodeURIComponent(returnTo)}`
+            const href = `${exerciseBasePath}/${e.id}?returnTo=${encodeURIComponent(returnTo)}`
             return (
               <Link key={e.id} href={href} className="block">
                 <Card className="p-2 shadow-none ring-1 ring-black/10 sm:p-4">

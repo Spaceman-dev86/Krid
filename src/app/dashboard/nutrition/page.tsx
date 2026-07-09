@@ -1,6 +1,7 @@
 import Link from 'next/link'
 
 import { Card, Container } from '../../../components/marketing'
+import { coachDashboardCardClass } from '../../../lib/coachDashboardUi'
 import { createClient } from '../../../lib/supabase/server'
 import AddClientModal from './AddClientModal'
 import StickyHeader from './StickyHeader'
@@ -203,16 +204,16 @@ export default async function DashboardNutritionPage(props: PageProps) {
   })()
 
   return (
-    <main className="min-h-screen bg-white">
-      <Container className="py-6 sm:py-10">
-        <StickyHeader className="sticky top-16 z-40 bg-white/95 px-4 py-4 md:backdrop-blur sm:px-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+    <main className="min-h-screen min-w-0 bg-transparent">
+      <Container className="min-w-0 py-6 sm:py-10">
+        <StickyHeader opaquePageBackdrop>
+          <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
             <div className="min-w-0">
               <h1 className="text-2xl font-extrabold tracking-tight text-[#341c44]">Suivi nutritionnel</h1>
               <p className="mt-1 text-sm text-black/60">Créer et suivre des plans nutritionnels pour tes clients.</p>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
               <Link
                 href="/dashboard"
                 aria-label="Retour"
@@ -234,9 +235,9 @@ export default async function DashboardNutritionPage(props: PageProps) {
           </div>
         </StickyHeader>
 
-        <div className="mt-5 grid gap-4 lg:grid-cols-[260px_minmax(0,1fr)]">
-          <Card className="p-0 overflow-hidden !bg-black/5">
-            <div className="border-b border-black/10 !bg-[#f3f3f3] px-4 py-3">
+        <div className="relative z-0 mt-5 grid min-w-0 gap-4 lg:grid-cols-[260px_minmax(0,1fr)]">
+          <Card className={`${coachDashboardCardClass} min-w-0 overflow-hidden p-0`}>
+            <div className="border-b border-black/10 bg-white px-4 py-3">
               <div className="text-sm font-extrabold text-[#341c44]">Clients</div>
             </div>
             <div className="p-3">
@@ -266,7 +267,7 @@ export default async function DashboardNutritionPage(props: PageProps) {
             </div>
           </Card>
 
-          <Card className="shadow-md ring-black/10">
+          <Card className={`${coachDashboardCardClass} min-w-0`}>
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-extrabold text-[#341c44]">

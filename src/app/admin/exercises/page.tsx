@@ -2,6 +2,11 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
 import { createClient } from '../../../lib/supabase/server'
+import { Container } from '../../../components/marketing'
+import DashboardExerciseLibraryClient from '../../../components/DashboardExerciseLibraryClient'
+
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 type ExerciseListRow = {
   id: string
@@ -30,7 +35,7 @@ export default async function AdminExercisesPage() {
   } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect('/login')
+    redirect('/loginadmin')
   }
 
   const { data: profile } = await supabase
@@ -41,7 +46,7 @@ export default async function AdminExercisesPage() {
 
   const typedProfile = profile as unknown as { role: string | null } | null
   if (typedProfile?.role !== 'admin') {
-    redirect('/dashboard')
+    redirect('/dashboard/exercises')
   }
 
   let exercises: ExerciseListRow[] | null = null
@@ -89,83 +94,46 @@ export default async function AdminExercisesPage() {
     : null
 
   return (
-    <section style={{ marginTop: 24 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>Bibliothèque d’exercices</h1>
-        <Link
-          href="/admin"
-          aria-label="Retour admin"
-          title="Retour admin"
-          style={{ textDecoration: 'none', color: '#111827', fontSize: 20, lineHeight: 1 }}
-        >
-          ←
-        </Link>
-      </div>
+    <main className="min-h-screen bg-transparent">
+      <Container className="py-6 sm:py-10 px-2 sm:px-6">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-extrabold tracking-tight text-[#341c44]">Bibliothèque d’exercices</h1>
+            <p className="mt-1 text-sm text-black/60">{items ? `${items.length} exercice(s)` : '0 exercice'}</p>
+          </div>
 
-      {errorMessage ? <p style={{ color: '#b91c1c', marginTop: 12 }}>{errorMessage}</p> : null}
+          <div className="flex shrink-0 items-center gap-2">
+            <Link
+              href="/admin/exercises/new"
+              aria-label="Créer un exercice"
+              title="Créer un exercice"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--brand)] text-white ring-1 ring-black/10 hover:opacity-90"
+            >
+              <span className="text-lg font-black leading-none">+</span>
+            </Link>
+            <Link
+              href="/admin"
+              aria-label="Retour admin"
+              title="Retour admin"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-[#341c44] ring-1 ring-black/10 hover:bg-[#f5f5f5]"
+            >
+              ←
+            </Link>
+          </div>
+        </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 12, gap: 12 }}>
-        <p style={{ color: '#6b7280', margin: 0 }}>{items ? `${items.length} exercice(s)` : '0 exercice'}</p>
-        <Link
-          href="/admin/exercises/new"
-          aria-label="Créer un exercice"
-          title="Créer un exercice"
-          style={{
-            display: 'inline-flex',
-            width: 40,
-            height: 40,
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: 9999,
-            background: 'var(--brand)',
-            color: '#ffffff',
-            fontSize: 18,
-            fontWeight: 800,
-            textDecoration: 'none',
-            flex: '0 0 auto',
-          }}
-        >
-          +
-        </Link>
-      </div>
+        {errorMessage ? <p className="mt-4 text-sm text-red-700">{errorMessage}</p> : null}
 
-      {items && items.length > 0 ? (
-        <ul style={{ listStyle: 'none', padding: 0, margin: '16px 0 0', display: 'grid', gap: 10 }}>
-          {items.map((e: ExerciseListItem) => (
-            <li key={e.id} style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: 12 }}>
-              <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
-                <div style={{ width: 72, height: 72, borderRadius: 12, overflow: 'hidden', background: '#f3f4f6', flex: '0 0 auto' }}>
-                  {e.thumb_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={e.thumb_url}
-                      alt=""
-                      width={72}
-                      height={72}
-                      style={{ width: 72, height: 72, objectFit: 'cover', display: 'block' }}
-                    />
-                  ) : null}
-                </div>
-
-                <div style={{ minWidth: 0, flex: '1 1 auto' }}>
-                  <Link
-                    href={`/admin/exercises/${e.id}`}
-                    style={{ textDecoration: 'none', color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}
-                  >
-                    <strong>{e.name}</strong>
-                  </Link>
-                  <div style={{ color: '#6b7280', marginTop: 6, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                    <span>{e.muscle_group ?? ''}</span>
-                    <span>{e.difficulty ?? ''}</span>
-                  </div>
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p style={{ color: '#6b7280', marginTop: 16 }}>Aucun exercice.</p>
-      )}
-    </section>
+        {items ? (
+          <div className="mt-5">
+            <DashboardExerciseLibraryClient
+              items={items}
+              returnTo="/admin/exercises"
+              exerciseBasePath="/admin/exercises"
+            />
+          </div>
+        ) : null}
+      </Container>
+    </main>
   )
 }

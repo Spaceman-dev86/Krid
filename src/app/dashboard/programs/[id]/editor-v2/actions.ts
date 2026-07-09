@@ -1,0 +1,1 @@
+export { deleteProgramFromEditor } from '../actions'

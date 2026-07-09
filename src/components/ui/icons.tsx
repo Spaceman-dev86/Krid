@@ -116,6 +116,15 @@ export function IconFilter(props: { size?: number; className?: string }) {
   )
 }
 
+export function IconUser(props: { size?: number; className?: string }) {
+  return (
+    <Icon size={props.size} className={props.className}>
+      <path d="M20 21a8 8 0 1 0-16 0" />
+      <path d="M12 13a4 4 0 1 0-4-4 4 4 0 0 0 4 4z" />
+    </Icon>
+  )
+}
+
 export function IconEdit(props: { size?: number; className?: string }) {
   return (
     <Icon size={props.size} className={props.className}>

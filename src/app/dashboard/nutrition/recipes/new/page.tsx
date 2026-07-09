@@ -1,9 +1,10 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 
 import { Card, Container } from '../../../../../components/marketing'
+import { coachDashboardCardClass } from '../../../../../lib/coachDashboardUi'
 import { createClient } from '../../../../../lib/supabase/client'
 import StickyHeader from '../../StickyHeader'
 
@@ -94,7 +95,7 @@ function IngredientSearchSelect(props: {
   }, [open])
 
   return (
-    <div ref={containerRef} className={open ? 'relative z-50' : 'relative'}>
+    <div ref={containerRef} className={`min-w-0 ${open ? 'relative z-50' : 'relative'}`}>
       <input
         value={open ? query : selected?.name ?? query}
         onFocus={() => {
@@ -151,7 +152,7 @@ export default function DashboardNutritionNewRecipePage() {
   const supabase = useMemo(() => createClient(), [])
   const supabaseUntyped = supabase as unknown as SupabaseUntypedLike
 
-  const photoInputId = useMemo(() => `photo-${Math.random().toString(16).slice(2)}`, [])
+  const photoInputId = useId()
 
   const [title, setTitle] = useState('')
   const [category, setCategory] = useState<'petit-dej' | 'snack' | 'repas'>('repas')
@@ -255,10 +256,10 @@ export default function DashboardNutritionNewRecipePage() {
   }
 
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen min-w-0 bg-transparent">
       <Container className="py-6 sm:py-10">
-        <StickyHeader className="sticky top-16 z-40 -mx-4 bg-white/95 px-4 py-4 md:backdrop-blur sm:-mx-6 sm:px-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+        <StickyHeader opaquePageBackdrop>
+          <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
             <div className="min-w-0">
               <h1 className="text-2xl font-extrabold tracking-tight text-[#341c44]">Nouvelle recette</h1>
               <p className="mt-1 text-sm text-black/60">Crée ta nouvelle recette origical pour ton plan d&apos;entrainement.</p>
@@ -279,28 +280,28 @@ export default function DashboardNutritionNewRecipePage() {
           </div>
         </StickyHeader>
 
-        <div className="mt-5">
-          <Card className="shadow-md ring-black/10">
+        <div className="relative z-0 mt-5 min-w-0">
+          <Card className={`${coachDashboardCardClass} min-w-0 overflow-x-clip`}>
             {error ? <div className="mb-3 text-sm font-semibold text-red-600">{error}</div> : null}
-            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
-              <div className="grid gap-3">
+            <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
+              <div className="grid min-w-0 gap-3">
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <label className="grid gap-1">
+                  <label className="grid min-w-0 gap-1">
                     <span className="text-xs font-extrabold text-[#341c44]">Nom</span>
                     <input
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
-                      className="h-11 w-full rounded-2xl bg-black/5 px-3 text-sm font-semibold text-[#341c44] ring-1 ring-black/10 focus:outline-none focus:ring-2 focus:ring-[#341c44]/20"
+                      className="h-11 w-full min-w-0 rounded-2xl bg-black/5 px-3 text-sm font-semibold text-[#341c44] ring-1 ring-black/10 focus:outline-none focus:ring-2 focus:ring-[#341c44]/20"
                     />
                   </label>
 
-                  <label className="grid gap-1">
+                  <label className="grid min-w-0 gap-1">
                     <span className="text-xs font-extrabold text-[#341c44]">Catégorie</span>
                     <div className="relative">
                       <select
                         value={category}
                         onChange={(e) => setCategory(e.target.value as 'petit-dej' | 'snack' | 'repas')}
-                        className="h-11 w-full appearance-none rounded-2xl bg-black/5 px-3 pr-10 text-sm font-semibold text-[#341c44] ring-1 ring-black/10 focus:outline-none focus:ring-2 focus:ring-[#341c44]/20"
+                        className="h-11 w-full min-w-0 appearance-none rounded-2xl bg-black/5 px-3 pr-10 text-sm font-semibold text-[#341c44] ring-1 ring-black/10 focus:outline-none focus:ring-2 focus:ring-[#341c44]/20"
                       >
                         <option value="petit-dej">Petit-dej</option>
                         <option value="snack">Snack</option>
@@ -315,53 +316,65 @@ export default function DashboardNutritionNewRecipePage() {
                   </label>
                 </div>
 
-                <label className="grid gap-1">
+                <label className="grid min-w-0 gap-1">
                   <span className="text-xs font-extrabold text-[#341c44]">Note</span>
                   <textarea
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
-                    className="min-h-[100px] rounded-2xl bg-white p-3 text-sm font-semibold text-[#341c44] ring-1 ring-black/10 focus:outline-none focus:ring-2 focus:ring-[#341c44]/20"
+                    className="min-h-[100px] w-full min-w-0 rounded-2xl bg-white p-3 text-sm font-semibold text-[#341c44] ring-1 ring-black/10 focus:outline-none focus:ring-2 focus:ring-[#341c44]/20"
                   />
                 </label>
 
-                <div className="grid gap-2">
+                <div className="grid min-w-0 gap-2">
                   <div className="text-xs font-extrabold text-[#341c44]">Liste d&apos;ingrédients</div>
-                  <div className="relative overflow-visible rounded-2xl bg-white ring-1 ring-black/10">
+                  <div className="relative min-w-0 overflow-x-clip rounded-2xl bg-white ring-1 ring-black/10">
                     <div className="rounded-t-2xl bg-black/5">
-                      <div className="grid grid-cols-[minmax(0,1fr)_140px_140px] border-b border-black/10 px-4 py-2 text-xs font-extrabold text-[#341c44]">
+                      <div className="hidden min-[450px]:grid min-[450px]:grid-cols-[minmax(0,1fr)_88px_88px] border-b border-black/10 px-4 py-2 text-xs font-extrabold text-[#341c44]">
                         <div>Ingrédient</div>
                         <div className="text-right">Quantité (g)</div>
                         <div className="text-right">Total (kcal)</div>
                       </div>
                     </div>
 
-                    <div className="grid gap-2 p-4">
+                    <div className="grid gap-2 p-3 sm:p-4">
                       {ingredientLines.map((line, idx) => {
                         const kcal = lineTotals[idx] ?? 0
                         return (
-                          <div key={idx} className="grid grid-cols-[minmax(0,1fr)_140px_140px_44px] gap-2">
-                            <IngredientSearchSelect
-                              value={line.ingredientId}
-                              ingredients={ingredients}
-                              onChange={(nextId) =>
-                                setIngredientLines((prev) => prev.map((p, i) => (i === idx ? { ...p, ingredientId: nextId } : p)))
-                              }
-                              placeholder="Rechercher un ingrédient…"
-                            />
+                          <div
+                            key={idx}
+                            className="grid min-w-0 gap-2 rounded-2xl border border-black/10 p-3 min-[450px]:grid-cols-[minmax(0,1fr)_88px_88px_44px] min-[450px]:items-center min-[450px]:rounded-none min-[450px]:border-0 min-[450px]:p-0"
+                          >
+                            <div className="min-w-0">
+                              <div className="mb-1 text-xs font-extrabold text-[#341c44] min-[450px]:hidden">Ingrédient</div>
+                              <IngredientSearchSelect
+                                value={line.ingredientId}
+                                ingredients={ingredients}
+                                onChange={(nextId) =>
+                                  setIngredientLines((prev) => prev.map((p, i) => (i === idx ? { ...p, ingredientId: nextId } : p)))
+                                }
+                                placeholder="Rechercher un ingrédient…"
+                              />
+                            </div>
 
-                            <input
-                              inputMode="decimal"
-                              value={line.quantityG}
-                              onChange={(e) => {
-                                const v = e.target.value
-                                setIngredientLines((prev) => prev.map((p, i) => (i === idx ? { ...p, quantityG: v } : p)))
-                              }}
-                              placeholder="0"
-                              className="h-11 rounded-2xl bg-white px-3 text-right text-sm font-semibold text-[#341c44] ring-1 ring-black/10 focus:outline-none focus:ring-2 focus:ring-[#341c44]/20"
-                            />
+                            <div className="min-w-0">
+                              <div className="mb-1 text-xs font-extrabold text-[#341c44] min-[450px]:hidden">Quantité (g)</div>
+                              <input
+                                inputMode="decimal"
+                                value={line.quantityG}
+                                onChange={(e) => {
+                                  const v = e.target.value
+                                  setIngredientLines((prev) => prev.map((p, i) => (i === idx ? { ...p, quantityG: v } : p)))
+                                }}
+                                placeholder="0"
+                                className="h-11 w-full min-w-0 rounded-2xl bg-white px-3 text-right text-sm font-semibold text-[#341c44] ring-1 ring-black/10 focus:outline-none focus:ring-2 focus:ring-[#341c44]/20"
+                              />
+                            </div>
 
-                            <div className="flex h-11 items-center justify-end rounded-2xl bg-black/5 px-3 text-sm font-extrabold tabular-nums text-[#341c44] ring-1 ring-black/10">
-                              {kcal > 0 ? kcal.toFixed(1) : '—'}
+                            <div className="min-w-0">
+                              <div className="mb-1 text-xs font-extrabold text-[#341c44] min-[450px]:hidden">Total (kcal)</div>
+                              <div className="flex h-11 w-full min-w-0 items-center justify-end rounded-2xl bg-black/5 px-3 text-sm font-extrabold tabular-nums text-[#341c44] ring-1 ring-black/10">
+                                {kcal > 0 ? kcal.toFixed(1) : '—'}
+                              </div>
                             </div>
 
                             <button
@@ -374,7 +387,7 @@ export default function DashboardNutritionNewRecipePage() {
                                   return prev.filter((_, i) => i !== idx)
                                 })
                               }}
-                              className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-[#341c44] ring-1 ring-black/10 hover:bg-[#f5f5f5]"
+                              className="inline-flex h-11 w-11 shrink-0 items-center justify-center justify-self-end rounded-2xl bg-white text-[#341c44] ring-1 ring-black/10 hover:bg-[#f5f5f5] min-[450px]:justify-self-auto"
                             >
                               <TrashIcon />
                             </button>
@@ -412,14 +425,14 @@ export default function DashboardNutritionNewRecipePage() {
 
                   <div className="grid gap-2">
                     {steps.map((s, idx) => (
-                      <div key={idx} className="grid grid-cols-[minmax(0,1fr)_44px] gap-2">
+                      <div key={idx} className="grid min-w-0 grid-cols-[minmax(0,1fr)_44px] gap-2">
                         <input
                           value={s}
                           onChange={(e) => {
                             const v = e.target.value
                             setSteps((prev) => prev.map((p, i) => (i === idx ? v : p)))
                           }}
-                          className="h-11 rounded-2xl bg-white px-3 text-sm font-semibold text-[#341c44] ring-1 ring-black/10 focus:outline-none focus:ring-2 focus:ring-[#341c44]/20"
+                          className="h-11 w-full min-w-0 rounded-2xl bg-white px-3 text-sm font-semibold text-[#341c44] ring-1 ring-black/10 focus:outline-none focus:ring-2 focus:ring-[#341c44]/20"
                           placeholder={`Étape ${idx + 1}`}
                         />
 
@@ -470,7 +483,7 @@ export default function DashboardNutritionNewRecipePage() {
                     )}
                   </div>
                   <div className="border-t border-black/10 p-3">
-                    <div className="flex items-center justify-between gap-3">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
                       <input
                         id={photoInputId}
                         type="file"

@@ -5,6 +5,8 @@ import { createClient } from '../../lib/supabase/server'
 import { Card, Container } from '../../components/marketing'
 import SubmitButtonWithProgressClient from '../../components/SubmitButtonWithProgressClient'
 import ProgramLimitPopupClient from '../../components/ProgramLimitPopupClient'
+import DuplicatePublicProgramPopupClient from '../../components/DuplicatePublicProgramPopupClient'
+import { ProgramEditorLink } from '../../components/ProgramEditorNavigationClient'
 
  type PostgrestErrorLike = { message?: string }
 
@@ -26,6 +28,11 @@ import ProgramLimitPopupClient from '../../components/ProgramLimitPopupClient'
    from: (table: string) => UntypedQuery
  }
 
+const coachProgramPillClass =
+  'inline-flex items-center rounded-full bg-white px-4 py-2 text-sm font-semibold text-[#341c44] ring-1 ring-black/10 hover:bg-[#f5f5f5] disabled:opacity-60'
+
+const coachDashboardCardClass = '!ring-[var(--brand)]/35'
+
 export default async function DashboardIndexPage({
   searchParams,
 }: {
@@ -41,20 +48,22 @@ export default async function DashboardIndexPage({
     redirect('/login')
   }
 
-  const { data: publicProgram4Weeks } = await supabaseUntyped
+  const { data: publicPrograms } = await supabaseUntyped
     .from('programs')
     .select('id,title')
     .eq('is_published', true)
-    .ilike('title', '%semaine%')
-    .or('title.ilike.%4%,title.ilike.%quatre%')
+    .eq('is_template', false)
     .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
 
-  const publicProgram4WeeksTyped = publicProgram4Weeks as unknown as { id: string; title: string | null } | null
+  const publicProgramsTyped = (publicPrograms ?? []) as unknown as { id: string; title: string | null }[]
 
-  const { data: duoPhoneImage } = supabase.storage.from('home_page').getPublicUrl('duo_phone.png')
-  const duoPhoneUrl = (duoPhoneImage as unknown as { publicUrl?: string } | null)?.publicUrl ?? null
+  const muscuPreviewProgram =
+    publicProgramsTyped.find((p) => (p.title ?? '').trim().toLowerCase() === 'muscu') ??
+    publicProgramsTyped.find((p) => (p.title ?? '').trim().toLowerCase().includes('muscu')) ??
+    publicProgramsTyped[0] ??
+    null
+
+  const duoPhoneUrl = supabase.storage.from('home_page').getPublicUrl('duo_phone.png').data.publicUrl
 
   async function forkPublicProgram(formData: FormData) {
     'use server'
@@ -325,76 +334,107 @@ export default async function DashboardIndexPage({
   const showProgramLimitError = errorValue === 'program_limit'
 
   return (
-    <main className="min-h-screen bg-[#f5f5f5]">
+    <main className="min-h-screen bg-transparent">
       <Container className="py-10">
-        <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_420px] md:items-start md:gap-8">
-          <div>
+        <div className="grid gap-6 min-[820px]:grid-cols-[minmax(0,1fr)_420px] min-[820px]:items-start min-[820px]:gap-8">
+          <div className="grid gap-4">
             {showProgramLimitError ? (
-              <div className="mb-4 rounded-2xl bg-white p-4 text-sm font-semibold text-[#341c44] ring-1 ring-black/10">
+              <div className="rounded-2xl bg-white p-4 text-sm font-semibold text-[#341c44] ring-1 ring-black/10">
                 Limite atteinte : tu ne peux avoir qu’un seul programme.
               </div>
             ) : null}
 
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div className="grid gap-2">
-                <h1 className="text-2xl font-extrabold tracking-tight text-[#341c44]">
-                  Voici un exemple de Dashboard fonctionnel qu&apos;on pourrait créeer enssemble
-                </h1>
-                <p className="text-sm text-black/60">Coach</p>
-              </div>
-            </div>
+            <Card className={`${coachDashboardCardClass} p-0`}>
+              <div className="p-5 sm:p-6">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div className="grid gap-2">
+                    <div className="inline-flex w-fit items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-extrabold text-[#341c44] ring-1 ring-black/10">
+                      <span className="inline-flex h-2 w-2 rounded-full bg-[#341c44]" aria-hidden />
+                      Dashboard coach
+                    </div>
+                    <h1 className="text-2xl font-extrabold tracking-tight text-[#341c44] sm:text-3xl">
+                      Voici une démo qui te permet de créer tes programmes, gérer tes clients et accélérer ton business.
+                    </h1>
+                    <p className="max-w-2xl text-sm text-black/60">
+                      Si tu veux le même système à ton nom (site + programmes + paiement + espace client), on le construit
+                      sur-mesure.
+                    </p>
+                  </div>
 
-            <div className="mt-6 grid gap-4">
-              <Card>
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <h2 className="text-sm font-extrabold text-[#341c44]">Programmes publics</h2>
+                  <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
+                    <Link
+                      href="/contact"
+                      className="inline-flex h-11 items-center justify-center rounded-2xl bg-[#341c44] px-5 text-sm font-extrabold text-white shadow-sm hover:opacity-90"
+                    >
+                      Commander mon app
+                    </Link>
+                    {muscuPreviewProgram?.id ? (
+                      <Link
+                        href={`/dashboard/preview/${muscuPreviewProgram.id}`}
+                        className="inline-flex h-11 items-center justify-center rounded-2xl bg-white px-5 text-sm font-extrabold text-[#341c44] ring-1 ring-black/10 hover:bg-[#f5f5f5]"
+                      >
+                        Rendu programme
+                      </Link>
+                    ) : (
+                      <div className="inline-flex h-11 items-center justify-center rounded-2xl bg-white px-5 text-sm font-extrabold text-[#341c44] ring-1 ring-black/10 opacity-60">
+                        Rendu programme
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {publicProgram4WeeksTyped ? (
-                    <>
-                      <Link
-                        href={`/dashboard/programs/${publicProgram4WeeksTyped.id}`}
-                        className="inline-flex items-center rounded-full bg-white px-4 py-2 text-sm font-semibold text-[#341c44] ring-1 ring-black/10 hover:bg-[#f5f5f5]"
-                      >
-                        {publicProgram4WeeksTyped.title || 'Programme 4 semaines'}
-                      </Link>
-                      {myProgramsTyped.length >= 1 ? (
-                        <ProgramLimitPopupClient
-                          title="Limite atteinte"
-                          message="Tu ne peux pas dupliquer un programme si tu en as déjà un en édition."
-                          triggerClassName="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[#341c44] text-white shadow-sm opacity-60"
-                          triggerAriaLabel="Dupliquer"
-                          triggerTitle="Dupliquer"
-                          trigger={
-                            <svg
-                              viewBox="0 0 24 24"
-                              width={22}
-                              height={22}
-                              aria-hidden
-                              style={{ display: 'block', overflow: 'visible' }}
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth={2}
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <rect x="9" y="9" width="11" height="11" rx="2" />
-                              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                            </svg>
-                          }
-                        />
-                      ) : (
-                        <form action={forkPublicProgram}>
-                          <input type="hidden" name="program_id" value={publicProgram4WeeksTyped.id} />
-                          <SubmitButtonWithProgressClient
-                            label="Dupliquer"
-                            iconOnly
-                            icon={
+                <div className="mt-5 grid gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+                  <div className="rounded-2xl bg-white p-4 ring-1 ring-black/10">
+                    <div className="text-xs font-bold text-black/50">Outils personnalisables</div>
+                    <div className="mt-1 text-sm font-extrabold leading-snug text-[#341c44]">
+                      Planning • Nutrition • Chat • Bibliothèque d&apos;exercices • Program builder
+                    </div>
+                  </div>
+                  <div className="rounded-2xl bg-white p-4 ring-1 ring-black/10">
+                    <div className="text-xs font-bold text-black/50">Objectif</div>
+                    <div className="mt-1 text-sm font-extrabold leading-snug text-[#341c44]">
+                      Professionnalise
+                      <br />
+                      ton business
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            <div className="@container/programs">
+              <div className="grid grid-cols-1 gap-4 @[34rem]:grid-cols-[minmax(0,1.85fr)_minmax(0,1fr)]">
+              <Card className={`${coachDashboardCardClass} min-w-0`}>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <h2 className="text-sm font-extrabold text-[#341c44]">Programmes publics</h2>
+                  <div className="text-xs font-semibold text-black/50">Consulte en aperçu ou duplique un exemple.</div>
+                </div>
+
+                <div className="mt-3 grid gap-2">
+                  {publicProgramsTyped.length > 0 ? (
+                    publicProgramsTyped.map((p) => (
+                      <div key={p.id} className="flex min-w-0 items-center gap-2">
+                        <Link
+                          href={`/dashboard/preview/${p.id}`}
+                          className={`${coachProgramPillClass} min-w-0 flex-1 overflow-hidden`}
+                          title={p.title || 'Programme public'}
+                        >
+                          <span className="block truncate">{p.title || 'Programme public'}</span>
+                        </Link>
+
+                        <div className="shrink-0">
+                          {myProgramsTyped.length >= 1 ? (
+                          <ProgramLimitPopupClient
+                            title="Limite atteinte"
+                            message="Tu ne peux pas dupliquer un programme si tu en as déjà un en édition."
+                            triggerClassName="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#341c44] text-white opacity-60"
+                            triggerAriaLabel="Dupliquer"
+                            triggerTitle="Dupliquer"
+                            trigger={
                               <svg
                                 viewBox="0 0 24 24"
-                                width={22}
-                                height={22}
+                                width={20}
+                                height={20}
                                 aria-hidden
                                 style={{ display: 'block', overflow: 'visible' }}
                                 fill="none"
@@ -407,136 +447,327 @@ export default async function DashboardIndexPage({
                                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
                               </svg>
                             }
-                            style={{
-                              width: 44,
-                              height: 44,
-                              borderRadius: 16,
-                              border: '1px solid #00000000',
-                              background: '#341c44',
-                              color: '#ffffff',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              textDecoration: 'none',
-                              flex: '0 0 auto',
-                            }}
                           />
-                        </form>
-                      )}
-                    </>
+                        ) : (
+                          <form action={forkPublicProgram}>
+                            <input type="hidden" name="program_id" value={p.id} />
+                            <SubmitButtonWithProgressClient
+                              label="Dupliquer"
+                              iconOnly
+                              icon={
+                                <svg
+                                  viewBox="0 0 24 24"
+                                  width={20}
+                                  height={20}
+                                  aria-hidden
+                                  style={{ display: 'block', overflow: 'visible' }}
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth={2}
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                >
+                                  <rect x="9" y="9" width="11" height="11" rx="2" />
+                                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                </svg>
+                              }
+                              style={{
+                                width: 40,
+                                height: 40,
+                                borderRadius: 16,
+                                border: '1px solid #00000000',
+                                background: '#341c44',
+                                color: '#ffffff',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                textDecoration: 'none',
+                                flex: '0 0 auto',
+                              }}
+                            />
+                          </form>
+                          )}
+                        </div>
+                      </div>
+                    ))
                   ) : (
                     <div className="text-sm text-black/60">Aucun programme public.</div>
                   )}
                 </div>
               </Card>
 
-              <Card>
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <h2 className="text-sm font-extrabold text-[#341c44]">Mes programmes</h2>
+              <Card className={`${coachDashboardCardClass} min-w-0`}>
+                <div className="flex items-center justify-between gap-3">
+                  <h2 className="min-w-0 truncate text-sm font-extrabold text-[#341c44]">Mes programmes</h2>
+                  <div className="shrink-0">
                   {myProgramsTyped.length >= 1 ? (
                     <ProgramLimitPopupClient
                       title="Limite atteinte"
                       message="Tu ne peux pas créer un nouveau programme tant que tu en as déjà un."
-                      triggerClassName="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[#341c44] text-lg font-black text-white opacity-60"
+                      triggerClassName="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[#f5f5f5] text-[#341c44] ring-1 ring-black/10 opacity-60"
                       triggerAriaLabel="Créer un nouveau programme"
                       triggerTitle="Créer un nouveau programme"
-                      trigger={<span aria-hidden>+</span>}
+                      trigger={
+                        <svg
+                          viewBox="0 0 24 24"
+                          width={18}
+                          height={18}
+                          aria-hidden
+                          style={{ display: 'block' }}
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth={2.5}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M12 5v14" />
+                          <path d="M5 12h14" />
+                        </svg>
+                      }
                     />
                   ) : (
                     <Link
                       href="/dashboard/programs/new"
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[#341c44] text-lg font-black text-white shadow-sm hover:opacity-90"
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[#f5f5f5] text-[#341c44] ring-1 ring-black/10 hover:bg-white"
                       aria-label="Créer un nouveau programme"
                       title="Créer un nouveau programme"
                     >
-                      +
+                      <svg
+                        viewBox="0 0 24 24"
+                        width={18}
+                        height={18}
+                        aria-hidden
+                        style={{ display: 'block' }}
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={2.5}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M12 5v14" />
+                        <path d="M5 12h14" />
+                      </svg>
                     </Link>
                   )}
+                  </div>
                 </div>
 
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-3 flex min-w-0 flex-wrap gap-2">
                   {myProgramsTyped.length > 0 ? (
                     myProgramsTyped.map((p) => (
-                      <Link
+                      <ProgramEditorLink
                         key={p.id}
                         href={`/dashboard/programs/${p.id}`}
-                        className="inline-flex items-center rounded-full bg-white px-4 py-2 text-sm font-semibold text-[#341c44] ring-1 ring-black/10 hover:bg-[#f5f5f5]"
+                        className={`${coachProgramPillClass} max-w-full truncate`}
                       >
                         {p.title || 'Programme'}
-                      </Link>
+                      </ProgramEditorLink>
                     ))
                   ) : (
                     <div className="text-sm text-black/60">Aucun programme.</div>
                   )}
                 </div>
               </Card>
+              </div>
+            </div>
 
-              <Link href="/dashboard/exercises" className="block" aria-label="Ouvrir la bibliothèque d'exercices">
-                <Card className="hover:bg-[#f5f5f5]">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <h2 className="text-sm font-extrabold text-[#341c44]">Bibliotheque d&apos;exercice</h2>
-                  </div>
-                  <div className="mt-2 text-sm font-semibold text-[#341c44]">
-                    Accéder à tes exercices, variantes, médias et tags.
-                  </div>
-                </Card>
-              </Link>
+            <Card className={coachDashboardCardClass}>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h2 className="text-sm font-extrabold text-[#341c44]">Actions rapides</h2>
+                <div className="text-xs font-semibold text-black/50">Tout ce dont tu as besoin, au même endroit.</div>
+              </div>
 
-              <Link href="/dashboard/nutrition" className="block" aria-label="Ouvrir le plan nutritionnel">
-                <Card className="hover:bg-[#f5f5f5]">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <h2 className="text-sm font-extrabold text-[#341c44]">Plan nutritionel</h2>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <Link href="/dashboard/chat" className="block" aria-label="Ouvrir le chat client">
+                  <div className="grid gap-2 rounded-2xl bg-[#f5f5f5] p-4 ring-1 ring-black/10 transition hover:bg-white">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="grid gap-1">
+                        <div className="text-sm font-extrabold text-[#341c44]">Chat client</div>
+                        <div className="text-xs font-semibold text-black/50">Centralise les retours, améliore la rétention.</div>
+                      </div>
+                      <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-[#341c44] ring-1 ring-black/10">
+                        →
+                      </div>
+                    </div>
                   </div>
-                  <div className="mt-2 text-sm text-black/60">Créer et suivre des plans nutritionnels pour tes clients.</div>
-                </Card>
-              </Link>
-
-              <Link href="/dashboard/chat" className="block" aria-label="Ouvrir le chat client">
-                <Card className="hover:bg-[#f5f5f5]">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <h2 className="text-sm font-extrabold text-[#341c44]">Chat client</h2>
-                  </div>
-                  <div className="mt-2 text-sm font-semibold text-[#341c44]">
-                    Échanger avec tes clients et centraliser leurs retours.
-                  </div>
-                </Card>
-              </Link>
-
-              <Card>
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <h2 className="text-sm font-extrabold text-[#341c44]">Calendrier</h2>
-                </div>
-                <Link
-                  href="/dashboard/calendar"
-                  className="mt-2 inline-flex text-sm font-semibold text-[#341c44]"
-                  aria-label="Ouvrir le calendrier"
-                >
-                  Planifier les séances, bilans et rendez-vous.
                 </Link>
-              </Card>
 
-              <div className="flex justify-center pt-2">
-                <Link
-                  href="/contact"
-                  className="inline-flex h-11 items-center justify-center rounded-2xl bg-[#341c44] px-6 text-sm font-extrabold text-white shadow-sm hover:opacity-90"
-                >
-                  commander mon app
+                <Link href="/dashboard/exercises" className="block" aria-label="Ouvrir la bibliothèque d'exercices">
+                  <div className="grid gap-2 rounded-2xl bg-[#f5f5f5] p-4 ring-1 ring-black/10 transition hover:bg-white">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="grid gap-1">
+                        <div className="text-sm font-extrabold text-[#341c44]">Bibliothèque d’exercices</div>
+                        <div className="text-xs font-semibold text-black/50">Tags, variantes, médias, organisation.</div>
+                      </div>
+                      <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-[#341c44] ring-1 ring-black/10">
+                        →
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+
+                <Link href="/dashboard/nutrition" className="block" aria-label="Ouvrir le plan nutritionnel">
+                  <div className="grid gap-2 rounded-2xl bg-[#f5f5f5] p-4 ring-1 ring-black/10 transition hover:bg-white">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="grid gap-1">
+                        <div className="text-sm font-extrabold text-[#341c44]">Nutrition</div>
+                        <div className="text-xs font-semibold text-black/50">Plans & recettes pour tes clients.</div>
+                      </div>
+                      <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-[#341c44] ring-1 ring-black/10">
+                        →
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+
+                <Link href="/dashboard/calendar" className="block" aria-label="Ouvrir le calendrier">
+                  <div className="grid gap-2 rounded-2xl bg-[#f5f5f5] p-4 ring-1 ring-black/10 transition hover:bg-white">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="grid gap-1">
+                        <div className="text-sm font-extrabold text-[#341c44]">Calendrier</div>
+                        <div className="text-xs font-semibold text-black/50">Séances, bilans, rendez-vous.</div>
+                      </div>
+                      <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-[#341c44] ring-1 ring-black/10">
+                        →
+                      </div>
+                    </div>
+                  </div>
                 </Link>
               </div>
+
+              <div className="mt-3">
+                <div className="grid gap-2 rounded-2xl bg-white p-4 ring-1 ring-black/10">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="grid gap-1">
+                      <div className="text-sm font-extrabold text-[#341c44]">Créer un programme</div>
+                      <div className="text-xs font-semibold text-black/50">Structure, semaines, séances, exercices.</div>
+                    </div>
+                    {myProgramsTyped.length >= 1 ? (
+                      <ProgramLimitPopupClient
+                        title="Limite atteinte"
+                        message="Tu ne peux pas créer un nouveau programme tant que tu en as déjà un."
+                        triggerClassName="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[#341c44] text-lg font-black text-white opacity-60"
+                        triggerAriaLabel="Créer un nouveau programme"
+                        triggerTitle="Créer un nouveau programme"
+                        trigger={<span aria-hidden>+</span>}
+                      />
+                    ) : (
+                      <Link
+                        href="/dashboard/programs/new"
+                        className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[#341c44] text-lg font-black text-white shadow-sm hover:opacity-90"
+                        aria-label="Créer un nouveau programme"
+                        title="Créer un nouveau programme"
+                      >
+                        +
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            <div className="flex justify-center pt-1 min-[820px]:hidden">
+              <Link
+                href="/contact"
+                className="inline-flex h-11 items-center justify-center rounded-2xl bg-[#341c44] px-6 text-sm font-extrabold text-white shadow-sm hover:opacity-90"
+              >
+                Commander mon app
+              </Link>
             </div>
           </div>
 
-          <aside className="hidden md:block">
-            <div className="sticky top-24">
-              <div className="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-black/10">
-                {duoPhoneUrl ? (
-                  <img src={duoPhoneUrl} alt="" className="h-auto w-full" loading="lazy" />
-                ) : (
-                  <div className="grid aspect-[4/5] place-items-center bg-[#f5f5f5] text-sm font-semibold text-black/60">
-                    Image indisponible
+          <aside className="hidden min-[820px]:block">
+            <div className="sticky top-24 grid gap-4">
+              <Card className={`${coachDashboardCardClass} overflow-hidden p-0`}>
+                <div className="p-5 sm:p-6">
+                  <div className="text-sm font-extrabold text-[#341c44]">Ton app à ton nom</div>
+                  <div className="mt-1 text-sm text-black/60">
+                    Je te livre le même système, brandé pour toi, prêt à vendre tes programmes.
                   </div>
-                )}
-              </div>
+                  <div className="mt-4 grid gap-2">
+                    <Link
+                      href="/contact"
+                      className="inline-flex h-11 items-center justify-center rounded-2xl bg-[#341c44] px-5 text-sm font-extrabold text-white shadow-sm hover:opacity-90"
+                    >
+                      Commander mon app
+                    </Link>
+                    <Link
+                      href="/mon-app"
+                      className="inline-flex h-11 items-center justify-center rounded-2xl bg-white px-5 text-sm font-extrabold text-[#341c44] ring-1 ring-black/10 hover:bg-[#f5f5f5]"
+                    >
+                      Voir ce que ça inclut
+                    </Link>
+                  </div>
+
+                  <div className="mt-4 grid gap-2 rounded-2xl bg-[#f5f5f5] p-4 ring-1 ring-black/10">
+                    <div className="text-xs font-extrabold text-[#341c44]">Inclus</div>
+                    <div className="grid gap-1 text-xs font-semibold text-black/60">
+                      <div>• Site vitrine premium</div>
+                      <div>• Dashboard coach + espace client</div>
+                      <div>• Programmes, nutrition, planning, chat</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-black/5">
+                  {duoPhoneUrl ? (
+                    <img src={duoPhoneUrl} alt="" className="h-auto w-full" loading="lazy" />
+                  ) : (
+                    <div className="grid aspect-[4/5] place-items-center bg-[#f5f5f5] text-sm font-semibold text-black/60">
+                      Image indisponible
+                    </div>
+                  )}
+                </div>
+              </Card>
+
+              <Card className={coachDashboardCardClass}>
+                <div className="text-sm font-extrabold text-[#341c44]">Conseil rapide</div>
+                <div className="mt-2 text-sm text-black/60">
+                  Tu peux soit dupliquer un programme public, soit partir de zéro et construire ton programme étape par étape.
+                </div>
+                <div className="mt-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="min-w-0">
+                      {myProgramsTyped.length >= 1 ? (
+                        <ProgramLimitPopupClient
+                          title="Limite atteinte"
+                          message="Tu ne peux pas dupliquer un programme si tu en as déjà un en édition."
+                          triggerClassName="inline-flex h-11 w-full items-center justify-center rounded-2xl bg-white px-5 text-sm font-extrabold text-[#341c44] ring-1 ring-black/10 opacity-60"
+                          triggerAriaLabel="Dupliquer"
+                          triggerTitle="Dupliquer"
+                          trigger={<span aria-hidden>Dupliquer</span>}
+                        />
+                      ) : (
+                        <DuplicatePublicProgramPopupClient
+                          publicPrograms={publicProgramsTyped}
+                          canDuplicate={myProgramsTyped.length < 1}
+                          forkPublicProgram={forkPublicProgram}
+                        />
+                      )}
+                    </div>
+
+                    <div className="min-w-0">
+                      {myProgramsTyped.length >= 1 ? (
+                        <ProgramLimitPopupClient
+                          title="Limite atteinte"
+                          message="Tu ne peux pas créer un nouveau programme tant que tu en as déjà un."
+                          triggerClassName="inline-flex h-11 w-full items-center justify-center rounded-2xl bg-white px-5 text-sm font-extrabold text-[#341c44] ring-1 ring-black/10 opacity-60"
+                          triggerAriaLabel="Nouveau programme"
+                          triggerTitle="Nouveau programme"
+                          trigger={<span aria-hidden>Nouveau programme</span>}
+                        />
+                      ) : (
+                        <Link
+                          href="/dashboard/programs/new"
+                          className="inline-flex h-11 w-full items-center justify-center rounded-2xl bg-white px-5 text-sm font-extrabold text-[#341c44] ring-1 ring-black/10 hover:bg-[#f5f5f5]"
+                        >
+                          Nouveau programme
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </Card>
             </div>
           </aside>
         </div>

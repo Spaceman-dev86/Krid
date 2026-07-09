@@ -79,7 +79,7 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
   } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect('/login')
+    redirect('/loginadmin')
   }
 
   const { data: profileData } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
@@ -147,7 +147,7 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
     } = await supabase.auth.getUser()
 
     if (!user) {
-      redirect('/login')
+      redirect('/loginadmin')
     }
 
     const { data: profileData } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
@@ -194,7 +194,7 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
     } = await supabase.auth.getUser()
 
     if (!user) {
-      redirect('/login')
+      redirect('/loginadmin')
     }
 
     const { data: profileData } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
@@ -287,7 +287,7 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
     } = await supabase.auth.getUser()
 
     if (!user) {
-      redirect('/login')
+      redirect('/loginadmin')
     }
 
     const { data: profileData } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
@@ -328,7 +328,7 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
     } = await supabase.auth.getUser()
 
     if (!user) {
-      redirect('/login')
+      redirect('/loginadmin')
     }
 
     const { data: profileData } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
@@ -360,7 +360,7 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
     } = await supabase.auth.getUser()
 
     if (!user) {
-      redirect('/login')
+      redirect('/loginadmin')
     }
 
     const { data: profileData } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
@@ -445,7 +445,7 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
     } = await supabase.auth.getUser()
 
     if (!user) {
-      redirect('/login')
+      redirect('/loginadmin')
     }
 
     const { data: profileData } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
@@ -491,7 +491,7 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
     } = await supabase.auth.getUser()
 
     if (!user) {
-      redirect('/login')
+      redirect('/loginadmin')
     }
 
     const { data: profileData } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
@@ -524,7 +524,7 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
     } = await supabase.auth.getUser()
 
     if (!user) {
-      redirect('/login')
+      redirect('/loginadmin')
     }
 
     const { data: profileData } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
@@ -595,7 +595,7 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
     } = await supabase.auth.getUser()
 
     if (!user) {
-      redirect('/login')
+      redirect('/loginadmin')
     }
 
     const { data: profileData } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
@@ -629,7 +629,7 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
     } = await supabase.auth.getUser()
 
     if (!user) {
-      redirect('/login')
+      redirect('/loginadmin')
     }
 
     const { data: profileData } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()

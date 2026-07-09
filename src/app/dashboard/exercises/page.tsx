@@ -4,6 +4,8 @@ import { redirect } from 'next/navigation'
 import { createClient } from '../../../lib/supabase/server'
 import { Container } from '../../../components/marketing'
 import DashboardExerciseLibraryClient from '../../../components/DashboardExerciseLibraryClient'
+import StickyHeader from '../nutrition/StickyHeader'
+import { filterSelectableLibraryExercises } from '../../../lib/exerciseLibraryVisibility'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -73,7 +75,7 @@ export default async function DashboardExercisesPage() {
 
   const items: ExerciseListItem[] | null = exercises
     ? await Promise.all(
-        exercises.map(async (e) => {
+        filterSelectableLibraryExercises(exercises).map(async (e) => {
           const raw = e.demo_media_path ?? null
           if (!raw) return e
 
@@ -94,23 +96,25 @@ export default async function DashboardExercisesPage() {
     : null
 
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-transparent">
       <Container className="py-6 sm:py-10 px-2 sm:px-6">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <h1 className="text-2xl font-extrabold tracking-tight text-[#341c44]">Bibliothèque d’exercices</h1>
-            <p className="mt-1 text-sm text-black/60">{items ? `${items.length} exercice(s)` : '0 exercice'}</p>
-          </div>
+        <StickyHeader opaquePageBackdrop>
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <h1 className="text-2xl font-extrabold tracking-tight text-[#341c44]">Bibliothèque d’exercices</h1>
+              <p className="mt-1 text-sm text-black/60">{items ? `${items.length} exercice(s)` : '0 exercice'}</p>
+            </div>
 
-          <Link
-            href="/dashboard"
-            aria-label="Retour dashboard"
-            title="Retour dashboard"
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-[#341c44] ring-1 ring-black/10 hover:bg-[#f5f5f5]"
-          >
-            ←
-          </Link>
-        </div>
+            <Link
+              href="/dashboard"
+              aria-label="Retour dashboard"
+              title="Retour dashboard"
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-[#341c44] ring-1 ring-black/10 hover:bg-[#f5f5f5]"
+            >
+              ←
+            </Link>
+          </div>
+        </StickyHeader>
 
         {errorMessage ? <p className="mt-4 text-sm text-red-700">{errorMessage}</p> : null}
 

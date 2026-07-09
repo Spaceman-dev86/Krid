@@ -18,7 +18,7 @@ export default async function NewExercisePage() {
     } = await supabase.auth.getUser()
 
     if (!user) {
-      redirect('/login')
+      redirect('/loginadmin')
     }
 
     const { data: profile } = await supabase
@@ -129,6 +129,7 @@ export default async function NewExercisePage() {
             <option value="Débutant">Débutant</option>
             <option value="Intermédiaire">Intermédiaire</option>
             <option value="Avancé">Avancé</option>
+            <option value="Maison">Maison (poids du corps / à domicile)</option>
           </select>
         </label>
 

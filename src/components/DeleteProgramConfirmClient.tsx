@@ -8,27 +8,48 @@ import { IconTrash } from './ui/icons'
 export default function DeleteProgramConfirmClient({
   formId,
   disabled,
+  variant = 'icon',
+  onMenuAction,
 }: {
   formId: string
   disabled?: boolean
+  variant?: 'icon' | 'menu'
+  onMenuAction?: () => void
 }) {
   const [open, setOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
 
   const effectiveDisabled = !!disabled || isPending
 
+  const openDialog = () => {
+    if (effectiveDisabled) return
+    onMenuAction?.()
+    setOpen(true)
+  }
+
   return (
     <>
-      <button
-        type="button"
-        disabled={effectiveDisabled}
-        className="grid h-10 w-10 place-items-center rounded-full bg-[var(--brand)] text-white shadow-sm ring-1 ring-white/60 disabled:opacity-50"
-        aria-label="Supprimer"
-        title="Supprimer"
-        onClick={() => setOpen(true)}
-      >
-        <IconTrash className="h-5 w-5 text-white" />
-      </button>
+      {variant === 'menu' ? (
+        <button
+          type="button"
+          disabled={effectiveDisabled}
+          className="flex w-full items-center rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-50"
+          onClick={openDialog}
+        >
+          Supprimer
+        </button>
+      ) : (
+        <button
+          type="button"
+          disabled={effectiveDisabled}
+          className="grid h-10 w-10 place-items-center rounded-full bg-[var(--brand)] text-white shadow-sm ring-1 ring-white/60 disabled:opacity-50"
+          aria-label="Supprimer"
+          title="Supprimer"
+          onClick={openDialog}
+        >
+          <IconTrash className="h-5 w-5 text-white" />
+        </button>
+      )}
 
       {typeof document !== 'undefined' && open
         ? createPortal(

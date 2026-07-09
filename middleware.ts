@@ -36,7 +36,7 @@ export async function middleware(request: NextRequest) {
 
   if (!user) {
     const redirectUrl = request.nextUrl.clone()
-    redirectUrl.pathname = '/login'
+    redirectUrl.pathname = pathname.startsWith('/admin') ? '/loginadmin' : '/login'
     redirectUrl.searchParams.set('redirectTo', pathname)
     return NextResponse.redirect(redirectUrl)
   }
@@ -59,8 +59,13 @@ export async function middleware(request: NextRequest) {
   if (pathname.startsWith('/admin')) {
     if (role !== 'admin') {
       const redirectUrl = request.nextUrl.clone()
-      redirectUrl.pathname = '/dashboard'
-      redirectUrl.search = ''
+      if (role) {
+        redirectUrl.pathname = '/dashboard'
+        redirectUrl.search = ''
+      } else {
+        redirectUrl.pathname = '/loginadmin'
+        redirectUrl.searchParams.set('redirectTo', pathname)
+      }
       return NextResponse.redirect(redirectUrl)
     }
   }

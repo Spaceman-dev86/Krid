@@ -1,7 +1,10 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
+import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
+
+import StickyHeader from '../nutrition/StickyHeader'
 
 type ClientRow = {
   id: string
@@ -108,6 +111,11 @@ export default function CalendarClient({
 
   const [detailDay, setDetailDay] = useState<string | null>(null)
   const [detailEventId, setDetailEventId] = useState<string | null>(null)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     if (!isOpen) {
@@ -194,9 +202,343 @@ export default function CalendarClient({
 
   const monthSwipeRef = useRef<{ x: number; y: number; active: boolean }>({ x: 0, y: 0, active: false })
 
+  const createSessionModal = isOpen ? (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+      <div
+        className="absolute inset-0 bg-black/40"
+        onClick={() => {
+          if (isPending) return
+          setIsOpen(false)
+        }}
+      />
+      <div className="relative z-10 flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-black/10">
+        <div className="flex items-start justify-between gap-3 p-4">
+          <div className="min-w-0">
+            <div className="text-base font-extrabold text-[#341c44]">Nouvelle séance</div>
+            <div className="mt-1 text-xs font-semibold text-black/50">Elle sera ajoutée au calendrier et envoyée au client.</div>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              if (isPending) return
+              setIsOpen(false)
+            }}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-white text-[#341c44] ring-1 ring-black/10 hover:bg-[#f5f5f5]"
+            aria-label="Fermer"
+          >
+            ×
+          </button>
+        </div>
+
+        <div className="max-h-[calc(85vh-76px)] overflow-auto px-4 pb-4 pt-0">
+          <div className="grid gap-3">
+            <label className="grid gap-1">
+              <div className="text-xs font-extrabold text-black/60">Client</div>
+              <div className="relative">
+                <select
+                  value={clientId}
+                  onChange={(e) => setClientId(e.target.value)}
+                  className="h-11 w-full appearance-none rounded-2xl bg-white px-3 pr-10 text-sm font-semibold text-[#341c44] ring-1 ring-black/10"
+                >
+                  {clients.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.full_name}
+                    </option>
+                  ))}
+                </select>
+                <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-black/40">
+                  <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+                    <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+              </div>
+            </label>
+
+            <div className="grid grid-cols-2 gap-3">
+              <label className="grid gap-1">
+                <div className="text-xs font-extrabold text-black/60">Date</div>
+                <input
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  className="h-11 rounded-2xl bg-white px-3 text-sm font-semibold text-[#341c44] ring-1 ring-black/10"
+                />
+              </label>
+
+              <label className="grid gap-1">
+                <div className="text-xs font-extrabold text-black/60">Heure</div>
+                <input
+                  type="time"
+                  value={time}
+                  onChange={(e) => setTime(e.target.value)}
+                  className="h-11 rounded-2xl bg-white px-3 text-sm font-semibold text-[#341c44] ring-1 ring-black/10"
+                />
+              </label>
+            </div>
+
+            <div className="grid gap-1">
+              <div className="text-xs font-extrabold text-black/60">Durée</div>
+              <div className="flex h-11 items-stretch overflow-hidden rounded-2xl bg-white ring-1 ring-black/10">
+                <div className="flex flex-1 items-center px-3 text-sm font-semibold text-[#341c44]">{duration} min</div>
+                <div className="grid grid-rows-2">
+                  <button
+                    type="button"
+                    onClick={() => changeDuration(15)}
+                    className="inline-flex w-10 items-center justify-center border-l border-black/10 text-[#341c44] hover:bg-[#f5f5f5]"
+                    aria-label="Augmenter la durée"
+                    title="+15 min"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+                      <path d="M6 14l6-6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => changeDuration(-15)}
+                    className="inline-flex w-10 items-center justify-center border-l border-t border-black/10 text-[#341c44] hover:bg-[#f5f5f5]"
+                    aria-label="Diminuer la durée"
+                    title="-15 min"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+                      <path d="M6 10l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <label className="grid gap-1">
+              <div className="text-xs font-extrabold text-black/60">Note</div>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={3}
+                className="rounded-2xl bg-white px-3 py-2 text-sm font-semibold text-[#341c44] ring-1 ring-black/10"
+              />
+            </label>
+
+            <button
+              type="button"
+              disabled={isPending || !clientId || !date || !time || !duration}
+              onClick={() => {
+                const start = parseLocalDateTime(date, time)
+                const end = addMinutes(start, duration)
+
+                const optimisticId = `optimistic-${start.getTime()}`
+                const client = clients.find((c) => c.id === clientId)
+                const optimisticTitle = `Séance présentiel — ${client?.full_name ?? 'Client'}`
+
+                setEvents((prev) => [
+                  ...prev,
+                  {
+                    id: optimisticId,
+                    owner_coach_id: currentUserId,
+                    client_id: clientId,
+                    title: optimisticTitle,
+                    start_at: start.toISOString(),
+                    end_at: end.toISOString(),
+                    notes: notes.length > 0 ? notes : null,
+                  },
+                ])
+
+                const fd = new FormData()
+                fd.set('client_id', clientId)
+                fd.set('date', date)
+                fd.set('time', time)
+                fd.set('duration_min', String(duration))
+                fd.set('notes', notes)
+
+                startTransition(async () => {
+                  await createSessionAction(fd)
+                  router.refresh()
+                  setIsOpen(false)
+                })
+              }}
+              className="inline-flex h-12 items-center justify-center rounded-2xl bg-[#341c44] px-4 text-sm font-extrabold text-white shadow-sm hover:opacity-90 disabled:opacity-50"
+            >
+              Envoyer la demande de séance
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  ) : null
+
+  const dayDetailModal =
+    !isOpen && detailDay ? (
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+        <div
+          className="absolute inset-0 bg-black/40"
+          onClick={() => {
+            if (isPending) return
+            closeDetails()
+          }}
+        />
+
+        <div className="relative z-10 flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-black/10">
+          <div className="flex items-start justify-between gap-3 p-4">
+            <div className="min-w-0">
+              <div className="text-base font-extrabold text-[#341c44]">
+                {detailDayDate
+                  ? new Intl.DateTimeFormat('fr-FR', {
+                      weekday: 'long',
+                      day: '2-digit',
+                      month: 'long',
+                      year: 'numeric',
+                    }).format(detailDayDate)
+                  : detailDay}
+              </div>
+              <div className="mt-1 text-xs font-semibold text-black/50">
+                {detailEvent ? 'Détail de la séance' : `${detailDayEvents.length} séance(s)`}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {!detailEvent ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    openCreateForDay(detailDay)
+                  }}
+                  aria-label="Ajouter une séance"
+                  title="Ajouter une séance"
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-[#341c44] text-white shadow-sm hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#341c44]/30"
+                >
+                  +
+                </button>
+              ) : null}
+              {detailEvent ? (
+                <button
+                  type="button"
+                  onClick={() => setDetailEventId(null)}
+                  className="inline-flex h-9 items-center justify-center rounded-2xl bg-white px-3 text-sm font-extrabold text-[#341c44] ring-1 ring-black/10 hover:bg-[#f5f5f5]"
+                  aria-label="Retour"
+                  title="Retour"
+                >
+                  ←
+                </button>
+              ) : null}
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (isPending) return
+                  closeDetails()
+                }}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-white text-[#341c44] ring-1 ring-black/10 hover:bg-[#f5f5f5]"
+                aria-label="Fermer"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+
+          <div className="max-h-[calc(85vh-76px)] overflow-auto px-4 pb-4 pt-2">
+            {detailEvent ? (
+              <div className="grid gap-3">
+                <div className="rounded-2xl bg-[#341c44]/5 p-3">
+                  <div className="text-sm font-extrabold text-[#341c44]">{detailEvent.title}</div>
+                  <div className="mt-1 text-xs font-semibold text-black/60">
+                    {clientNameById.get(detailEvent.client_id ?? '') ?? 'Client'}
+                  </div>
+                </div>
+
+                <div className="grid gap-2 rounded-2xl bg-white p-3 ring-1 ring-black/10">
+                  <div className="text-xs font-extrabold text-black/60">Horaire</div>
+                  <div className="text-sm font-semibold text-[#341c44]">
+                    {formatTime(detailEvent.start_at)}
+                    {detailEvent.end_at ? ` – ${formatTime(detailEvent.end_at)}` : ''}
+                  </div>
+                </div>
+
+                <div className="grid gap-2 rounded-2xl bg-white p-3 ring-1 ring-black/10">
+                  <div className="text-xs font-extrabold text-black/60">Note</div>
+                  <div className="text-sm font-semibold text-black/70">{detailEvent.notes?.trim() ? detailEvent.notes : '—'}</div>
+                </div>
+
+                <button
+                  type="button"
+                  disabled={isPending || detailEvent.id.startsWith('optimistic-')}
+                  onClick={() => {
+                    const fd = new FormData()
+                    fd.set('id', detailEvent.id)
+
+                    startTransition(async () => {
+                      await deleteSessionAction(fd)
+                      setEvents((prev) => prev.filter((e) => e.id !== detailEvent.id))
+                      router.refresh()
+                      setDetailEventId(null)
+                    })
+                  }}
+                  className="inline-flex h-12 items-center justify-center rounded-2xl bg-white px-4 text-sm font-extrabold text-red-600 ring-1 ring-black/10 hover:bg-[#f5f5f5] disabled:opacity-50"
+                >
+                  Supprimer la séance
+                </button>
+              </div>
+            ) : detailDayEvents.length > 0 ? (
+              <div className="grid gap-2">
+                {detailDayEvents.map((ev, idx) => (
+                  <div
+                    key={ev.id}
+                    className={(idx === 0 ? 'mt-1 ' : '') + 'grid gap-1 rounded-2xl bg-white p-3 text-left ring-1 ring-black/10'}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setDetailEventId(ev.id)}
+                      className="flex items-start justify-between gap-3 text-left"
+                    >
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-extrabold text-[#341c44]">{ev.title}</div>
+                        <div className="mt-0.5 truncate text-xs font-semibold text-black/60">
+                          {clientNameById.get(ev.client_id ?? '') ?? 'Client'}
+                        </div>
+                      </div>
+                      <div className="shrink-0 text-xs font-extrabold tabular-nums text-black/50">{formatTime(ev.start_at)}</div>
+                    </button>
+
+                    {ev.owner_coach_id === currentUserId && !ev.id.startsWith('optimistic-') ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const fd = new FormData()
+                          fd.set('id', ev.id)
+                          startTransition(async () => {
+                            await deleteSessionAction(fd)
+                            setEvents((prev) => prev.filter((e) => e.id !== ev.id))
+                            router.refresh()
+                          })
+                        }}
+                        className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded-xl bg-white text-red-600 ring-1 ring-black/10 hover:bg-[#f5f5f5]"
+                        aria-label="Supprimer"
+                        title="Supprimer"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+                          <path d="M3 6h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                          <path d="M8 6V4h8v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          <path d="M6 6l1 16h10l1-16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </button>
+                    ) : null}
+
+                    {ev.notes?.trim() ? (
+                      <div className="truncate text-xs font-semibold text-black/45">{ev.notes}</div>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-black/10 bg-white p-4 text-sm font-semibold text-black/60">
+                Aucune séance ce jour.
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    ) : null
+
   return (
     <div>
-      <div className="sticky top-16 z-40 -mx-4 bg-white/95 px-4 py-3 md:backdrop-blur sm:-mx-6 sm:px-6 sm:py-4">
+      <StickyHeader opaquePageBackdrop className="py-3 sm:py-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h1 className="text-2xl font-extrabold tracking-tight text-[#341c44]">Calendrier</h1>
@@ -243,7 +585,7 @@ export default function CalendarClient({
             →
           </button>
         </div>
-      </div>
+      </StickyHeader>
 
       <div className="mt-5">
         <div className="overflow-hidden rounded-2xl bg-black/10 ring-1 ring-black/10">
@@ -348,334 +690,8 @@ export default function CalendarClient({
         </div>
       </div>
 
-      {isOpen ? (
-        <div className="fixed inset-0 z-50">
-          <div
-            className="absolute inset-0 bg-black/40"
-            onClick={() => {
-              if (isPending) return
-              setIsOpen(false)
-            }}
-          />
-          <div className="absolute inset-x-0 bottom-0 rounded-t-3xl bg-white p-4 shadow-2xl ring-1 ring-black/10">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <div className="text-base font-extrabold text-[#341c44]">Nouvelle séance</div>
-                <div className="mt-1 text-xs font-semibold text-black/50">Elle sera ajoutée au calendrier et envoyée au client.</div>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  if (isPending) return
-                  setIsOpen(false)
-                }}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-white text-[#341c44] ring-1 ring-black/10 hover:bg-[#f5f5f5]"
-                aria-label="Fermer"
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="mt-4 grid gap-3">
-              <label className="grid gap-1">
-                <div className="text-xs font-extrabold text-black/60">Client</div>
-                <div className="relative">
-                  <select
-                    value={clientId}
-                    onChange={(e) => setClientId(e.target.value)}
-                    className="h-11 w-full appearance-none rounded-2xl bg-white px-3 pr-10 text-sm font-semibold text-[#341c44] ring-1 ring-black/10"
-                  >
-                    {clients.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.full_name}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-black/40">
-                    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-                      <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </div>
-                </div>
-              </label>
-
-              <div className="grid grid-cols-2 gap-3">
-                <label className="grid gap-1">
-                  <div className="text-xs font-extrabold text-black/60">Date</div>
-                  <input
-                    type="date"
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                    className="h-11 rounded-2xl bg-white px-3 text-sm font-semibold text-[#341c44] ring-1 ring-black/10"
-                  />
-                </label>
-
-                <label className="grid gap-1">
-                  <div className="text-xs font-extrabold text-black/60">Heure</div>
-                  <input
-                    type="time"
-                    value={time}
-                    onChange={(e) => setTime(e.target.value)}
-                    className="h-11 rounded-2xl bg-white px-3 text-sm font-semibold text-[#341c44] ring-1 ring-black/10"
-                  />
-                </label>
-              </div>
-
-              <div className="grid gap-1">
-                <div className="text-xs font-extrabold text-black/60">Durée</div>
-                <div className="flex h-11 items-stretch overflow-hidden rounded-2xl bg-white ring-1 ring-black/10">
-                  <div className="flex flex-1 items-center px-3 text-sm font-semibold text-[#341c44]">{duration} min</div>
-                  <div className="grid grid-rows-2">
-                    <button
-                      type="button"
-                      onClick={() => changeDuration(15)}
-                      className="inline-flex w-10 items-center justify-center border-l border-black/10 text-[#341c44] hover:bg-[#f5f5f5]"
-                      aria-label="Augmenter la durée"
-                      title="+15 min"
-                    >
-                      <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-                        <path d="M6 14l6-6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => changeDuration(-15)}
-                      className="inline-flex w-10 items-center justify-center border-l border-t border-black/10 text-[#341c44] hover:bg-[#f5f5f5]"
-                      aria-label="Diminuer la durée"
-                      title="-15 min"
-                    >
-                      <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-                        <path d="M6 10l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <label className="grid gap-1">
-                <div className="text-xs font-extrabold text-black/60">Note</div>
-                <textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  rows={3}
-                  className="rounded-2xl bg-white px-3 py-2 text-sm font-semibold text-[#341c44] ring-1 ring-black/10"
-                />
-              </label>
-
-              <button
-                type="button"
-                disabled={isPending || !clientId || !date || !time || !duration}
-                onClick={() => {
-                  const start = parseLocalDateTime(date, time)
-                  const end = addMinutes(start, duration)
-
-                  const optimisticId = `optimistic-${start.getTime()}`
-                  const client = clients.find((c) => c.id === clientId)
-                  const optimisticTitle = `Séance présentiel — ${client?.full_name ?? 'Client'}`
-
-                  setEvents((prev) => [
-                    ...prev,
-                    {
-                      id: optimisticId,
-                      owner_coach_id: currentUserId,
-                      client_id: clientId,
-                      title: optimisticTitle,
-                      start_at: start.toISOString(),
-                      end_at: end.toISOString(),
-                      notes: notes.length > 0 ? notes : null,
-                    },
-                  ])
-
-                  const fd = new FormData()
-                  fd.set('client_id', clientId)
-                  fd.set('date', date)
-                  fd.set('time', time)
-                  fd.set('duration_min', String(duration))
-                  fd.set('notes', notes)
-
-                  startTransition(async () => {
-                    await createSessionAction(fd)
-                    router.refresh()
-                    setIsOpen(false)
-                  })
-                }}
-                className="inline-flex h-12 items-center justify-center rounded-2xl bg-[#341c44] px-4 text-sm font-extrabold text-white shadow-sm hover:opacity-90 disabled:opacity-50"
-              >
-                Envoyer la demande de séance
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : detailDay ? (
-        <div className="fixed inset-0 z-50">
-          <div
-            className="absolute inset-0 bg-black/40"
-            onClick={() => {
-              if (isPending) return
-              closeDetails()
-            }}
-          />
-
-          <div className="absolute inset-x-0 bottom-0 max-h-[78vh] overflow-hidden rounded-t-3xl bg-white shadow-2xl ring-1 ring-black/10">
-            <div className="flex items-start justify-between gap-3 p-4">
-              <div className="min-w-0">
-                <div className="text-base font-extrabold text-[#341c44]">
-                  {detailDayDate
-                    ? new Intl.DateTimeFormat('fr-FR', {
-                        weekday: 'long',
-                        day: '2-digit',
-                        month: 'long',
-                        year: 'numeric',
-                      }).format(detailDayDate)
-                    : detailDay}
-                </div>
-                <div className="mt-1 text-xs font-semibold text-black/50">
-                  {detailEvent ? 'Détail de la séance' : `${detailDayEvents.length} séance(s)`}
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                {!detailEvent ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      openCreateForDay(detailDay)
-                    }}
-                    aria-label="Ajouter une séance"
-                    title="Ajouter une séance"
-                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-[#341c44] text-white shadow-sm hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#341c44]/30"
-                  >
-                    +
-                  </button>
-                ) : null}
-                {detailEvent ? (
-                  <button
-                    type="button"
-                    onClick={() => setDetailEventId(null)}
-                    className="inline-flex h-9 items-center justify-center rounded-2xl bg-white px-3 text-sm font-extrabold text-[#341c44] ring-1 ring-black/10 hover:bg-[#f5f5f5]"
-                    aria-label="Retour"
-                    title="Retour"
-                  >
-                    ←
-                  </button>
-                ) : null}
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (isPending) return
-                    closeDetails()
-                  }}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-white text-[#341c44] ring-1 ring-black/10 hover:bg-[#f5f5f5]"
-                  aria-label="Fermer"
-                >
-                  ×
-                </button>
-              </div>
-            </div>
-
-            <div className="max-h-[calc(78vh-76px)] overflow-auto px-4 pb-4 pt-2">
-              {detailEvent ? (
-                <div className="grid gap-3">
-                  <div className="rounded-2xl bg-[#341c44]/5 p-3">
-                    <div className="text-sm font-extrabold text-[#341c44]">{detailEvent.title}</div>
-                    <div className="mt-1 text-xs font-semibold text-black/60">
-                      {clientNameById.get(detailEvent.client_id ?? '') ?? 'Client'}
-                    </div>
-                  </div>
-
-                  <div className="grid gap-2 rounded-2xl bg-white p-3 ring-1 ring-black/10">
-                    <div className="text-xs font-extrabold text-black/60">Horaire</div>
-                    <div className="text-sm font-semibold text-[#341c44]">
-                      {formatTime(detailEvent.start_at)}
-                      {detailEvent.end_at ? ` – ${formatTime(detailEvent.end_at)}` : ''}
-                    </div>
-                  </div>
-
-                  <div className="grid gap-2 rounded-2xl bg-white p-3 ring-1 ring-black/10">
-                    <div className="text-xs font-extrabold text-black/60">Note</div>
-                    <div className="text-sm font-semibold text-black/70">{detailEvent.notes?.trim() ? detailEvent.notes : '—'}</div>
-                  </div>
-
-                  <button
-                    type="button"
-                    disabled={isPending || detailEvent.id.startsWith('optimistic-')}
-                    onClick={() => {
-                      const fd = new FormData()
-                      fd.set('id', detailEvent.id)
-
-                      startTransition(async () => {
-                        await deleteSessionAction(fd)
-                        setEvents((prev) => prev.filter((e) => e.id !== detailEvent.id))
-                        router.refresh()
-                        setDetailEventId(null)
-                      })
-                    }}
-                    className="inline-flex h-12 items-center justify-center rounded-2xl bg-white px-4 text-sm font-extrabold text-red-600 ring-1 ring-black/10 hover:bg-[#f5f5f5] disabled:opacity-50"
-                  >
-                    Supprimer la séance
-                  </button>
-                </div>
-              ) : detailDayEvents.length > 0 ? (
-                <div className="grid gap-2">
-                  {detailDayEvents.map((ev, idx) => (
-                    <div
-                      key={ev.id}
-                      className={(idx === 0 ? 'mt-1 ' : '') + 'grid gap-1 rounded-2xl bg-white p-3 text-left ring-1 ring-black/10'}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => setDetailEventId(ev.id)}
-                        className="flex items-start justify-between gap-3 text-left"
-                      >
-                        <div className="min-w-0">
-                          <div className="truncate text-sm font-extrabold text-[#341c44]">{ev.title}</div>
-                          <div className="mt-0.5 truncate text-xs font-semibold text-black/60">
-                            {clientNameById.get(ev.client_id ?? '') ?? 'Client'}
-                          </div>
-                        </div>
-                        <div className="shrink-0 text-xs font-extrabold tabular-nums text-black/50">{formatTime(ev.start_at)}</div>
-                      </button>
-
-                      {ev.owner_coach_id === currentUserId && !ev.id.startsWith('optimistic-') ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const fd = new FormData()
-                            fd.set('id', ev.id)
-                            startTransition(async () => {
-                              await deleteSessionAction(fd)
-                              setEvents((prev) => prev.filter((e) => e.id !== ev.id))
-                              router.refresh()
-                            })
-                          }}
-                          className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded-xl bg-white text-red-600 ring-1 ring-black/10 hover:bg-[#f5f5f5]"
-                          aria-label="Supprimer"
-                          title="Supprimer"
-                        >
-                          <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-                            <path d="M3 6h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                            <path d="M8 6V4h8v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            <path d="M6 6l1 16h10l1-16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                        </button>
-                      ) : null}
-
-                      {ev.notes?.trim() ? (
-                        <div className="truncate text-xs font-semibold text-black/45">{ev.notes}</div>
-                      ) : null}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="rounded-2xl bg-white p-4 text-sm font-semibold text-black/60 ring-1 ring-black/10">
-                  Aucune séance ce jour.
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      ) : null}
+      {mounted && createSessionModal ? createPortal(createSessionModal, document.body) : null}
+      {mounted && dayDetailModal ? createPortal(dayDetailModal, document.body) : null}
     </div>
   )
 }

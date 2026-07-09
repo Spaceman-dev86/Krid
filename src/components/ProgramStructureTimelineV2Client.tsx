@@ -20,6 +20,7 @@ import { useRouter } from 'next/navigation'
 import type { ReactElement, ReactNode } from 'react'
 import { cloneElement, isValidElement, useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { useProgramEditorUrlState } from '../lib/useProgramEditorUrlState'
+import { useMarkProgramEditorReady } from './ProgramEditorNavigationClient'
 import { IconDuplicate, IconEdit, IconTrash } from './ui/icons'
 
 type WeekRow = {
@@ -27,6 +28,16 @@ type WeekRow = {
   title: string
   week_order: number
   notes?: string | null
+}
+
+function isDbSessionItemBlock(kind: string | null | undefined): boolean {
+  const k = String(kind ?? '').trim().toLowerCase()
+  return k === 'block' || k === 'session_block' || k === 'bloc' || k === 'circuit' || k === 'crosstraining'
+}
+
+/** Clé stable pour lier session_items ↔ block_exercises (casse / espaces). */
+function canonSessionBlockId(id: string | null | undefined): string {
+  return String(id ?? '').trim().toLowerCase()
 }
 
 function SortableSessionCard({
@@ -102,10 +113,10 @@ function BlockEditorDropZone({ children }: { children: ReactNode }) {
 function isInteractiveDndTarget(el: Element | null): boolean {
   if (!el) return false
   const tag = el.tagName.toLowerCase()
-  if (tag === 'input' || tag === 'textarea' || tag === 'select' || tag === 'option') return true
+  if (tag === 'input' || tag === 'textarea' || tag === 'select' || tag === 'option' || tag === 'button') return true
   const editable = (el as HTMLElement).isContentEditable
   if (editable) return true
-  return !!(el as HTMLElement).closest?.('input,textarea,select,option,[contenteditable=true]')
+  return !!(el as HTMLElement).closest?.('input,textarea,select,option,button,[contenteditable=true]')
 }
 
 class SmartPointerSensor extends PointerSensor {
@@ -243,7 +254,7 @@ type Props = {
   ) => Promise<void | { newWeekId?: string | null; week_order?: number | null; title?: string | null; notes?: string | null }>
   addSessionAction?: (formData: FormData) => Promise<void | { newSessionId?: string | null }>
   deleteWeekAction?: (formData: FormData) => Promise<void>
-  duplicateWeekAction?: (formData: FormData) => Promise<void>
+  duplicateWeekAction?: (formData: FormData) => Promise<void | { newWeekId?: string | null }>
   deleteSessionAction?: (formData: FormData) => Promise<void>
   duplicateSessionAction?: (formData: FormData) => Promise<void | { newSessionId?: string | null }>
   addBlockExerciseAction?: (formData: FormData) => Promise<void | { newBlockExerciseId?: string | null; position?: number | null }>
@@ -273,8 +284,8 @@ type TimelineItem =
       programExerciseId: string | null
       title: string
       subtitle: string | null
-      sets: number | null
-      reps: number | null
+      sets: string | null
+      reps: string | null
       rest_time: string | null
       rpe: number | null
       tempo: string | null
@@ -315,8 +326,23 @@ function SortableTimelineRow({
 }
 
 export default function ProgramStructureTimelineV2Client(props: Props) {
+  useMarkProgramEditorReady()
+
   const router = useRouter()
   const [, startTransition] = useTransition()
+
+  const isDraggingRef = useRef(false)
+
+  const [duplicatingWeekId, setDuplicatingWeekId] = useState<string | null>(null)
+  const [duplicatingSessionId, setDuplicatingSessionId] = useState<string | null>(null)
+  const [pendingWeekIds, setPendingWeekIds] = useState<Set<string>>(() => new Set())
+  const [pendingSessionIds, setPendingSessionIds] = useState<Set<string>>(() => new Set())
+
+  const cancelledAddSessionTmpIdsRef = useRef<Set<string>>(new Set())
+
+  const InlineSpinner = useCallback(({ className }: { className?: string }) => {
+    return <span className={className ?? 'h-4 w-4 animate-spin rounded-full border-2 border-white/60 border-t-white'} aria-hidden />
+  }, [])
   const [mounted, setMounted] = useState(false)
   const [activeDragId, setActiveDragId] = useState<string | null>(null)
 
@@ -335,8 +361,8 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
       {
         title: string
         notes: string | null
-        sets: number | null
-        reps: number | null
+        sets: string | null
+        reps: string | null
         rest_time: string | null
         rpe: number | null
         tempo: string | null
@@ -412,7 +438,10 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
     if (didClearInitialOpenBlockRef.current) return
     didClearInitialOpenBlockRef.current = true
 
-    if (urlState.openBlockId) {
+    const ob = urlState.openBlockId
+    // Ne retirer de l'URL que les blocs temporaires (création optimiste). Les UUID réels
+    // (liens profonds / refresh) doivent rester pour que l'éditeur de bloc reste monté.
+    if (ob && String(ob).startsWith('tmp-block-')) {
       urlState.setOpenBlockId(null, { preserveScroll: true })
     }
   }, [mounted, urlState])
@@ -441,9 +470,11 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
     if (typeof window === 'undefined') return
 
     const getServerList = (blockId: string) => {
+      const want = canonSessionBlockId(blockId)
+      if (!want) return []
       const out: BlockExerciseRow[] = []
       for (const be of props.blockExercises ?? []) {
-        if (String(be.session_block_id) !== blockId) continue
+        if (canonSessionBlockId(be.session_block_id) !== want) continue
         out.push(be)
       }
       out.sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
@@ -455,14 +486,16 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
       const blockId = String(e.detail?.blockId ?? '').trim()
       const row = e.detail?.row
       if (!blockId || !row) return
+      const ck = canonSessionBlockId(blockId)
+      if (!ck) return
 
       setOptimisticBlockExercisesByBlockId((prev) => {
-        const base = prev[blockId] ? prev[blockId] : getServerList(blockId)
+        const base = ck in prev ? prev[ck]! : getServerList(blockId)
         const merged = base.concat([row])
         const byId = new Map<string, BlockExerciseRow>()
         for (const r of merged) byId.set(r.id, r)
         const nextList = Array.from(byId.values()).slice().sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
-        return { ...prev, [blockId]: nextList }
+        return { ...prev, [ck]: nextList }
       })
     }
 
@@ -473,9 +506,11 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
       const newId = String(e.detail?.newId ?? '').trim()
       const position = e.detail?.position
       if (!blockId || !tmpId || !newId) return
+      const ck = canonSessionBlockId(blockId)
+      if (!ck) return
 
       setOptimisticBlockExercisesByBlockId((prev) => {
-        const base = prev[blockId] ? prev[blockId] : getServerList(blockId)
+        const base = ck in prev ? prev[ck]! : getServerList(blockId)
         const nextList = base.map((r) => {
           if (r.id !== tmpId) return r
           return { ...r, id: newId, position: typeof position === 'number' ? position : r.position }
@@ -483,7 +518,7 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
         const byId = new Map<string, BlockExerciseRow>()
         for (const r of nextList) byId.set(r.id, r)
         const deduped = Array.from(byId.values()).slice().sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
-        return { ...prev, [blockId]: deduped }
+        return { ...prev, [ck]: deduped }
       })
     }
 
@@ -492,11 +527,13 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
       const blockId = String(e.detail?.blockId ?? '').trim()
       const id = String(e.detail?.id ?? '').trim()
       if (!blockId || !id) return
+      const ck = canonSessionBlockId(blockId)
+      if (!ck) return
 
       setOptimisticBlockExercisesByBlockId((prev) => {
-        const base = prev[blockId] ? prev[blockId] : getServerList(blockId)
+        const base = ck in prev ? prev[ck]! : getServerList(blockId)
         const nextList = (base ?? []).filter((r) => r.id !== id)
-        return { ...prev, [blockId]: nextList }
+        return { ...prev, [ck]: nextList }
       })
     }
 
@@ -508,9 +545,21 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
       const e = evt as CustomEvent<{ blockId?: string; rows?: BlockExerciseRow[] }>
       const blockId = String(e.detail?.blockId ?? '').trim()
       const rows = e.detail?.rows
-      if (!blockId || !rows) return
+      if (!blockId || rows == null) return
+      const ck = canonSessionBlockId(blockId)
+      if (!ck) return
       setOptimisticBlockExercisesByBlockId((prev) => {
-        const base = prev[blockId] ? prev[blockId] : getServerList(blockId)
+        if (rows.length === 0) {
+          const serverOnly = getServerList(blockId)
+          if (serverOnly.length > 0) {
+            const copy = { ...prev }
+            delete copy[ck]
+            return copy
+          }
+          return { ...prev, [ck]: [] }
+        }
+
+        const base = ck in prev ? prev[ck]! : getServerList(blockId)
         const baseById = new Map<string, BlockExerciseRow>()
         for (const r of base ?? []) baseById.set(String(r.id), r)
 
@@ -523,7 +572,7 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
           return { ...existing, ...r, notes: nextNotes, exercise_library: nextLib, exercise_name: nextName }
         })
 
-        return { ...prev, [blockId]: merged.slice() }
+        return { ...prev, [ck]: merged.slice() }
       })
     }
     window.addEventListener('program:block-editor:block-exercises-snapshot', onSnapshot as EventListener)
@@ -535,6 +584,57 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
       window.removeEventListener('program:block-editor:block-exercises-snapshot', onSnapshot as EventListener)
     }
   }, [props.blockExercises])
+
+  // L'éditeur de bloc relit parfois les exercices depuis sessionStorage quand le serveur renvoie [].
+  // Sans cette étape, la vue « circuit fermé » reste vide alors que l'éditeur ouvert affiche les lignes.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const serverByCk = new Map<string, BlockExerciseRow[]>()
+    for (const be of props.blockExercises ?? []) {
+      const ck = canonSessionBlockId(be.session_block_id)
+      if (!ck) continue
+      const list = serverByCk.get(ck) ?? []
+      list.push(be)
+      serverByCk.set(ck, list)
+    }
+
+    const blockIds = new Set<string>()
+    for (const row of props.sessionItems ?? []) {
+      if (!isDbSessionItemBlock(row.kind)) continue
+      const bid = String(row.session_block_id ?? '').trim()
+      if (!bid || bid.startsWith('tmp-block-')) continue
+      blockIds.add(bid)
+    }
+
+    setOptimisticBlockExercisesByBlockId((prev) => {
+      let next: Record<string, BlockExerciseRow[]> | null = null
+      for (const blockId of blockIds) {
+        const ck = canonSessionBlockId(blockId)
+        const serverList = serverByCk.get(ck) ?? []
+        if (serverList.length > 0) continue
+
+        const prevCanon = prev[ck] ?? []
+        const prevRaw = prev[blockId] ?? []
+        if (prevCanon.length > 0 || prevRaw.length > 0) continue
+
+        let stored: BlockExerciseRow[] | null = null
+        try {
+          const raw = window.sessionStorage.getItem(`program:block-exercises:${blockId}`)
+          if (!raw) continue
+          const parsed = JSON.parse(raw) as unknown
+          if (!Array.isArray(parsed) || parsed.length === 0) continue
+          stored = parsed as BlockExerciseRow[]
+        } catch {
+          continue
+        }
+
+        if (!next) next = { ...prev }
+        next[ck] = stored.slice().sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+      }
+      return next ?? prev
+    })
+  }, [props.sessionItems, props.blockExercises])
 
   const refreshPreserveScroll = useCallback(() => {
     const y = typeof window !== 'undefined' ? window.scrollY : 0
@@ -556,8 +656,9 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
 
   const restoreScrollY = useCallback((y: number | null) => {
     if (typeof window === 'undefined') return
+    if (isDraggingRef.current) return
     if (y == null) return
-    const restore = () => window.scrollTo({ top: y, left: 0, behavior: 'instant' as ScrollBehavior })
+    const restore = () => window.scrollTo({ top: y, left: 0, behavior: 'auto' })
     window.setTimeout(() => {
       restore()
       window.requestAnimationFrame(() => {
@@ -607,12 +708,15 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
     setEditingProgramExerciseId(null)
     setEditingBlockId(null)
 
-    const exists = (() => {
+    const canonBid = canonSessionBlockId(blockId)
+    const blockRow = (() => {
       const byId = new Map<string, SessionBlockRow>()
-      for (const b of props.sessionBlocks) byId.set(String(b.id), b)
-      for (const b of Object.values(optimisticSessionBlocksById)) byId.set(String(b.id), b)
-      return byId.has(String(blockId))
+      for (const b of props.sessionBlocks) byId.set(canonSessionBlockId(b.id), b)
+      for (const b of Object.values(optimisticSessionBlocksById)) byId.set(canonSessionBlockId(b.id), b)
+      return byId.get(canonBid) ?? null
     })()
+
+    const exists = Boolean(blockRow)
     if (!exists) {
       const title = String(optimisticBlockTitleById[String(blockId)] ?? '').trim() || 'Bloc'
       const notesRaw = optimisticBlockNotesById[String(blockId)]
@@ -633,7 +737,13 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
       }
     }
 
-    setOpenBlockInUrl(String(blockId), openSessionId)
+    const sessionForOpen = String(blockRow?.program_session_id ?? openSessionId ?? '').trim()
+    if (sessionForOpen && sessionForOpen !== String(openSessionId ?? '')) {
+      setOpenSessionId(sessionForOpen)
+      window.setTimeout(() => urlState.setOpenSessionId(sessionForOpen, { preserveScroll: true }), 0)
+    }
+
+    setOpenBlockInUrl(String(blockId), sessionForOpen || null)
   }
 
   function addExerciseToOpenBlock(exerciseId: string) {
@@ -669,12 +779,34 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
   const blockExercisesByBlockId = useMemo(() => {
     const out: Record<string, BlockExerciseRow[]> = {}
     for (const be of props.blockExercises ?? []) {
-      const key = String(be.session_block_id)
+      const key = canonSessionBlockId(be.session_block_id)
+      if (!key) continue
       out[key] = out[key] ?? []
       out[key].push(be)
     }
-    for (const [blockId, list] of Object.entries(optimisticBlockExercisesByBlockId)) {
-      out[blockId] = list
+
+    const optimisticMerged = new Map<string, BlockExerciseRow[]>()
+    for (const [rawBlockId, list] of Object.entries(optimisticBlockExercisesByBlockId)) {
+      const key = canonSessionBlockId(rawBlockId)
+      if (!key) continue
+      const existing = optimisticMerged.get(key)
+      if (!existing) {
+        optimisticMerged.set(key, list)
+        continue
+      }
+      if (existing.length === 0 && list.length > 0) {
+        optimisticMerged.set(key, list)
+      } else if (existing.length > 0 && list.length === 0) {
+        /* garder existing */
+      } else {
+        optimisticMerged.set(key, list)
+      }
+    }
+
+    for (const [key, list] of optimisticMerged) {
+      const serverLen = (out[key] ?? []).length
+      if (list.length === 0 && serverLen > 0) continue
+      out[key] = list
     }
     for (const k of Object.keys(out)) {
       out[k].sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
@@ -690,20 +822,39 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
     return Array.from(byId.values())
   }, [blockExercisesByBlockId])
 
+  /** Vue fermée : si la map fusionnée est vide (clé / overlay), retomber sur les lignes serveur brutes. */
+  const closedBlockExercisesForBlockId = useCallback(
+    (blockId: string | null | undefined): BlockExerciseRow[] => {
+      if (!blockId) return []
+      const ck = canonSessionBlockId(blockId)
+      const fromMap = blockExercisesByBlockId[ck] ?? []
+      if (fromMap.length > 0) return fromMap
+      const fallback = (props.blockExercises ?? []).filter((be) => canonSessionBlockId(be.session_block_id) === ck)
+      fallback.sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+      return fallback
+    },
+    [blockExercisesByBlockId, props.blockExercises]
+  )
+
   useEffect(() => {
     // When server blockExercises catch up for a block, drop the optimistic overlay to prevent stale data.
     const optimisticKeys = Object.keys(optimisticBlockExercisesByBlockId)
     if (optimisticKeys.length === 0) return
     const serverByBlockId: Record<string, Map<string, BlockExerciseRow>> = {}
     for (const be of props.blockExercises ?? []) {
-      const blockId = String(be.session_block_id)
-      serverByBlockId[blockId] = serverByBlockId[blockId] ?? new Map<string, BlockExerciseRow>()
-      serverByBlockId[blockId].set(String(be.id), be)
+      const bid = canonSessionBlockId(be.session_block_id)
+      if (!bid) continue
+      serverByBlockId[bid] = serverByBlockId[bid] ?? new Map<string, BlockExerciseRow>()
+      serverByBlockId[bid].set(String(be.id), be)
     }
 
     const toClear = optimisticKeys.filter((blockId) => {
       const optimisticList = optimisticBlockExercisesByBlockId[blockId] ?? []
-      const serverRows = serverByBlockId[blockId] ?? null
+      const canonKey = canonSessionBlockId(blockId)
+      const serverRows = serverByBlockId[canonKey] ?? null
+
+      if (optimisticList.length === 0 && serverRows && serverRows.size > 0) return true
+
       if (!serverRows) return false
 
       const nonTmpIds = optimisticList
@@ -726,7 +877,10 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
     if (toClear.length === 0) return
     setOptimisticBlockExercisesByBlockId((prev) => {
       const copy = { ...prev }
-      for (const k of toClear) delete copy[k]
+      for (const k of toClear) {
+        delete copy[k]
+        delete copy[canonSessionBlockId(k)]
+      }
       return copy
     })
   }, [optimisticBlockExercisesByBlockId, props.blockExercises])
@@ -822,7 +976,10 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
     if (!effectiveOpenBlockId) return
     if (!urlState.openSessionId) return
 
-    const b = effectiveSessionBlocks.find((row) => String(row.id) === String(effectiveOpenBlockId)) ?? null
+    const b =
+      effectiveSessionBlocks.find(
+        (row) => canonSessionBlockId(row.id) === canonSessionBlockId(effectiveOpenBlockId)
+      ) ?? null
     if (!b) return
     if (String(b.program_session_id) !== String(urlState.openSessionId)) {
       urlState.setOpenBlockId(null, { preserveScroll: true })
@@ -859,6 +1016,7 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
   const duplicateWeek = useCallback(
     (weekId: string) => {
       if (!props.duplicateWeekAction) return
+      if (duplicatingWeekId) return
 
       const source = effectiveWeeks.find((w) => w.id === weekId) ?? null
       if (source) {
@@ -875,6 +1033,11 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
           ])
         )
         setOpenWeekId(tmpWeekId)
+        setPendingWeekIds((prev) => {
+          const next = new Set(prev)
+          next.add(tmpWeekId)
+          return next
+        })
       }
 
       const fd = new FormData()
@@ -882,15 +1045,31 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
       fd.set('week_id', weekId)
       if (openWeekId) fd.set('openWeek', openWeekId)
       if (openSessionId) fd.set('openSession', openSessionId)
+      setDuplicatingWeekId(weekId)
       startTransition(async () => {
         try {
-          await props.duplicateWeekAction?.(fd)
+          const res = (await props.duplicateWeekAction?.(fd)) as void | { newWeekId?: string | null }
+          const newWeekId = res && typeof res === 'object' ? (res.newWeekId ?? null) : null
+          if (newWeekId) {
+            // Replace the latest tmp week with the server id and clear pending.
+            const tmpWeekId = Array.from(pendingWeekIds).find((id) => id.startsWith('tmp-week-')) ?? null
+            if (tmpWeekId) {
+              setOptimisticWeeks((prev) => prev.map((w) => (String(w.id) === String(tmpWeekId) ? { ...w, id: String(newWeekId) } : w)))
+              setPendingWeekIds((prev) => {
+                const next = new Set(prev)
+                next.delete(tmpWeekId)
+                return next
+              })
+              setOpenWeekId(String(newWeekId))
+            }
+          }
         } finally {
-          refreshPreserveScroll()
+          setDuplicatingWeekId(null)
+          router.refresh()
         }
       })
     },
-    [openSessionId, openWeekId, props, refreshPreserveScroll, startTransition]
+    [duplicatingWeekId, effectiveWeeks, openSessionId, openWeekId, openSessionId, orderedWeeks, pendingWeekIds, props, router, startTransition]
   )
 
   const deleteWeek = useCallback(
@@ -928,8 +1107,10 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
   const duplicateSession = useCallback(
     (weekId: string, sessionId: string) => {
       if (!props.duplicateSessionAction) return
+      if (duplicatingSessionId) return
 
       const y = typeof window !== 'undefined' ? window.scrollY : null
+      let insertOrder: number | null = null
 
       const source = effectiveSessions.find((s) => s.id === sessionId) ?? null
       if (source) {
@@ -942,7 +1123,7 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
         const sourceIdx = siblings.findIndex((s) => String(s.id) === String(sessionId))
         const next = sourceIdx >= 0 ? siblings[sourceIdx + 1] ?? null : null
         const nextOrder = next?.session_order ?? null
-        const insertOrder =
+        insertOrder =
           typeof nextOrder === 'number' && Number.isFinite(nextOrder) ? (Number(sourceOrder) + Number(nextOrder)) / 2 : Number(sourceOrder) + 1
         setOptimisticSessions((prev) => {
           const insert: SessionRow = {
@@ -950,20 +1131,27 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
             week_id: weekId,
             title: `${String(source.title ?? '').trim() || 'Séance'} (copie)`,
             description: source.description ?? null,
-            session_order: insertOrder,
+            session_order: insertOrder ?? Number(sourceOrder) + 1,
           }
           return prev.concat([insert])
         })
 
         pendingDuplicateSessionRef.current[tmpSessionId] = { weekId, tmpSessionId }
+        setPendingSessionIds((prev) => {
+          const next = new Set(prev)
+          next.add(tmpSessionId)
+          return next
+        })
       }
 
       const fd = new FormData()
       fd.set('client', '1')
       fd.set('week_id', weekId)
       fd.set('session_id', sessionId)
+      // Server expects an integer session_order; it will place the copy just below the source and shift siblings.
       if (openWeekId) fd.set('openWeek', openWeekId)
       if (openSessionId) fd.set('openSession', openSessionId)
+      setDuplicatingSessionId(sessionId)
       startTransition(async () => {
         try {
           const res = (await props.duplicateSessionAction?.(fd)) as void | { newSessionId?: string | null }
@@ -975,14 +1163,23 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
             if (tmpSessionId) {
               setOptimisticSessions((prev) => prev.map((s) => (String(s.id) === String(tmpSessionId) ? { ...s, id: newSessionId } : s)))
               delete pendingDuplicateSessionRef.current[tmpSessionId]
+              setPendingSessionIds((prev) => {
+                const next = new Set(prev)
+                next.delete(tmpSessionId)
+                return next
+              })
             }
+            setOpenSessionId(String(newSessionId))
+            window.setTimeout(() => urlState.setOpenSessionId(String(newSessionId), { preserveScroll: true }), 0)
           }
         } finally {
+          setDuplicatingSessionId(null)
+          router.refresh()
           restoreScrollY(y)
         }
       })
     },
-    [effectiveSessions, openSessionId, openWeekId, props, restoreScrollY, startTransition]
+    [duplicatingSessionId, effectiveSessions, openSessionId, openWeekId, props, restoreScrollY, router, startTransition, urlState]
   )
 
   const deleteSession = useCallback(
@@ -990,6 +1187,22 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
       if (!props.deleteSessionAction) return
 
       const y = typeof window !== 'undefined' ? window.scrollY : null
+
+      // If it's a freshly created optimistic session, delete locally without server roundtrip.
+      if (String(sessionId).startsWith('tmp-session-')) {
+        cancelledAddSessionTmpIdsRef.current.add(String(sessionId))
+        setOptimisticSessions((prev) => prev.filter((s) => String(s.id) !== String(sessionId)))
+        setPendingSessionIds((prev) => {
+          const next = new Set(prev)
+          next.delete(String(sessionId))
+          return next
+        })
+        if (openSessionId === sessionId) {
+          setOpenSessionId(null)
+          window.setTimeout(() => urlState.setOpenSessionId(null, { preserveScroll: true }), 0)
+        }
+        return
+      }
 
       setOptimisticDeletedSessionIds((prev) => {
         const next = new Set(prev)
@@ -1048,6 +1261,9 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
       setSavingWeekId(weekId)
       setEditingWeekId(null)
 
+      // Optimistic: make notes/title visible immediately (no refresh required).
+      setOptimisticWeeks((prev) => prev.map((w) => (String(w.id) === String(weekId) ? { ...w, title, notes: notes || null } : w)))
+
       const fd = new FormData()
       fd.set('client', '1')
       fd.set('week_id', weekId)
@@ -1080,6 +1296,18 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
 
       setSavingSessionId(sessionId)
       setEditingSessionId(null)
+
+      // Optimistic: make notes/title visible immediately (no refresh required).
+      setOptimisticSessions((prev) => {
+        const byId = new Map<string, SessionRow>()
+        for (const s of prev) byId.set(String(s.id), s)
+
+        const base = byId.get(String(sessionId)) ?? (props.sessions ?? []).find((s) => String(s.id) === String(sessionId)) ?? null
+        if (!base) return prev
+
+        byId.set(String(sessionId), { ...base, title, description: notes || null })
+        return Array.from(byId.values())
+      })
 
       const fd = new FormData()
       fd.set('client', '1')
@@ -1212,7 +1440,9 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
       if (!blocksSet.has(v.newBlockId)) continue
 
       const serverSessionItemId =
-        sessionItems.find((r) => String(r.session_id) === String(v.sessionId) && r.kind === 'block' && r.session_block_id === v.newBlockId)?.id ??
+        sessionItems.find(
+          (r) => String(r.session_id) === String(v.sessionId) && isDbSessionItemBlock(r.kind) && r.session_block_id === v.newBlockId
+        )?.id ??
         null
       if (!serverSessionItemId) continue
 
@@ -1247,7 +1477,7 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
         const next: Record<string, SessionItemRow[]> = { ...prev }
         const list = (next[v.sessionId] ?? []).slice()
         next[v.sessionId] = list.map((r) => {
-          if (r.kind !== 'block') return r
+          if (!isDbSessionItemBlock(r.kind)) return r
           const isTarget = r.id === v.tmpSessionItemId || r.session_block_id === v.tmpBlockId
           if (!isTarget) return r
           return {
@@ -1277,10 +1507,13 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
 
       setOptimisticBlockExercisesByBlockId((prev) => {
         const copy = { ...prev }
-        const list = copy[v.tmpBlockId]
+        const tmpK = canonSessionBlockId(String(v.tmpBlockId))
+        const newK = canonSessionBlockId(String(v.newBlockId))
+        const list = copy[tmpK] ?? copy[v.tmpBlockId]
         if (list) {
-          copy[v.newBlockId as string] = list.map((be) => ({ ...be, session_block_id: v.newBlockId as string }))
+          copy[newK] = list.map((be) => ({ ...be, session_block_id: v.newBlockId as string }))
         }
+        delete copy[tmpK]
         delete copy[v.tmpBlockId]
         return copy
       })
@@ -1377,12 +1610,12 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
       for (const pe of props.programExercises) peById.set(pe.id, pe)
 
       const blockById = new Map<string, SessionBlockRow>()
-      for (const b of effectiveSessionBlocks) blockById.set(b.id, b)
+      for (const b of effectiveSessionBlocks) blockById.set(canonSessionBlockId(b.id), b)
 
       for (const [sessionId, rows] of Object.entries(effectiveSessionItemsBySession)) {
         out[sessionId] = []
         for (const r of rows) {
-          if (r.kind === 'exercise' && r.program_exercise_id) {
+          if (String(r.kind ?? '').trim().toLowerCase() === 'exercise' && r.program_exercise_id) {
             const pe = peById.get(r.program_exercise_id) ?? null
             const optimistic = optimisticExerciseById[r.program_exercise_id] ?? null
             const title =
@@ -1398,8 +1631,8 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
               programExerciseId: r.program_exercise_id,
               title,
               subtitle: optimistic?.notes != null ? String(optimistic.notes) : pe?.notes ? String(pe.notes) : null,
-              sets: optimistic?.sets ?? pe?.sets ?? null,
-              reps: optimistic?.reps ?? pe?.reps ?? null,
+              sets: optimistic?.sets ?? (pe?.sets != null ? String(pe.sets) : null),
+              reps: optimistic?.reps ?? (pe?.reps != null ? String(pe.reps) : null),
               rest_time: optimistic?.rest_time ?? pe?.rest_time ?? null,
               rpe: optimistic?.rpe ?? pe?.rpe ?? null,
               tempo: optimistic?.tempo ?? pe?.tempo ?? null,
@@ -1408,10 +1641,13 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
             continue
           }
 
-          if (r.kind === 'block' && r.session_block_id) {
-            const b = blockById.get(r.session_block_id) ?? null
-            const optimisticTitle = optimisticBlockTitleById[r.session_block_id] ?? null
-            const optimisticNotes = optimisticBlockNotesById[r.session_block_id] ?? null
+          if (isDbSessionItemBlock(r.kind) && r.session_block_id) {
+            const bid = canonSessionBlockId(r.session_block_id)
+            const b = blockById.get(bid) ?? null
+            const optimisticTitle =
+              optimisticBlockTitleById[r.session_block_id] ?? optimisticBlockTitleById[bid] ?? null
+            const optimisticNotes =
+              optimisticBlockNotesById[r.session_block_id] ?? optimisticBlockNotesById[bid] ?? null
             const title =
               String(optimisticTitle ?? '').trim() || String(b?.title ?? '').trim() || String(b?.type ?? 'block')
             out[sessionId].push({
@@ -1473,8 +1709,8 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
           programExerciseId: pe.id,
           title,
           subtitle: pe.notes ? String(pe.notes) : null,
-          sets: pe.sets ?? null,
-          reps: pe.reps ?? null,
+          sets: pe.sets != null ? String(pe.sets) : null,
+          reps: pe.reps != null ? String(pe.reps) : null,
           rest_time: pe.rest_time ?? null,
           rpe: pe.rpe ?? null,
           tempo: pe.tempo ?? null,
@@ -1516,8 +1752,6 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
     props.sessionItems,
   ])
 
-// ...
-
   function saveEditExercise(item: TimelineItem & { kind: 'exercise' }, opts?: { skipRefresh?: boolean }) {
     if (!props.updateProgramExerciseAction) return
     const peId = String(item.programExerciseId ?? '')
@@ -1540,8 +1774,8 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
     const updatePayload = {
       title: item.title,
       notes: nextNotes ? nextNotes : null,
-      sets: nextSets ? Number(nextSets) : null,
-      reps: nextReps ? Number(nextReps) : null,
+      sets: nextSets ? nextSets : null,
+      reps: nextReps ? nextReps : null,
       rest_time: nextRest ? nextRest : null,
       rpe: Number.isFinite(rpeParsed as number) ? (rpeParsed as number) : null,
       tempo: nextTempo ? nextTempo : null,
@@ -1632,7 +1866,7 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
 
       setSessionItemsLocal((prev) => {
         const current = (prev[sessionIdForDelete] ?? []).slice()
-        const filtered = current.filter((r) => !(r.kind === 'block' && r.session_block_id === blockId))
+        const filtered = current.filter((r) => !(isDbSessionItemBlock(r.kind) && r.session_block_id === blockId))
         const renumbered = filtered
           .slice()
           .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
@@ -1657,6 +1891,8 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
       })
       setOptimisticBlockExercisesByBlockId((prev) => {
         const copy = { ...prev }
+        const ck = canonSessionBlockId(String(blockId))
+        delete copy[ck]
         delete copy[String(blockId)]
         return copy
       })
@@ -1678,7 +1914,7 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
 
     setSessionItemsLocal((prev) => {
       const current = (prev[sessionIdForDelete] ?? []).slice()
-      const filtered = current.filter((r) => !(r.kind === 'block' && r.session_block_id === blockId))
+      const filtered = current.filter((r) => !(isDbSessionItemBlock(r.kind) && r.session_block_id === blockId))
       const renumbered = filtered
         .slice()
         .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
@@ -1744,7 +1980,7 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
       }
     }
 
-    const sourceExercises = (blockExercisesByBlockId[String(blockId)] ?? []).slice()
+    const sourceExercises = (blockExercisesByBlockId[canonSessionBlockId(String(blockId))] ?? []).slice()
     if (sourceExercises.length) {
       const tmpExercises = sourceExercises.map((be) => ({
         ...be,
@@ -1755,7 +1991,7 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
     }
 
     const sourceSessionItemId =
-      (sessionItemsLocal[sessionIdForDup] ?? []).find((r) => r.kind === 'block' && String(r.session_block_id) === String(blockId))?.id ?? null
+      (sessionItemsLocal[sessionIdForDup] ?? []).find((r) => isDbSessionItemBlock(r.kind) && String(r.session_block_id) === String(blockId))?.id ?? null
 
     pendingDuplicateBlockIdRef.current[tmpSessionItemId] = {
       sessionId: sessionIdForDup,
@@ -1768,7 +2004,7 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
     setSessionItemsDirtyBySession((prev) => ({ ...prev, [sessionIdForDup]: true }))
     setSessionItemsLocal((prev) => {
       const current = (prev[sessionIdForDup] ?? []).slice().sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
-      const sourceIdx = current.findIndex((r) => r.kind === 'block' && String(r.session_block_id) === String(blockId))
+      const sourceIdx = current.findIndex((r) => isDbSessionItemBlock(r.kind) && String(r.session_block_id) === String(blockId))
       const insertAt = sourceIdx >= 0 ? sourceIdx + 1 : current.length
       const inserted: SessionItemRow = {
         id: tmpSessionItemId,
@@ -1822,7 +2058,7 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
             const list = (next[sessionIdForDup] ?? []).slice()
             next[sessionIdForDup] = list.map((r) => {
               if (r.id !== tmpSessionItemId) return r
-              if (r.kind !== 'block') return r
+              if (!isDbSessionItemBlock(r.kind)) return r
               return { ...r, session_block_id: String(newBlockId) }
             })
             return next
@@ -1856,11 +2092,18 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
 
           setOptimisticBlockExercisesByBlockId((prev) => {
             const copy = { ...prev }
-            const nextList = (newBlockExercises ?? null)
-              ? (newBlockExercises as BlockExerciseRow[]).map((be) => ({ ...be, session_block_id: String(newBlockId) }))
-              : (copy[tmpBlockId] ?? []).map((be) => ({ ...be, session_block_id: String(newBlockId) }))
+            const tmpK = canonSessionBlockId(tmpBlockId)
+            const newK = canonSessionBlockId(String(newBlockId))
+            const optimisticFallback = (copy[tmpK] ?? copy[tmpBlockId] ?? []).map((be) => ({
+              ...be,
+              session_block_id: String(newBlockId),
+            }))
+            const serverRows = Array.isArray(newBlockExercises) && newBlockExercises.length > 0 ? newBlockExercises : null
+            const nextList = serverRows
+              ? serverRows.map((be) => ({ ...be, session_block_id: String(newBlockId) }))
+              : optimisticFallback
 
-            copy[String(newBlockId)] = nextList
+            copy[newK] = nextList
 
             if (typeof window !== 'undefined') {
               try {
@@ -1871,6 +2114,7 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
               }
             }
 
+            delete copy[tmpK]
             delete copy[tmpBlockId]
             return copy
           })
@@ -1952,7 +2196,7 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
           })
         }
       } finally {
-        refreshPreserveScroll()
+        router.refresh()
       }
     })
   }
@@ -1987,12 +2231,6 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
       const renumbered = next.map((r, idx) => ({ ...r, position: idx }))
       return { ...prev, [sessionId]: renumbered }
     })
-
-    if (y != null && typeof window !== 'undefined') {
-      window.setTimeout(() => {
-        window.scrollTo({ top: y, left: 0, behavior: 'instant' as ScrollBehavior })
-      }, 0)
-    }
 
     const fd = new FormData()
     fd.set('client', '1')
@@ -2044,11 +2282,7 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
           return { ...prev, [sessionId]: renumbered }
         })
       } finally {
-        if (y != null && typeof window !== 'undefined') {
-          window.setTimeout(() => {
-            window.scrollTo({ top: y, left: 0, behavior: 'instant' as ScrollBehavior })
-          }, 0)
-        }
+        restoreScrollY(y)
       }
     })
   }
@@ -2094,12 +2328,6 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
       const renumbered = next.map((r, idx) => ({ ...r, position: idx }))
       return { ...prev, [sessionId]: renumbered }
     })
-
-    if (y != null && typeof window !== 'undefined') {
-      window.setTimeout(() => {
-        window.scrollTo({ top: y, left: 0, behavior: 'instant' as ScrollBehavior })
-      }, 0)
-    }
 
     const fd = new FormData()
     fd.set('client', '1')
@@ -2182,11 +2410,7 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
         })
       } finally {
         // keep dirty=true until server props include the inserted rows, to prevent flicker
-        if (y != null && typeof window !== 'undefined') {
-          window.setTimeout(() => {
-            window.scrollTo({ top: y, left: 0, behavior: 'instant' as ScrollBehavior })
-          }, 0)
-        }
+        restoreScrollY(y)
       }
     })
   }
@@ -2195,6 +2419,7 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
     const id = String(e.active.id)
     if (isDndDisabled) return
     if (isTimelineDndDisabled && !id.startsWith('library-exercise:')) return
+    isDraggingRef.current = true
     setActiveDragId(id)
     lastOverIdRef.current = null
     setActiveDropMarkerId(null)
@@ -2245,12 +2470,14 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
       setActiveDragId(null)
       lastOverIdRef.current = null
       setActiveDropMarkerId(null)
+      isDraggingRef.current = false
       return
     }
     const overId = e.over?.id ? String(e.over.id) : lastOverIdRef.current
     setActiveDragId(null)
     lastOverIdRef.current = null
     setActiveDropMarkerId(null)
+    isDraggingRef.current = false
 
     if (!overId) return
 
@@ -2271,7 +2498,9 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
       const renumbered = moved.map((s, idx) => ({ ...s, session_order: idx + 1 }))
 
       setOptimisticSessions((prev) => {
-        const byId = new Map(prev.map((s) => [String(s.id), s]))
+        const byId = new Map<string, SessionRow>()
+        for (const s of props.sessions ?? []) byId.set(String(s.id), s)
+        for (const s of prev) byId.set(String(s.id), s)
         for (const s of renumbered) {
           const existing = byId.get(String(s.id))
           if (existing) byId.set(String(s.id), { ...existing, session_order: s.session_order })
@@ -2413,15 +2642,17 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
                   </div>
                 </div>
 
-                <div className="mt-3 grid gap-2 px-3 pb-3">
-                  {filteredExerciseLibrary.slice(0, 50).map((ex) => (
-                    <div
-                      key={ex.id}
-                      className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] px-2.5 py-2 text-sm font-semibold text-[var(--text)]"
-                    >
-                      <div className="truncate">{String(ex.name ?? 'Exercice')}</div>
-                    </div>
-                  ))}
+                <div className="mt-3 max-h-[min(60vh,520px)] overflow-y-auto overscroll-contain px-3 pb-3">
+                  <div className="grid gap-2">
+                    {filteredExerciseLibrary.map((ex) => (
+                      <div
+                        key={ex.id}
+                        className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] px-2.5 py-2 text-sm font-semibold text-[var(--text)]"
+                      >
+                        <div className="truncate">{String(ex.name ?? 'Exercice')}</div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -2469,15 +2700,17 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
                 </div>
               </div>
 
-              <div className="mt-3 grid gap-2 px-3 pb-3">
-                {filteredExerciseLibrary.slice(0, 50).map((ex) => (
-                  <div
-                    key={ex.id}
-                    className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] px-2.5 py-2 text-sm font-semibold text-[var(--text)]"
-                  >
-                    <div className="truncate">{String(ex.name ?? 'Exercice')}</div>
-                  </div>
-                ))}
+              <div className="mt-3 max-h-[min(60vh,520px)] overflow-y-auto overscroll-contain px-3 pb-3">
+                <div className="grid gap-2">
+                  {filteredExerciseLibrary.map((ex) => (
+                    <div
+                      key={ex.id}
+                      className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] px-2.5 py-2 text-sm font-semibold text-[var(--text)]"
+                    >
+                      <div className="truncate">{String(ex.name ?? 'Exercice')}</div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -2597,6 +2830,7 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
                 <div className="grid gap-3">
                 {orderedWeeks.map((w) => {
                   const isWeekOpen = openWeekId === w.id
+                  const isWeekPending = pendingWeekIds.has(String(w.id)) || String(w.id).startsWith('tmp-week-')
                   const sessions = sessionsByWeek[w.id] ?? []
 
                   return (
@@ -2610,12 +2844,14 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
                         className="flex w-full cursor-pointer items-center justify-between gap-3 px-4 py-3 text-left"
                         onClick={(e) => {
                           if ((e.target as HTMLElement | null)?.closest?.('input,textarea,button')) return
+                          if (isWeekPending) return
                           setOpenWeekId((cur) => (cur === w.id ? null : w.id))
                         }}
                         onKeyDown={(e) => {
                           if (e.key !== 'Enter' && e.key !== ' ') return
                           if ((e.target as HTMLElement | null)?.closest?.('input,textarea,button')) return
                           e.preventDefault()
+                          if (isWeekPending) return
                           setOpenWeekId((cur) => (cur === w.id ? null : w.id))
                         }}
                       >
@@ -2654,6 +2890,7 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
                                     saveWeekMeta(w.id)
                                   }}
                                 >
+                                  {savingWeekId === w.id ? <InlineSpinner className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white/60 border-t-white" /> : null}
                                   Sauvegarder
                                 </button>
                                 <button
@@ -2685,8 +2922,11 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
                                     type="button"
                                     className="ml-3 inline-flex h-8 w-8 flex-none items-center justify-center rounded-full bg-[var(--brand)] text-white shadow-sm ring-1 ring-black/10 transition hover:opacity-90"
                                     onPointerDownCapture={(e) => e.stopPropagation()}
+                                    disabled={isWeekPending}
+                                    aria-busy={isWeekPending}
                                     onClick={(e) => {
                                       e.stopPropagation()
+                                      if (isWeekPending) return
                                       setEditingWeekId(w.id)
                                       setEditWeekTitle(w.title)
                                       setEditWeekNotes(String(w.notes ?? '').trim())
@@ -2694,7 +2934,11 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
                                     aria-label="Éditer"
                                     title="Éditer"
                                   >
-                                    <IconEdit size={14} />
+                                    {isWeekPending ? (
+                                      <InlineSpinner className="h-4 w-4 animate-spin rounded-full border-2 border-white/60 border-t-white" />
+                                    ) : (
+                                      <IconEdit size={14} />
+                                    )}
                                   </button>
                                 ) : (
                                   <div className="ml-3 h-8 w-8 flex-none" />
@@ -2709,6 +2953,8 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
                             type="button"
                             className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--brand)] text-white shadow-sm ring-1 ring-black/10 transition hover:opacity-90"
                             onPointerDownCapture={(e) => e.stopPropagation()}
+                            disabled={duplicatingWeekId === w.id}
+                            aria-busy={duplicatingWeekId === w.id}
                             onClick={(e) => {
                               e.stopPropagation()
                               duplicateWeek(w.id)
@@ -2716,7 +2962,11 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
                             aria-label="Dupliquer"
                             title="Dupliquer"
                           >
-                            <IconDuplicate size={18} />
+                            {duplicatingWeekId === w.id ? (
+                              <InlineSpinner className="h-4 w-4 animate-spin rounded-full border-2 border-white/60 border-t-white" />
+                            ) : (
+                              <IconDuplicate size={18} />
+                            )}
                           </button>
                           <button
                             type="button"
@@ -2739,6 +2989,7 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
                           <SortableContext items={sessions.map((s) => `session:${String(s.id)}`)} strategy={verticalListSortingStrategy}>
                             {sessions.map((s) => {
                               const isSessionOpen = openSessionId === s.id && closedSessionId !== s.id
+                              const isSessionPending = pendingSessionIds.has(String(s.id)) || String(s.id).startsWith('tmp-session-')
                               const sessionItems = timelineItemsBySession[s.id] ?? []
                               const summary = sessionItems
                                 .slice(0, 8)
@@ -2759,45 +3010,23 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
                                         className="flex w-full max-w-full min-w-0 cursor-pointer items-start justify-between gap-3 px-4 py-3 text-left"
                                         onClick={(e) => {
                                           if ((e.target as HTMLElement | null)?.closest?.('input,textarea,button')) return
-                                          const y = typeof window !== 'undefined' ? window.scrollY : null
+                                          if (isSessionPending) return
                                           setClosedSessionId((cur) => (cur === s.id ? null : s.id))
                                           if (!isSessionOpen) {
                                             setOpenSessionId(s.id)
                                             window.setTimeout(() => urlState.setOpenSessionId(s.id, { preserveScroll: true }), 0)
                                           }
-                                          window.setTimeout(() => {
-                                            if (y != null && typeof window !== 'undefined') {
-                                              window.scrollTo({ top: y, left: 0, behavior: 'instant' as ScrollBehavior })
-                                              window.requestAnimationFrame(() => {
-                                                window.scrollTo({ top: y, left: 0, behavior: 'instant' as ScrollBehavior })
-                                              })
-                                              window.setTimeout(() => {
-                                                window.scrollTo({ top: y, left: 0, behavior: 'instant' as ScrollBehavior })
-                                              }, 50)
-                                            }
-                                          }, 0)
                                         }}
                                         onKeyDown={(e) => {
                                           if (e.key !== 'Enter' && e.key !== ' ') return
                                           if ((e.target as HTMLElement | null)?.closest?.('input,textarea,button')) return
                                           e.preventDefault()
-                                          const y = typeof window !== 'undefined' ? window.scrollY : null
+                                          if (isSessionPending) return
                                           setClosedSessionId((cur) => (cur === s.id ? null : s.id))
                                           if (!isSessionOpen) {
                                             setOpenSessionId(s.id)
                                             window.setTimeout(() => urlState.setOpenSessionId(s.id, { preserveScroll: true }), 0)
                                           }
-                                          window.setTimeout(() => {
-                                            if (y != null && typeof window !== 'undefined') {
-                                              window.scrollTo({ top: y, left: 0, behavior: 'instant' as ScrollBehavior })
-                                              window.requestAnimationFrame(() => {
-                                                window.scrollTo({ top: y, left: 0, behavior: 'instant' as ScrollBehavior })
-                                              })
-                                              window.setTimeout(() => {
-                                                window.scrollTo({ top: y, left: 0, behavior: 'instant' as ScrollBehavior })
-                                              }, 50)
-                                            }
-                                          }, 0)
                                         }}
                                       >
                                         <div className="min-w-0 flex-1">
@@ -2835,6 +3064,9 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
                                                     saveSessionMeta(w.id, s.id)
                                                   }}
                                                 >
+                                                  {savingSessionId === s.id ? (
+                                                    <InlineSpinner className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white/60 border-t-white" />
+                                                  ) : null}
                                                   Sauvegarder
                                                 </button>
                                                 <button
@@ -2866,8 +3098,11 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
                                                         type="button"
                                                         className="ml-3 inline-flex h-8 w-8 flex-none items-center justify-center rounded-full bg-[var(--brand)] text-white shadow-sm ring-1 ring-black/10 transition hover:opacity-90"
                                                         onPointerDownCapture={(e) => e.stopPropagation()}
+                                                        disabled={isSessionPending}
+                                                        aria-busy={isSessionPending}
                                                         onClick={(e) => {
                                                           e.stopPropagation()
+                                                          if (isSessionPending) return
                                                           setEditingSessionId(s.id)
                                                           setEditSessionTitle(s.title)
                                                           setEditSessionNotes(String(s.description ?? '').trim())
@@ -2875,7 +3110,11 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
                                                         aria-label="Éditer"
                                                         title="Éditer"
                                                       >
-                                                        <IconEdit size={14} />
+                                                        {isSessionPending ? (
+                                                          <InlineSpinner className="h-4 w-4 animate-spin rounded-full border-2 border-white/60 border-t-white" />
+                                                        ) : (
+                                                          <IconEdit size={14} />
+                                                        )}
                                                       </button>
                                                     ) : (
                                                       <div className="ml-3 h-8 w-8 flex-none" />
@@ -2896,7 +3135,12 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
                                           <button
                                             type="button"
                                             className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--brand)] text-white shadow-sm ring-1 ring-black/10 transition hover:opacity-90"
-                                            onPointerDownCapture={(e) => e.stopPropagation()}
+                                            onPointerDownCapture={(e) => {
+                                              e.preventDefault()
+                                              e.stopPropagation()
+                                            }}
+                                            disabled={duplicatingSessionId === s.id}
+                                            aria-busy={duplicatingSessionId === s.id}
                                             onClick={(e) => {
                                               e.stopPropagation()
                                               duplicateSession(w.id, s.id)
@@ -2909,8 +3153,12 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
                                           <button
                                             type="button"
                                             className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--brand)] text-white shadow-sm ring-1 ring-black/10 transition hover:opacity-90"
-                                            onPointerDownCapture={(e) => e.stopPropagation()}
+                                            onPointerDownCapture={(e) => {
+                                              e.preventDefault()
+                                              e.stopPropagation()
+                                            }}
                                             onClick={(e) => {
+                                              e.preventDefault()
                                               e.stopPropagation()
                                               deleteSession(w.id, s.id)
                                             }}
@@ -3355,32 +3603,35 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
                                                         {it.kind === 'block' && (!effectiveOpenBlockId || it.blockId !== effectiveOpenBlockId) ? (
                                                           <div className="mt-2 grid gap-1">
                                                             {it.subtitle ? <div className="text-xs text-gray-600">{it.subtitle}</div> : null}
-                                                            {(blockExercisesByBlockId[it.blockId] ?? []).length ? (
-                                                              <div className="mt-1">
-                                                                <div className="grid gap-1">
-                                                                  {(blockExercisesByBlockId[it.blockId] ?? []).slice(0, 4).map((be) => (
-                                                                    <div key={be.id} className="grid min-w-0 grid-cols-[minmax(0,220px)_minmax(0,220px)] items-center gap-0">
-                                                                      <div className="min-w-0 truncate pr-2 text-xs font-semibold text-[var(--brand)]">
-                                                                        {be.exercise_library?.name ?? be.exercise_name ?? 'Exercice'}
-                                                                      </div>
-                                                                      {be.notes ? (
-                                                                        <div className="truncate border-l border-gray-200 pl-2 text-left text-[11px] text-gray-600">
-                                                                          {be.notes}
+                                                            {(() => {
+                                                              const closedRows = closedBlockExercisesForBlockId(it.blockId)
+                                                              return closedRows.length ? (
+                                                                <div className="mt-1">
+                                                                  <div className="grid gap-1">
+                                                                    {closedRows.slice(0, 4).map((be) => (
+                                                                      <div key={be.id} className="grid min-w-0 grid-cols-[minmax(0,220px)_minmax(0,220px)] items-center gap-0">
+                                                                        <div className="min-w-0 truncate pr-2 text-xs font-semibold text-[var(--brand)]">
+                                                                          {be.exercise_library?.name ?? be.exercise_name ?? 'Exercice'}
                                                                         </div>
-                                                                      ) : null}
-                                                                    </div>
-                                                                  ))}
-                                                                </div>
-
-                                                                {(blockExercisesByBlockId[it.blockId] ?? []).length > 4 ? (
-                                                                  <div className="mt-2 border-t border-gray-100 pt-2 text-[11px] font-semibold text-gray-500">
-                                                                    +{(blockExercisesByBlockId[it.blockId] ?? []).length - 4} exercices
+                                                                        {be.notes ? (
+                                                                          <div className="truncate border-l border-gray-200 pl-2 text-left text-[11px] text-gray-600">
+                                                                            {be.notes}
+                                                                          </div>
+                                                                        ) : null}
+                                                                      </div>
+                                                                    ))}
                                                                   </div>
-                                                                ) : null}
-                                                              </div>
-                                                            ) : (
-                                                              <div className="text-xs text-gray-500">Aucun exercice.</div>
-                                                            )}
+
+                                                                  {closedRows.length > 4 ? (
+                                                                    <div className="mt-2 border-t border-gray-100 pt-2 text-[11px] font-semibold text-gray-500">
+                                                                      +{closedRows.length - 4} exercices
+                                                                    </div>
+                                                                  ) : null}
+                                                                </div>
+                                                              ) : (
+                                                                <div className="text-xs text-gray-500">Aucun exercice.</div>
+                                                              )
+                                                            })()}
                                                           </div>
                                                         ) : null}
                                                       </div>
@@ -3462,40 +3713,38 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
                                             </select>
                                           </div>
 
-                                          {addExerciseQuery.trim() || addExerciseMuscle.trim() ? (
-                                            <div className="mt-2 grid gap-1">
-                                              {filteredAddExerciseLibrary.slice(0, 8).map((ex) => (
-                                                <button
-                                                  key={ex.id}
-                                                  type="button"
-                                                  className="flex h-10 items-center rounded-xl border border-gray-200 bg-white px-3 text-left text-sm font-semibold text-[var(--brand)] hover:bg-gray-50"
-                                                  onPointerDownCapture={(e) => e.stopPropagation()}
-                                                  onClick={(e) => {
-                                                    e.preventDefault()
-                                                    e.stopPropagation()
-                                                    if (!openSessionId) return
+                                          <div className="mt-2 grid max-h-72 gap-1 overflow-y-auto overscroll-contain rounded-lg border border-gray-100 p-1">
+                                            {filteredAddExerciseLibrary.length === 0 ? (
+                                              <div className="py-2 text-sm text-gray-600">Aucun exercice.</div>
+                                            ) : null}
+                                            {filteredAddExerciseLibrary.map((ex) => (
+                                              <button
+                                                key={ex.id}
+                                                type="button"
+                                                className="flex h-10 w-full items-center rounded-xl border border-gray-200 bg-white px-3 text-left text-sm font-semibold text-[var(--brand)] hover:bg-gray-50"
+                                                onPointerDownCapture={(e) => e.stopPropagation()}
+                                                onClick={(e) => {
+                                                  e.preventDefault()
+                                                  e.stopPropagation()
+                                                  if (!openSessionId) return
 
-                                                    const rows = (effectiveSessionItemsBySession[openSessionId] ?? []).slice()
-                                                    const insertPosition = rows.length
-                                                    insertExerciseAt(openSessionId, insertPosition, String(ex.id))
-                                                    setOpenAddPanel(null)
-                                                    setAddExerciseQuery('')
-                                                    setAddExerciseMuscle('')
-                                                  }}
-                                                >
-                                                  <div className="min-w-0 truncate">{String(ex.name ?? '').trim() || '—'}</div>
-                                                  {ex.muscle_group ? (
-                                                    <div className="ml-auto truncate pl-2 text-xs font-semibold text-gray-500">
-                                                      {String(ex.muscle_group)}
-                                                    </div>
-                                                  ) : null}
-                                                </button>
-                                              ))}
-                                              {!filteredAddExerciseLibrary.length ? (
-                                                <div className="py-2 text-sm text-gray-600">Aucun exercice.</div>
-                                              ) : null}
-                                            </div>
-                                          ) : null}
+                                                  const rows = (effectiveSessionItemsBySession[openSessionId] ?? []).slice()
+                                                  const insertPosition = rows.length
+                                                  insertExerciseAt(openSessionId, insertPosition, String(ex.id))
+                                                  setOpenAddPanel(null)
+                                                  setAddExerciseQuery('')
+                                                  setAddExerciseMuscle('')
+                                                }}
+                                              >
+                                                <div className="min-w-0 truncate">{String(ex.name ?? '').trim() || '—'}</div>
+                                                {ex.muscle_group ? (
+                                                  <div className="ml-auto truncate pl-2 text-xs font-semibold text-gray-500">
+                                                    {String(ex.muscle_group)}
+                                                  </div>
+                                                ) : null}
+                                              </button>
+                                            ))}
+                                          </div>
                                         </div>
                                       ) : null}
 
@@ -3588,6 +3837,28 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
                                     const res = (await props.addSessionAction?.(fd)) as void | { newSessionId?: string | null }
                                     const newSessionId = res && typeof res === 'object' ? (res.newSessionId ?? null) : null
                                     if (newSessionId) {
+                                      if (cancelledAddSessionTmpIdsRef.current.has(tmpSessionId)) {
+                                        // User deleted the optimistic session before the server responded; cleanup server row.
+                                        cancelledAddSessionTmpIdsRef.current.delete(tmpSessionId)
+                                        // Hide immediately (until server deletion is reflected in props).
+                                        setOptimisticDeletedSessionIds((prev) => {
+                                          const next = new Set(prev)
+                                          next.add(String(newSessionId))
+                                          return next
+                                        })
+                                        if (openSessionId === String(newSessionId)) {
+                                          setOpenSessionId(null)
+                                          window.setTimeout(() => urlState.setOpenSessionId(null, { preserveScroll: true }), 0)
+                                        }
+                                        if (props.deleteSessionAction) {
+                                          const delFd = new FormData()
+                                          delFd.set('client', '1')
+                                          delFd.set('week_id', w.id)
+                                          delFd.set('session_id', String(newSessionId))
+                                          await props.deleteSessionAction(delFd)
+                                        }
+                                        return
+                                      }
                                       setOptimisticSessions((prev) =>
                                         prev.map((s) => (String(s.id) === String(tmpSessionId) ? { ...s, id: String(newSessionId) } : s))
                                       )

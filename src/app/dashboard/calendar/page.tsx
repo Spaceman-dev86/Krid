@@ -207,7 +207,7 @@ export default async function DashboardCalendarPage(props: PageProps) {
   }
 
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-transparent">
       <Container className="py-6 sm:py-10">
         <CalendarClient
           clients={clients}

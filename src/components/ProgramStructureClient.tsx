@@ -12,6 +12,7 @@ import type { Transform } from '@dnd-kit/utilities'
 import { CSS } from '@dnd-kit/utilities'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useMarkProgramEditorReady } from './ProgramEditorNavigationClient'
 import type { ReactNode } from 'react'
 import React, { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import ExerciseSearchClient from './ExerciseSearchClient'
@@ -204,6 +205,8 @@ function StaticItem({
 }
 
 export default function ProgramStructureClient(props: Props) {
+  useMarkProgramEditorReady()
+
   const router = useRouter()
   const [, startTransition] = useTransition()
 
