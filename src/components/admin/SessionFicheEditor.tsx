@@ -82,6 +82,8 @@ type Props = {
   /** Séance déjà publiée → nouveaux blocs créés publiés. */
   sessionPublished?: boolean
   returnToForNewBlock: string
+  /** Builder programme : masque nom / notes / feedback / héritage (gérés ailleurs). */
+  compositionOnly?: boolean
   initial?: {
     name?: string
     notes?: string
@@ -138,6 +140,7 @@ export function SessionFicheEditor({
   initialBlockDetails = [],
   sessionPublished = false,
   returnToForNewBlock: _returnToForNewBlock,
+  compositionOnly = false,
   initial = {},
 }: Props) {
   const [slots, setSlots] = useState<SessionSlot[]>(() => initial.slots ?? [])
@@ -534,6 +537,8 @@ export function SessionFicheEditor({
           }
         }}
       />
+      {!compositionOnly ? (
+        <>
       <label className="grid gap-1">
         <span className="text-xs font-semibold text-[color:var(--muted)]">Nom *</span>
         <input
@@ -647,8 +652,10 @@ export function SessionFicheEditor({
           ) : null}
         </section>
       )}
+        </>
+      ) : null}
 
-      <section className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-da-sm">
+      <section className={`rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-da-sm ${compositionOnly ? '' : ''}`}>
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--muted)]">
             Composition ({slots.length})
@@ -1234,11 +1241,14 @@ export function SessionFicheEditor({
           })}
           {!slots.length ? (
             <li className="rounded-[var(--radius-md)] border border-dashed border-[var(--border)] py-6 text-center text-[12px] text-[color:var(--muted)]">
-              Ajoute des blocs publiés ou des exercices ci-dessous
+              {compositionOnly
+                ? 'Glisser un bloc / exo depuis le catalogue'
+                : 'Ajoute des blocs publiés ou des exercices ci-dessous'}
             </li>
           ) : null}
         </ul>
 
+        {!compositionOnly ? (
         <div ref={wrapRef} className="relative mt-3 grid gap-2">
           <div className="flex flex-wrap gap-1">
             <Button
@@ -1354,8 +1364,10 @@ export function SessionFicheEditor({
             </ul>
           ) : null}
         </div>
+        ) : null}
       </section>
 
+      {!compositionOnly ? (
       <label className="inline-flex items-center gap-2 text-sm text-[color:var(--fg)]">
         <input
           type="checkbox"
@@ -1365,6 +1377,7 @@ export function SessionFicheEditor({
         />
         Duplicable (coach peut récupérer une copie)
       </label>
+      ) : null}
 
       {hiddenTypeIds.map((id) => (
         <input key={`ht-${id}`} type="hidden" name="hidden_type_ids" value={id} />

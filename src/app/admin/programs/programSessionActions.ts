@@ -111,6 +111,41 @@ async function nextBlockTablePosition(
   return (typeof max === 'number' && Number.isFinite(max) ? max : -1) + 1
 }
 
+/**
+ * Bloc / exo → toujours une séance :
+ * - session_id explicite (drop sur une carte) → on l’utilise
+ * - sinon (drop hors séance / + catalogue) → crée une séance « Séance » avec l’item
+ */
+async function resolveSessionForItemDrop(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  weekId: string,
+  isCalendar: boolean,
+  targetOrder: number,
+  explicitSessionId: string,
+): Promise<string> {
+  if (explicitSessionId) return explicitSessionId
+
+  const insertOrder = await nextOrderForTarget(supabase, weekId, isCalendar, targetOrder)
+  const { data: created, error } = await supabase
+    .from('sessions')
+    .insert({
+      week_id: weekId,
+      title: 'Séance',
+      description: null,
+      notes: null,
+      objective_ressenti: true,
+      objective_note: true,
+      objective_difficulty: true,
+      session_order: insertOrder,
+    } as never)
+    .select('id')
+    .maybeSingle()
+  if (error || !created) {
+    throw new Error(error?.message ?? 'Création séance impossible')
+  }
+  return (created as { id: string }).id
+}
+
 function formatKeyToBlockType(formatKey: string | null | undefined): string {
   const k = String(formatKey ?? '').trim().toLowerCase()
   if (k.includes('warm')) return 'warmup'
@@ -145,13 +180,21 @@ export async function addTrainlyLibrarySessionAction(formData: FormData) {
 
   const { data: lib } = await supabase
     .from('session_library' as never)
-    .select('id,name,notes,status')
+    .select('id,name,notes,status,objective_ressenti,objective_note,objective_difficulty')
     .eq('id', libraryId)
     .is('coach_id', null)
     .is('deleted_at', null)
     .maybeSingle()
 
-  const library = lib as { id: string; name: string | null; notes: string | null; status: string } | null
+  const library = lib as {
+    id: string
+    name: string | null
+    notes: string | null
+    status: string
+    objective_ressenti?: boolean
+    objective_note?: boolean
+    objective_difficulty?: boolean
+  } | null
   if (!library || library.status !== 'published') {
     redirect(builderPath(programId, weekId, undefined, 'Séance catalogue introuvable ou non publiée'))
   }
@@ -185,6 +228,10 @@ export async function addTrainlyLibrarySessionAction(formData: FormData) {
       week_id: weekId,
       title: library.name?.trim() || 'Séance',
       description: library.notes?.trim() || null,
+      notes: library.notes?.trim() || null,
+      objective_ressenti: library.objective_ressenti !== false,
+      objective_note: library.objective_note !== false,
+      objective_difficulty: library.objective_difficulty !== false,
       session_order: insertOrder,
     } as never)
     .select('id')
@@ -214,6 +261,10 @@ export async function createEmptyProgramSessionAction(formData: FormData) {
   const programId = String(formData.get('program_id') ?? '').trim()
   const weekId = String(formData.get('week_id') ?? '').trim()
   const title = String(formData.get('title') ?? '').trim() || 'Séance'
+  const notes = String(formData.get('notes') ?? '').trim() || null
+  const objectiveRessenti = formData.get('objective_ressenti') === 'on'
+  const objectiveNote = formData.get('objective_note') === 'on'
+  const objectiveDifficulty = formData.get('objective_difficulty') === 'on'
   const targetOrder = Number.parseInt(String(formData.get('target_order') ?? ''), 10)
 
   if (!programId || !weekId) redirect('/admin/programs')
@@ -239,7 +290,11 @@ export async function createEmptyProgramSessionAction(formData: FormData) {
   const { error } = await supabase.from('sessions').insert({
     week_id: weekId,
     title,
-    description: null,
+    description: notes,
+    notes,
+    objective_ressenti: objectiveRessenti,
+    objective_note: objectiveNote,
+    objective_difficulty: objectiveDifficulty,
     session_order: insertOrder,
   } as never)
 
@@ -247,6 +302,39 @@ export async function createEmptyProgramSessionAction(formData: FormData) {
 
   revalidatePath(`/admin/programs/${programId}`)
   redirect(builderPath(programId, weekId, 'session_created'))
+}
+
+/** Métadonnées fiche (nom / notes / feedback) — hors composition. */
+export async function updateTrainlyProgramSessionMetaAction(formData: FormData) {
+  const { supabase } = await requireAdmin()
+  const programId = String(formData.get('program_id') ?? '').trim()
+  const weekId = String(formData.get('week_id') ?? '').trim()
+  const sessionId = String(formData.get('session_id') ?? '').trim()
+  const title = String(formData.get('title') ?? '').trim() || 'Séance'
+  const notes = String(formData.get('notes') ?? '').trim() || null
+  const objectiveRessenti = formData.get('objective_ressenti') === 'on'
+  const objectiveNote = formData.get('objective_note') === 'on'
+  const objectiveDifficulty = formData.get('objective_difficulty') === 'on'
+
+  if (!programId || !weekId || !sessionId) redirect('/admin/programs')
+  if (!(await assertTrainlyProgram(supabase, programId))) redirect('/admin/programs')
+
+  const { error } = await supabase
+    .from('sessions')
+    .update({
+      title,
+      notes,
+      description: notes,
+      objective_ressenti: objectiveRessenti,
+      objective_note: objectiveNote,
+      objective_difficulty: objectiveDifficulty,
+    } as never)
+    .eq('id', sessionId)
+    .eq('week_id', weekId)
+
+  if (error) redirect(builderPath(programId, weekId, undefined, error.message))
+  revalidatePath(`/admin/programs/${programId}`)
+  redirect(builderPath(programId, weekId, 'session_updated'))
 }
 
 export async function renameTrainlyProgramSessionAction(formData: FormData) {
@@ -372,14 +460,14 @@ export async function deleteTrainlyProgramSessionAction(formData: FormData) {
 
 /**
  * Ajoute un bloc catalogue dans une séance.
- * Si pas de session_id : crée une séance « Bloc · … » sur le jour/slot cible.
+ * Sans session_id : crée une séance « Séance » et y place le bloc.
  */
 export async function appendLibraryBlockToProgramAction(formData: FormData) {
   const { supabase } = await requireAdmin()
   const programId = String(formData.get('program_id') ?? '').trim()
   const weekId = String(formData.get('week_id') ?? '').trim()
   const blockId = String(formData.get('block_id') ?? '').trim()
-  let sessionId = String(formData.get('session_id') ?? '').trim()
+  const explicitSessionId = String(formData.get('session_id') ?? '').trim()
   const targetOrder = Number.parseInt(String(formData.get('target_order') ?? ''), 10)
 
   if (!programId || !weekId || !blockId) redirect('/admin/programs')
@@ -391,27 +479,17 @@ export async function appendLibraryBlockToProgramAction(formData: FormData) {
     redirect(builderPath(programId, weekId, undefined, detailErr ?? 'Bloc introuvable / non publié'))
   }
 
-  if (!sessionId) {
-    let insertOrder = 0
-    try {
-      insertOrder = await nextOrderForTarget(supabase, weekId, program.is_calendar, targetOrder)
-    } catch (e) {
-      redirect(builderPath(programId, weekId, undefined, e instanceof Error ? e.message : 'Erreur'))
-    }
-    const { data: created, error } = await supabase
-      .from('sessions')
-      .insert({
-        week_id: weekId,
-        title: detail.name,
-        description: null,
-        session_order: insertOrder,
-      } as never)
-      .select('id')
-      .maybeSingle()
-    if (error || !created) {
-      redirect(builderPath(programId, weekId, undefined, error?.message ?? 'Création séance impossible'))
-    }
-    sessionId = (created as { id: string }).id
+  let sessionId: string
+  try {
+    sessionId = await resolveSessionForItemDrop(
+      supabase,
+      weekId,
+      program.is_calendar,
+      targetOrder,
+      explicitSessionId,
+    )
+  } catch (e) {
+    redirect(builderPath(programId, weekId, undefined, e instanceof Error ? e.message : 'Erreur'))
   }
 
   const timelinePos = await nextTimelinePosition(supabase, sessionId)
@@ -447,6 +525,7 @@ export async function appendLibraryBlockToProgramAction(formData: FormData) {
       title: detail.name,
       notes,
       objective: detail.expected_result_label,
+      source_block_library_id: blockId,
     } as never)
     .select('id')
     .maybeSingle()
@@ -473,6 +552,7 @@ export async function appendLibraryBlockToProgramAction(formData: FormData) {
     kind: 'block',
     session_block_id: newBlockId,
     program_exercise_id: null,
+    prescriptions: [],
   } as never)
   if (siErr) redirect(builderPath(programId, weekId, undefined, siErr.message))
 
@@ -480,13 +560,13 @@ export async function appendLibraryBlockToProgramAction(formData: FormData) {
   redirect(builderPath(programId, weekId, 'block_added'))
 }
 
-/** Ajoute un exo catalogue dans une séance (ou crée une séance wrapper sur le jour). */
+/** Ajoute un exo catalogue dans une séance (ou crée « Séance » si drop hors séance). */
 export async function appendLibraryExerciseToProgramAction(formData: FormData) {
   const { supabase } = await requireAdmin()
   const programId = String(formData.get('program_id') ?? '').trim()
   const weekId = String(formData.get('week_id') ?? '').trim()
   const exerciseId = String(formData.get('exercise_id') ?? '').trim()
-  let sessionId = String(formData.get('session_id') ?? '').trim()
+  const explicitSessionId = String(formData.get('session_id') ?? '').trim()
   const targetOrder = Number.parseInt(String(formData.get('target_order') ?? ''), 10)
 
   if (!programId || !weekId || !exerciseId) redirect('/admin/programs')
@@ -506,27 +586,17 @@ export async function appendLibraryExerciseToProgramAction(formData: FormData) {
     redirect(builderPath(programId, weekId, undefined, 'Exercice introuvable / non publié'))
   }
 
-  if (!sessionId) {
-    let insertOrder = 0
-    try {
-      insertOrder = await nextOrderForTarget(supabase, weekId, program.is_calendar, targetOrder)
-    } catch (e) {
-      redirect(builderPath(programId, weekId, undefined, e instanceof Error ? e.message : 'Erreur'))
-    }
-    const { data: created, error } = await supabase
-      .from('sessions')
-      .insert({
-        week_id: weekId,
-        title: exercise.name,
-        description: null,
-        session_order: insertOrder,
-      } as never)
-      .select('id')
-      .maybeSingle()
-    if (error || !created) {
-      redirect(builderPath(programId, weekId, undefined, error?.message ?? 'Création séance impossible'))
-    }
-    sessionId = (created as { id: string }).id
+  let sessionId: string
+  try {
+    sessionId = await resolveSessionForItemDrop(
+      supabase,
+      weekId,
+      program.is_calendar,
+      targetOrder,
+      explicitSessionId,
+    )
+  } catch (e) {
+    redirect(builderPath(programId, weekId, undefined, e instanceof Error ? e.message : 'Erreur'))
   }
 
   const timelinePos = await nextTimelinePosition(supabase, sessionId)
@@ -550,9 +620,45 @@ export async function appendLibraryExerciseToProgramAction(formData: FormData) {
     kind: 'exercise',
     program_exercise_id: (pe as { id: string }).id,
     session_block_id: null,
+    prescriptions: [],
   } as never)
   if (siErr) redirect(builderPath(programId, weekId, undefined, siErr.message))
 
   revalidatePath(`/admin/programs/${programId}`)
   redirect(builderPath(programId, weekId, 'exercise_added'))
+}
+
+/** Remplace la composition d’une séance programme (même UI que /admin/sessions/new). */
+export async function replaceProgramSessionCompositionAction(formData: FormData) {
+  const { supabase } = await requireAdmin()
+  const programId = String(formData.get('program_id') ?? '').trim()
+  const weekId = String(formData.get('week_id') ?? '').trim()
+  const sessionId = String(formData.get('session_id') ?? '').trim()
+
+  if (!programId || !weekId || !sessionId) redirect('/admin/programs')
+  if (!(await assertTrainlyProgram(supabase, programId))) redirect('/admin/programs')
+
+  const { data: session } = await supabase
+    .from('sessions')
+    .select('id')
+    .eq('id', sessionId)
+    .eq('week_id', weekId)
+    .maybeSingle()
+  if (!session) redirect(builderPath(programId, weekId, undefined, 'Séance introuvable'))
+
+  const { parseSessionCompositionFormData } = await import(
+    '@/src/lib/sessions/parseSessionCompositionForm'
+  )
+  const { writeProgramSessionComposition } = await import(
+    '@/src/lib/sessions/writeProgramSessionComposition'
+  )
+
+  const slots = parseSessionCompositionFormData(formData)
+  const result = await writeProgramSessionComposition(supabase, sessionId, slots)
+  if (!result.ok) {
+    redirect(builderPath(programId, weekId, undefined, result.error))
+  }
+
+  revalidatePath(`/admin/programs/${programId}`)
+  redirect(builderPath(programId, weekId, 'composition_saved'))
 }

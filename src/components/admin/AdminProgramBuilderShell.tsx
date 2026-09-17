@@ -8,7 +8,6 @@ import {
   addTrainlyLibrarySessionAction,
   appendLibraryBlockToProgramAction,
   appendLibraryExerciseToProgramAction,
-  createEmptyProgramSessionAction,
   moveTrainlyProgramSessionAction,
 } from '@/src/app/admin/programs/programSessionActions'
 import {
@@ -27,14 +26,15 @@ import {
 import {
   ProgramBuilderDayBoard,
   type BuilderSession,
+  type CompositionEditorCatalog,
 } from '@/src/components/admin/ProgramBuilderDayBoard'
+import { ProgramSessionMetaPopup } from '@/src/components/admin/ProgramSessionMetaPopup'
 import {
   Button,
   ConfirmSubmitButton,
   IconBack,
   IconDuplicate,
   IconEdit,
-  IconPlus,
   IconTrash,
 } from '@/src/components/ui'
 
@@ -84,6 +84,7 @@ export function AdminProgramBuilderShell({
   catalogExercises,
   catalogSports = [],
   catalogTypes = [],
+  compositionEditor = null,
   initialWeekId = null,
 }: {
   program: AdminProgramBuilderData
@@ -92,6 +93,7 @@ export function AdminProgramBuilderShell({
   catalogExercises: PaletteExerciseItem[]
   catalogSports?: CatalogFilterOption[]
   catalogTypes?: CatalogFilterOption[]
+  compositionEditor?: CompositionEditorCatalog | null
   initialWeekId?: string | null
 }) {
   const weeks = useMemo(
@@ -109,7 +111,6 @@ export function AdminProgramBuilderShell({
   const [catalogOpen, setCatalogOpen] = useState(false)
   const [pending, setPending] = useState(false)
   const [createDay, setCreateDay] = useState<number | null>(null)
-  const [createTitle, setCreateTitle] = useState('')
 
   useEffect(() => {
     if (initialWeekId && weeks.some((w) => w.id === initialWeekId)) {
@@ -209,18 +210,6 @@ export function AdminProgramBuilderShell({
     fd.set('session_id', sessionId)
     fd.set('target_order', String(day))
     runAction(() => moveTrainlyProgramSessionAction(fd))
-  }
-
-  function submitCreateSession() {
-    if (!openWeek || createDay == null) return
-    const fd = new FormData()
-    fd.set('program_id', program.id)
-    fd.set('week_id', openWeek.id)
-    fd.set('title', createTitle.trim() || 'Séance')
-    fd.set('target_order', String(createDay))
-    setCreateDay(null)
-    setCreateTitle('')
-    runAction(() => createEmptyProgramSessionAction(fd))
   }
 
   return (
@@ -448,7 +437,7 @@ export function AdminProgramBuilderShell({
           </div>
         </section>
 
-        <section className="relative min-h-[420px] min-w-0 flex-1 overflow-hidden rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] p-2.5 shadow-da-sm">
+        <section className="relative min-h-[480px] min-w-0 flex-1 overflow-hidden rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] p-2.5 shadow-da-sm">
           <div className="mb-2 flex items-center justify-between gap-2">
             <h2 className="truncate text-sm font-bold text-[color:var(--fg)]">
               {openWeek?.title?.trim() || `Semaine ${openIndex + 1}`}
@@ -460,7 +449,7 @@ export function AdminProgramBuilderShell({
               <button
                 type="button"
                 onClick={() => setCatalogOpen(false)}
-                className="rounded-full bg-[var(--accent)] px-2.5 py-1 text-[11px] font-semibold text-[color:var(--fg)] hover:ring-1 hover:ring-[var(--border)]"
+                className="relative z-30 rounded-full bg-[var(--accent)] px-2.5 py-1 text-[11px] font-semibold text-[color:var(--fg)] hover:ring-1 hover:ring-[var(--border)]"
               >
                 Voir la semaine
               </button>
@@ -471,97 +460,70 @@ export function AdminProgramBuilderShell({
             )}
           </div>
 
-          <div className={catalogOpen ? 'pl-0 md:pl-[18.5rem]' : undefined}>
-            {openWeek ? (
-              <ProgramBuilderDayBoard
-                isCalendar={program.is_calendar}
-                weekSessions={weekSessions}
-                programId={program.id}
-                weekId={openWeek.id}
-                focusedDay={focusedDay}
-                buildMode={catalogOpen}
-                onFocusDay={(day) => {
-                  setFocusedDay(day)
-                  setCatalogOpen(true)
-                }}
-                pending={pending}
-                onDropLibrarySession={(id, day, into) => addLibrarySession(id, day, into)}
-                onDropLibraryBlock={(id, day, into) => addLibraryBlock(id, day, into)}
-                onDropLibraryExercise={(id, day, into) => addLibraryExercise(id, day, into)}
-                onMoveProgramSession={moveSession}
-                onCreateSession={(day) => {
-                  setFocusedDay(day)
-                  setCatalogOpen(true)
-                  setCreateTitle('')
-                  setCreateDay(day)
-                }}
-              />
-            ) : (
-              <p className="py-10 text-center text-sm text-[color:var(--muted)]">Aucune semaine.</p>
-            )}
-          </div>
-
-          {catalogOpen && openWeek ? (
-            <div className="pointer-events-none absolute inset-y-2 left-2 z-20 flex w-[min(100%,18rem)] max-w-[calc(100%-1rem)] md:pointer-events-auto">
-              <div className="pointer-events-auto flex h-full w-full">
-                <ProgramBuilderPalette
-                  sessions={catalogSessions}
-                  blocks={catalogBlocks}
-                  exercises={catalogExercises}
-                  sports={catalogSports}
-                  types={catalogTypes}
-                  selectedTargetLabel={targetLabel}
-                  addDisabled={pending}
-                  onClose={() => setCatalogOpen(false)}
-                  className="flex h-full w-full flex-col overflow-hidden rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] shadow-da-md"
-                  onAddSession={(id) => addLibrarySession(id)}
-                  onAddBlock={(id) => addLibraryBlock(id)}
-                  onAddExercise={(id) => addLibraryExercise(id)}
-                />
-              </div>
-            </div>
-          ) : null}
+          {openWeek ? (
+            <ProgramBuilderDayBoard
+              isCalendar={program.is_calendar}
+              weekSessions={weekSessions}
+              programId={program.id}
+              weekId={openWeek.id}
+              focusedDay={focusedDay}
+              expanded={catalogOpen}
+              compositionEditor={compositionEditor}
+              onFocusDay={(day) => {
+                setFocusedDay(day)
+                setCatalogOpen(true)
+              }}
+              pending={pending}
+              onDropLibrarySession={(id, day, into) => addLibrarySession(id, day, into)}
+              onDropLibraryBlock={(id, day, into) => addLibraryBlock(id, day, into)}
+              onDropLibraryExercise={(id, day, into) => addLibraryExercise(id, day, into)}
+              onMoveProgramSession={moveSession}
+              onCreateSession={(day) => {
+                setFocusedDay(day)
+                setCatalogOpen(true)
+                setCreateDay(day)
+              }}
+              catalogOverlay={
+                catalogOpen ? (
+                  <ProgramBuilderPalette
+                    sessions={catalogSessions}
+                    blocks={catalogBlocks}
+                    exercises={catalogExercises}
+                    sports={catalogSports}
+                    types={catalogTypes}
+                    selectedTargetLabel={targetLabel}
+                    addDisabled={pending}
+                    onClose={() => setCatalogOpen(false)}
+                    className="flex h-full w-full flex-col overflow-hidden rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)]/95 shadow-da-md backdrop-blur-sm"
+                    onAddSession={(id) => addLibrarySession(id)}
+                    onAddBlock={(id) => addLibraryBlock(id)}
+                    onAddExercise={(id) => addLibraryExercise(id)}
+                  />
+                ) : null
+              }
+            />
+          ) : (
+            <p className="py-10 text-center text-sm text-[color:var(--muted)]">Aucune semaine.</p>
+          )}
         </section>
       </div>
 
-      {createDay != null ? (
-        <div
-          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4"
-          onClick={() => setCreateDay(null)}
-        >
-          <div
-            className="w-full max-w-sm rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-4 shadow-da-md"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-sm font-bold text-[color:var(--fg)]">Nouvelle séance</h3>
-            <p className="mt-0.5 text-[11px] text-[color:var(--muted)]">
-              Sur {program.is_calendar
-                ? (['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'] as const)[
-                    createDay
-                  ]
-                : `slot ${createDay + 1}`}
-            </p>
-            <input
-              autoFocus
-              value={createTitle}
-              onChange={(e) => setCreateTitle(e.target.value)}
-              placeholder="Nom de la séance"
-              className="mt-3 h-9 w-full rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--page-bg)] px-3 text-sm text-[color:var(--fg)]"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') submitCreateSession()
-              }}
-            />
-            <div className="mt-3 flex justify-end gap-2">
-              <Button type="button" size="sm" variant="secondary" onClick={() => setCreateDay(null)}>
-                Annuler
-              </Button>
-              <Button type="button" size="sm" onClick={submitCreateSession}>
-                <IconPlus size={14} />
-                Créer
-              </Button>
-            </div>
-          </div>
-        </div>
+      {createDay != null && openWeek ? (
+        <ProgramSessionMetaPopup
+          mode="create"
+          programId={program.id}
+          weekId={openWeek.id}
+          day={createDay}
+          dayLabel={
+            program.is_calendar
+              ? (['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'] as const)[
+                  createDay
+                ] ?? 'jour'
+              : `slot ${createDay + 1}`
+          }
+          pending={pending}
+          onClose={() => setCreateDay(null)}
+        />
       ) : null}
     </div>
   )
