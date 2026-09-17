@@ -1,187 +1,194 @@
 import Link from 'next/link'
-import { redirect } from 'next/navigation'
 
-import { createClient } from '../../../../lib/supabase/server'
+import { ExerciseNotesAndBridgesEditor } from '@/src/components/admin/ExerciseNotesAndBridgesEditor'
+import { Button, DaBanner, PageTitle, Muted, daFieldClass, daSelectClass } from '@/src/components/ui'
+import {
+  EXERCISE_DIFFICULTIES,
+  EXERCISE_MUSCLE_GROUPS,
+} from '@/src/lib/exercises/ficheConstants'
+import { requirePlatformAdmin } from '@/src/lib/auth/requirePlatformAdmin'
+import {
+  createTrainlyExerciseDraftAction,
+  createTrainlyExercisePublishedAction,
+} from '../exerciseFicheActions'
 
-type UntypedInsertResult = { error: { message?: string } | null }
-type UntypedInsertQuery = {
-  insert: (values: Record<string, unknown>) => Promise<UntypedInsertResult>
+export const dynamic = 'force-dynamic'
+
+type Props = {
+  searchParams?: Promise<{ error?: string; ok?: string }> | { error?: string; ok?: string }
 }
 
-export default async function NewExercisePage() {
-  async function createExercise(formData: FormData) {
-    'use server'
+type TypeRow = { id: string; label: string }
+type Candidate = {
+  id: string
+  name: string
+  exercise_type_id: string | null
+  sport_id: string | null
+}
 
-    const supabase = await createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+export default async function NewAdminExercisePage({ searchParams }: Props) {
+  const params = await Promise.resolve(searchParams ?? {})
+  const { supabase } = await requirePlatformAdmin()
 
-    if (!user) {
-      redirect('/loginadmin')
-    }
+  const { data: typesRaw } = await supabase
+    .from('exercise_types' as never)
+    .select('id, label')
+    .is('coach_id' as never, null)
+    .is('deleted_at' as never, null)
+    .order('label' as never, { ascending: true })
 
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .maybeSingle()
+  const types = (typesRaw ?? []) as TypeRow[]
 
-    const typedProfile = profile as unknown as { role: string | null } | null
-    if (typedProfile?.role !== 'admin') {
-      redirect('/dashboard')
-    }
+  const { data: sportsRaw } = await supabase
+    .from('sports' as never)
+    .select('id, label')
+    .is('coach_id' as never, null)
+    .is('deleted_at' as never, null)
+    .order('label' as never, { ascending: true })
 
-    const name = String(formData.get('name') ?? '').trim()
-    const description = String(formData.get('description') ?? '').trim()
-    const muscleGroup = String(formData.get('muscle_group') ?? '').trim()
-    const difficulty = String(formData.get('difficulty') ?? '').trim()
-    const videoUrl = String(formData.get('video_url') ?? '').trim()
-    const commonMistakes = String(formData.get('common_mistakes') ?? '').trim()
-    const demoMediaPath = String(formData.get('demo_media_path') ?? '').trim()
-    const replacementExerciseIdRaw = String(formData.get('replacement_exercise_id') ?? '').trim()
+  const sports = (sportsRaw ?? []) as { id: string; label: string }[]
 
-    const replacementExerciseId = replacementExerciseIdRaw || null
+  const { data: candidatesRaw } = await supabase
+    .from('exercise_library')
+    .select('id, name, exercise_type_id, sport_id')
+    .is('coach_id', null)
+    .is('deleted_at', null)
+    .eq('status', 'published')
+    .order('name', { ascending: true })
+    .limit(500)
 
-    if (!name) {
-      redirect('/admin/exercises/new?error=missing_name')
-    }
-
-    const { error } = await (supabase as unknown as { from: (t: string) => UntypedInsertQuery })
-      .from('exercise_library')
-      .insert({
-      name,
-      description: description || null,
-      muscle_group: muscleGroup || null,
-      difficulty: difficulty || null,
-      video_url: videoUrl || null,
-      common_mistakes: commonMistakes || null,
-      demo_media_path: demoMediaPath || null,
-      replacement_exercise_id: replacementExerciseId,
-    })
-
-    if (error) {
-      redirect(`/admin/exercises/new?error=${encodeURIComponent(error.message ?? 'unknown_error')}`)
-    }
-
-    redirect('/admin/exercises')
-  }
+  const candidates = (candidatesRaw ?? []) as Candidate[]
 
   return (
-    <section style={{ marginTop: 24 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>Nouvel exercice</h1>
-        <Link href="/admin/exercises" style={{ textDecoration: 'none', color: '#111827' }}>
-          Retour
-        </Link>
+    <main className="mx-auto max-w-3xl px-4 py-8 md:px-6">
+      <div className="mb-6">
+        <p className="text-sm text-[color:var(--muted)]">
+          <Link href="/admin/exercises" className="font-semibold text-[var(--brand)] hover:underline">
+            ← Exercices
+          </Link>
+        </p>
+        <PageTitle className="mt-2">Nouvel exercice Trainly</PageTitle>
+        <Muted className="mt-1">
+          Types · sports catalogue. Gérer → onglets Types / Sport.
+        </Muted>
       </div>
 
-      <form action={createExercise} style={{ marginTop: 16, display: 'grid', gap: 12 }}>
-        <label style={{ display: 'grid', gap: 6 }}>
-          <span>Nom</span>
-          <input
-            name="name"
-            required
-            style={{ padding: '10px 12px', border: '1px solid #e5e7eb', borderRadius: 8 }}
-          />
+      {params.error ? <DaBanner tone="danger" className="mb-4">{params.error}</DaBanner> : null}
+
+      {!types.length ? (
+        <DaBanner tone="warning" className="mb-4">
+          Aucun type. Crée-en un dans{' '}
+          <Link href="/admin/exercises?view=types" className="underline">
+            Types
+          </Link>{' '}
+          d’abord.
+        </DaBanner>
+      ) : null}
+
+      {!sports.length ? (
+        <DaBanner tone="warning" className="mb-4">
+          Aucun sport — applique la migration 42 ou crée-en un dans{' '}
+          <Link href="/admin/exercises?view=sports" className="underline">
+            Sport
+          </Link>
+          .
+        </DaBanner>
+      ) : null}
+
+      <form className="grid gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-da-sm">
+        <label className="grid gap-1.5">
+          <span className="text-xs font-semibold text-[color:var(--muted)]">Nom *</span>
+          <input name="name" required className={daFieldClass} />
         </label>
 
-        <label style={{ display: 'grid', gap: 6 }}>
-          <span>Description</span>
-          <textarea
-            name="description"
-            rows={3}
-            style={{ padding: '10px 12px', border: '1px solid #e5e7eb', borderRadius: 8 }}
-          />
-        </label>
-
-        <label style={{ display: 'grid', gap: 6 }}>
-          <span>Groupe musculaire</span>
-          <select
-            name="muscle_group"
-            defaultValue=""
-            style={{ padding: '10px 12px', border: '1px solid #e5e7eb', borderRadius: 8 }}
-          >
-            <option value="">Sélectionner…</option>
-            <option value="Pectoraux">Pectoraux</option>
-            <option value="Dos">Dos</option>
-            <option value="Épaules">Épaules</option>
-            <option value="Biceps">Biceps</option>
-            <option value="Triceps">Triceps</option>
-            <option value="Jambes">Jambes</option>
-            <option value="Fessiers">Fessiers</option>
-            <option value="Ischios">Ischios</option>
-            <option value="Quadriceps">Quadriceps</option>
-            <option value="Mollets">Mollets</option>
-            <option value="Abdos">Abdos</option>
-            <option value="Full body">Full body</option>
-          </select>
-        </label>
-
-        <label style={{ display: 'grid', gap: 6 }}>
-          <span>Difficulté</span>
-          <select
-            name="difficulty"
-            defaultValue=""
-            style={{ padding: '10px 12px', border: '1px solid #e5e7eb', borderRadius: 8 }}
-          >
-            <option value="">Sélectionner…</option>
-            <option value="Débutant">Débutant</option>
-            <option value="Intermédiaire">Intermédiaire</option>
-            <option value="Avancé">Avancé</option>
-            <option value="Maison">Maison (poids du corps / à domicile)</option>
-          </select>
-        </label>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          <label style={{ display: 'grid', gap: 6 }}>
-            <span>URL vidéo</span>
-            <input
-              name="video_url"
-              style={{ padding: '10px 12px', border: '1px solid #e5e7eb', borderRadius: 8 }}
-            />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="grid gap-1.5">
+            <span className="text-xs font-semibold text-[color:var(--muted)]">Type *</span>
+            <select name="exercise_type_id" required defaultValue="" className={daSelectClass}>
+              <option value="" disabled>
+                Sélectionner…
+              </option>
+              {types.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
           </label>
 
-          <label style={{ display: 'grid', gap: 6 }}>
-            <span>Chemin média (Storage)</span>
-            <input
-              name="demo_media_path"
-              style={{ padding: '10px 12px', border: '1px solid #e5e7eb', borderRadius: 8 }}
-            />
+          <label className="grid gap-1.5">
+            <span className="text-xs font-semibold text-[color:var(--muted)]">Sport *</span>
+            <select name="sport_id" required defaultValue="" className={daSelectClass}>
+              <option value="" disabled>
+                Sélectionner…
+              </option>
+              {sports.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
           </label>
         </div>
 
-        <label style={{ display: 'grid', gap: 6 }}>
-          <span>Problèmes fréquents</span>
-          <textarea
-            name="common_mistakes"
-            rows={3}
-            style={{ padding: '10px 12px', border: '1px solid #e5e7eb', borderRadius: 8 }}
-          />
+        <label className="grid gap-1.5">
+          <span className="text-xs font-semibold text-[color:var(--muted)]">Consignes</span>
+          <textarea name="description" rows={3} className={daFieldClass} />
         </label>
 
-        <label style={{ display: 'grid', gap: 6 }}>
-          <span>ID exercice de remplacement (optionnel)</span>
-          <input
-            name="replacement_exercise_id"
-            style={{ padding: '10px 12px', border: '1px solid #e5e7eb', borderRadius: 8 }}
-          />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="grid gap-1.5">
+            <span className="text-xs font-semibold text-[color:var(--muted)]">Groupe musculaire</span>
+            <select name="muscle_group" defaultValue="" className={daSelectClass}>
+              <option value="">—</option>
+              {EXERCISE_MUSCLE_GROUPS.map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="grid gap-1.5">
+            <span className="text-xs font-semibold text-[color:var(--muted)]">Difficulté</span>
+            <select name="difficulty" defaultValue="" className={daSelectClass}>
+              <option value="">—</option>
+              {EXERCISE_DIFFICULTIES.map((d) => (
+                <option key={d} value={d}>
+                  {d}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="grid gap-1.5">
+            <span className="text-xs font-semibold text-[color:var(--muted)]">YouTube / URL vidéo</span>
+            <input name="video_url" className={daFieldClass} placeholder="https://…" />
+          </label>
+          <label className="grid gap-1.5">
+            <span className="text-xs font-semibold text-[color:var(--muted)]">Média démo (Storage)</span>
+            <input name="demo_media_path" className={daFieldClass} placeholder="mon-exo.gif" />
+          </label>
+        </div>
+
+        <ExerciseNotesAndBridgesEditor candidates={candidates} types={types} sports={sports} />
+
+        <label className="inline-flex items-center gap-2 text-sm text-[color:var(--fg)]">
+          <input type="checkbox" name="allow_duplicate" defaultChecked className="accent-[var(--brand)]" />
+          Duplicable (coach peut récupérer une copie)
         </label>
 
-        <button
-          type="submit"
-          style={{
-            padding: '10px 12px',
-            borderRadius: 8,
-            border: '1px solid #111827',
-            background: '#111827',
-            color: '#ffffff',
-            cursor: 'pointer',
-          }}
-        >
-          Créer
-        </button>
+        <div className="flex flex-wrap gap-2 pt-2">
+          <Button type="submit" formAction={createTrainlyExercisePublishedAction}>
+            Créer
+          </Button>
+          <Button type="submit" formAction={createTrainlyExerciseDraftAction} variant="secondary">
+            Brouillon
+          </Button>
+        </div>
       </form>
-    </section>
+    </main>
   )
 }

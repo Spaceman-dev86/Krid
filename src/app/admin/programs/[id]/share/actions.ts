@@ -7,7 +7,7 @@ import { createClient } from '../../../../../lib/supabase/server'
 import { createServiceRoleClient } from '../../../../../lib/supabase/serviceRole'
 import { sendProgramShareEmail } from '../../../../../lib/sendProgramShareEmail'
 
-export type ShareProgramState = { error: string } | { success: true } | null
+export type ShareProgramState = { error: string } | { success: true; shareUrl: string } | null
 
 function randomToken(): string {
   return crypto.randomBytes(24).toString('base64url')
@@ -86,6 +86,6 @@ export async function shareProgramPreviewByEmail(
   })
   if (!send.ok) return { error: send.error }
 
-  return { success: true }
+  return { success: true, shareUrl }
 }
 

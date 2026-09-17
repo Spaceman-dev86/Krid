@@ -96,7 +96,7 @@ function ProgramEditorChromeMobileActionsInner({
           href="/contact"
           className={
             inMenu
-              ? 'flex w-full items-center rounded-xl px-3 py-2.5 text-sm font-semibold text-[#341c44] transition hover:bg-[#f3f3f3]'
+              ? 'flex w-full items-center rounded-xl px-3 py-2.5 text-sm font-semibold text-[color:var(--brand)] transition hover:bg-[color-mix(in_srgb,var(--brand)_5%,var(--surface))]'
               : actionButtonClass('px-4')
           }
           onClick={inMenu ? closeMenu : undefined}
@@ -113,7 +113,7 @@ function ProgramEditorChromeMobileActionsInner({
           href={`${basePath}/${programId}/preview`}
           className={
             inMenu
-              ? 'flex w-full items-center rounded-xl px-3 py-2.5 text-sm font-semibold text-[#341c44] transition hover:bg-[#f3f3f3]'
+              ? 'flex w-full items-center rounded-xl px-3 py-2.5 text-sm font-semibold text-[color:var(--brand)] transition hover:bg-[color-mix(in_srgb,var(--brand)_5%,var(--surface))]'
               : actionButtonClass('px-3 sm:px-4')
           }
           onNavigate={inMenu ? closeMenu : undefined}
@@ -130,7 +130,7 @@ function ProgramEditorChromeMobileActionsInner({
           type="button"
           className={
             inMenu
-              ? 'flex w-full items-center rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-[#341c44] transition hover:bg-[#f3f3f3]'
+              ? 'flex w-full items-center rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-[color:var(--brand)] transition hover:bg-[color-mix(in_srgb,var(--brand)_5%,var(--surface))]'
               : actionButtonClass('px-4')
           }
           aria-label="Envoyer le programme"
@@ -152,7 +152,7 @@ function ProgramEditorChromeMobileActionsInner({
           type="button"
           className={
             inMenu
-              ? 'flex w-full items-center rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-[#341c44] transition hover:bg-[#f3f3f3]'
+              ? 'flex w-full items-center rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-[color:var(--brand)] transition hover:bg-[color-mix(in_srgb,var(--brand)_5%,var(--surface))]'
               : actionButtonClass('px-4')
           }
           onClick={() => {
@@ -172,7 +172,7 @@ function ProgramEditorChromeMobileActionsInner({
           type="button"
           className={
             inMenu
-              ? 'flex w-full items-center rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-[#341c44] transition hover:bg-[#f3f3f3]'
+              ? 'flex w-full items-center rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-[color:var(--brand)] transition hover:bg-[color-mix(in_srgb,var(--brand)_5%,var(--surface))]'
               : actionButtonClass('px-4')
           }
           onClick={() => {
@@ -221,8 +221,8 @@ function ProgramEditorChromeMobileActionsInner({
             className={[
               'inline-flex h-10 w-10 items-center justify-center rounded-xl text-sm font-bold transition',
               menuOpen
-                ? 'bg-[var(--brand)] text-white shadow-sm ring-2 ring-[var(--brand)]/30'
-                : 'bg-white text-[#341c44] ring-1 ring-black/10 hover:bg-[#f5f5f5]',
+                ? 'bg-[var(--brand)] text-[var(--brand-fg)] shadow-sm ring-2 ring-[color-mix(in_srgb,var(--brand)_30%,transparent)]'
+                : 'bg-[var(--surface)] text-[color:var(--brand)] ring-1 ring-[var(--border)] hover:bg-[color-mix(in_srgb,var(--brand)_5%,var(--surface))]',
             ].join(' ')}
             aria-label={menuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
             aria-expanded={menuOpen}
@@ -234,10 +234,10 @@ function ProgramEditorChromeMobileActionsInner({
           </button>
 
           {menuOpen ? (
-            <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-[min(280px,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-black/8 bg-white shadow-xl shadow-black/15 ring-1 ring-black/5">
-              <div className="border-b border-black/6 bg-[#fafafa] px-4 py-3">
-                <div className="text-[11px] font-bold uppercase tracking-wide text-black/45">Menu</div>
-                <div className="mt-0.5 text-sm font-extrabold text-[var(--brand)]">Program Builder</div>
+            <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-[min(280px,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-xl shadow-black/15 ring-1 ring-[var(--border)]">
+              <div className="border-b border-[var(--border)] bg-[color-mix(in_srgb,var(--muted)_8%,var(--surface))] px-4 py-3">
+                <div className="text-[11px] font-bold uppercase tracking-wide text-[color:var(--muted)]">Menu</div>
+                <div className="mt-0.5 text-sm font-extrabold text-[color:var(--brand)]">Program Builder</div>
               </div>
 
               <div className="p-2">

@@ -178,7 +178,7 @@ function ProgramEditorChromeInner({
             <button
               type="button"
               onClick={() => setMenuOpen((v) => !v)}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-white text-[#341c44] ring-1 ring-black/10 hover:bg-[#f5f5f5]"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--surface)] text-[color:var(--brand)] ring-1 ring-[var(--border)] hover:bg-[color-mix(in_srgb,var(--brand)_5%,var(--surface))]"
               aria-label={menuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
               title={menuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
             >
@@ -186,7 +186,7 @@ function ProgramEditorChromeInner({
             </button>
 
             {menuOpen ? (
-              <div className="absolute right-0 top-[calc(100%+10px)] z-50 w-72 overflow-hidden rounded-2xl bg-white shadow-lg ring-1 ring-black/10">
+              <div className="absolute right-0 top-[calc(100%+10px)] z-50 w-72 overflow-hidden rounded-2xl bg-[var(--surface)] shadow-lg ring-1 ring-[var(--border)]">
                 <div className="grid gap-2 p-2">
                   <div className="px-3 py-2 max-[623px]:block min-[624px]:hidden">
                     <PersistenceStatusBar />
@@ -194,7 +194,7 @@ function ProgramEditorChromeInner({
                   {!isAdmin ? (
                     <Link
                       href="/contact"
-                      className="rounded-2xl bg-[#f5f5f5] px-4 py-3 text-sm font-semibold text-[#341c44] max-[623px]:block min-[624px]:hidden"
+                      className="rounded-2xl bg-[color-mix(in_srgb,var(--muted)_10%,var(--surface))] px-4 py-3 text-sm font-semibold text-[color:var(--brand)] max-[623px]:block min-[624px]:hidden"
                       onClick={() => setMenuOpen(false)}
                     >
                       Commander mon APP
@@ -204,7 +204,7 @@ function ProgramEditorChromeInner({
                     <>
                       <button
                         type="button"
-                        className="rounded-2xl bg-[#f5f5f5] px-4 py-3 text-left text-sm font-semibold text-[#341c44] max-[623px]:block min-[624px]:hidden"
+                        className="rounded-2xl bg-[color-mix(in_srgb,var(--muted)_10%,var(--surface))] px-4 py-3 text-left text-sm font-semibold text-[color:var(--brand)] max-[623px]:block min-[624px]:hidden"
                         onClick={() => {
                           setShareOpen(true)
                           setMenuOpen(false)
@@ -215,7 +215,7 @@ function ProgramEditorChromeInner({
                       {!isPublished ? (
                         <button
                           type="button"
-                          className="rounded-2xl bg-[#f5f5f5] px-4 py-3 text-left text-sm font-semibold text-[#341c44] max-[623px]:block min-[624px]:hidden"
+                          className="rounded-2xl bg-[color-mix(in_srgb,var(--muted)_10%,var(--surface))] px-4 py-3 text-left text-sm font-semibold text-[color:var(--brand)] max-[623px]:block min-[624px]:hidden"
                           onClick={() => {
                             setPublishOpen(true)
                             setMenuOpen(false)
@@ -226,7 +226,7 @@ function ProgramEditorChromeInner({
                       ) : (
                         <button
                           type="button"
-                          className="rounded-2xl bg-[#f5f5f5] px-4 py-3 text-left text-sm font-semibold text-[#341c44] max-[623px]:block min-[624px]:hidden"
+                          className="rounded-2xl bg-[color-mix(in_srgb,var(--muted)_10%,var(--surface))] px-4 py-3 text-left text-sm font-semibold text-[color:var(--brand)] max-[623px]:block min-[624px]:hidden"
                           onClick={() => {
                             setEditCoverOpen(true)
                             setMenuOpen(false)
@@ -240,45 +240,45 @@ function ProgramEditorChromeInner({
                   <div className="max-[623px]:block min-[624px]:hidden">
                     <ProgramEditorDeleteControl programId={programId} />
                   </div>
-                  <div className="my-1 border-t border-black/8" aria-hidden />
+                  <div className="my-1 border-t border-[var(--border)]" aria-hidden />
                   <Link
                     href="/"
-                    className="rounded-2xl bg-[#f5f5f5] px-4 py-3 text-sm font-semibold text-[#341c44]"
+                    className="rounded-2xl bg-[color-mix(in_srgb,var(--muted)_10%,var(--surface))] px-4 py-3 text-sm font-semibold text-[color:var(--brand)]"
                     onClick={() => setMenuOpen(false)}
                   >
                     Acceuil
                   </Link>
                   <Link
                     href="/mon-app"
-                    className="rounded-2xl bg-[#f5f5f5] px-4 py-3 text-sm font-semibold text-[#341c44]"
+                    className="rounded-2xl bg-[color-mix(in_srgb,var(--muted)_10%,var(--surface))] px-4 py-3 text-sm font-semibold text-[color:var(--brand)]"
                     onClick={() => setMenuOpen(false)}
                   >
                     Mon app
                   </Link>
                   <Link
                     href="/mon-site"
-                    className="rounded-2xl bg-[#f5f5f5] px-4 py-3 text-sm font-semibold text-[#341c44]"
+                    className="rounded-2xl bg-[color-mix(in_srgb,var(--muted)_10%,var(--surface))] px-4 py-3 text-sm font-semibold text-[color:var(--brand)]"
                     onClick={() => setMenuOpen(false)}
                   >
                     Mon site
                   </Link>
                   <Link
                     href="/programs"
-                    className="rounded-2xl bg-[#f5f5f5] px-4 py-3 text-sm font-semibold text-[#341c44]"
+                    className="rounded-2xl bg-[color-mix(in_srgb,var(--muted)_10%,var(--surface))] px-4 py-3 text-sm font-semibold text-[color:var(--brand)]"
                     onClick={() => setMenuOpen(false)}
                   >
                     Programmes
                   </Link>
                   <Link
                     href="/simulation"
-                    className="rounded-2xl bg-[#f5f5f5] px-4 py-3 text-sm font-semibold text-[#341c44]"
+                    className="rounded-2xl bg-[color-mix(in_srgb,var(--muted)_10%,var(--surface))] px-4 py-3 text-sm font-semibold text-[color:var(--brand)]"
                     onClick={() => setMenuOpen(false)}
                   >
                     Simulation
                   </Link>
                   <Link
                     href="/contact"
-                    className="rounded-2xl bg-[#f5f5f5] px-4 py-3 text-sm font-semibold text-[#341c44]"
+                    className="rounded-2xl bg-[color-mix(in_srgb,var(--muted)_10%,var(--surface))] px-4 py-3 text-sm font-semibold text-[color:var(--brand)]"
                     onClick={() => setMenuOpen(false)}
                   >
                     Contact

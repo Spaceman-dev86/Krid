@@ -29,10 +29,10 @@ function BlockPalettePanelInner() {
     <div className={`relative rounded-2xl bg-white px-3 pb-3 pt-2 ${EDITOR_PANEL_SHADOW_CLASS}`}>
       <NeutralDropZone id={DND.paletteDropzone} active={isExternalDrag} />
       <div className={EDITOR_SECTION_TITLE_CLASS}>Blocs</div>
-      <p className="mt-1 text-[10px] font-medium text-[var(--muted)] max-[867px]:hidden">
+      <p className="mt-1 text-[10px] font-medium text-[color:var(--muted)] max-[867px]:hidden">
         Glisser dans une séance ouverte.
       </p>
-      <p className="mt-1 hidden text-[10px] font-medium text-[var(--muted)] max-[867px]:block">
+      <p className="mt-1 hidden text-[10px] font-medium text-[color:var(--muted)] max-[867px]:block">
         Glisser dans une séance.
       </p>
       <div className="mt-2 grid gap-1.5">

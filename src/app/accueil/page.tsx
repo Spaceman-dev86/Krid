@@ -1,3 +1,8 @@
-import HomePage from '../page'
+import { redirect } from 'next/navigation'
 
-export default HomePage
+import { siteUrl } from '../../lib/urls'
+
+/** Marketing page moved to apps/site — redirect. */
+export default function MarketingRedirectPage() {
+  redirect(siteUrl('/accueil'))
+}

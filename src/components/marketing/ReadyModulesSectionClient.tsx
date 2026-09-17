@@ -407,7 +407,7 @@ export default function ReadyModulesSectionClient({ programmePhotoUrl, mockups, 
             <h2 className="mt-2 max-w-2xl text-2xl font-extrabold tracking-tight text-[#9b6bb8] md:text-3xl">
               Des modules clés en main pour ton application
             </h2>
-            <p className="mt-3 max-w-xl text-sm text-[var(--muted)] md:text-base">
+            <p className="mt-3 max-w-xl text-sm text-[color:var(--muted)] md:text-base">
               Des modules pros et personnalisables pour lancer ton application rapidement.
             </p>
           </div>

@@ -2,15 +2,25 @@
   "name": "fitness_app",
   "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
   "scripts": {
     "dev": "next dev",
+    "dev:app": "next dev --port 3000",
+    "dev:site": "npm run dev -w @trainly/site",
     "build": "next build",
+    "build:app": "next build",
+    "build:site": "npm run build -w @trainly/site",
     "start": "next start",
+    "start:app": "next start --port 3000",
+    "start:site": "npm run start -w @trainly/site",
     "lint": "eslint",
     "test:domain": "node --import tsx --test src/domain/program-editor/applyMinimalCommand.test.ts src/domain/program-editor/tempIds.test.ts",
     "test:persistence": "node --import tsx --test src/lib/persistence/reorderUniquePositions.test.ts src/lib/hydratePreviewExerciseLibrary.test.ts src/persistence/startProgramEditorPersistence.test.ts",
     "test:store": "node --import tsx --test src/store/program-editor/documentStore.test.ts",
     "test:kernel": "npm run test:domain && npm run test:persistence && npm run test:store",
+    "sync:app-stubs": "node scripts/sync-app-stubs.mjs",
     "seed:remise-maison": "npx tsx scripts/seed-remise-en-forme-maison.ts"
   },
   "dependencies": {

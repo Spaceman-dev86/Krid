@@ -3,8 +3,8 @@ import type { ReactNode } from 'react'
 function PreviewSpinner() {
   return (
     <div className="flex flex-col items-center justify-center gap-3 py-10" role="status" aria-live="polite" aria-label="Chargement de l’aperçu">
-      <div className="h-9 w-9 animate-spin rounded-full border-[3px] border-[#341c44]/15 border-t-[#341c44]" />
-      <div className="text-sm font-semibold text-[#341c44]/70">Chargement de l’aperçu…</div>
+      <div className="h-9 w-9 animate-spin rounded-full border-[3px] border-[color-mix(in_srgb,var(--brand)_15%,transparent)] border-t-[var(--brand)]" />
+      <div className="text-sm font-semibold text-[color-mix(in_srgb,var(--brand)_70%,transparent)]">Chargement de l’aperçu…</div>
     </div>
   )
 }

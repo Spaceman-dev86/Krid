@@ -81,7 +81,7 @@ export default async function DashboardPreviewSection() {
           <div className="relative z-20 flex flex-wrap items-end justify-between gap-6">
             <div className="min-w-0">
               <h2 className="text-2xl font-extrabold tracking-tight text-[var(--brand)]">Aperçu dashboard</h2>
-              <p className="mt-2 text-sm text-[var(--muted)]">
+              <p className="mt-2 text-sm text-[color:var(--muted)]">
                 Une base solide, puis des modules ajoutés au rythme de ton business.
               </p>
             </div>
@@ -119,7 +119,7 @@ export default async function DashboardPreviewSection() {
                 </div>
                 <div className="px-6 pb-6">
                   <div className="text-sm font-extrabold text-[var(--brand)]">{c.title}</div>
-                  <div className="mt-1 text-sm text-[var(--muted)]">{c.desc}</div>
+                  <div className="mt-1 text-sm text-[color:var(--muted)]">{c.desc}</div>
                 </div>
               </div>
             ))}

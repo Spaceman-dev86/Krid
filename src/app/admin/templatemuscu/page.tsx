@@ -83,6 +83,7 @@ export default async function AdminTemplateMuscuListPage() {
       duration: '4 semaines',
       is_template: true,
       is_published: false,
+      is_trainly_catalog: true,
     })
     .select('id')
     .maybeSingle()

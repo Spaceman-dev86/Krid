@@ -3,6 +3,8 @@
 import { createPortal } from 'react-dom'
 import { useMemo, useState } from 'react'
 
+import { Button } from '@/src/components/ui'
+
 type PublicProgram = { id: string; title: string | null }
 
 type Props = {
@@ -19,7 +21,7 @@ export default function DuplicatePublicProgramPopupClient({ publicPrograms, canD
     return (
       <button
         type="button"
-        className="inline-flex h-11 w-full items-center justify-center rounded-2xl bg-white px-5 text-sm font-extrabold text-[#341c44] ring-1 ring-black/10 opacity-60"
+        className="inline-flex h-11 w-full items-center justify-center rounded-2xl bg-white px-5 text-sm font-extrabold text-[color:var(--brand)] ring-1 ring-black/10 opacity-60"
         aria-label="Dupliquer"
         title="Dupliquer"
         disabled
@@ -33,7 +35,7 @@ export default function DuplicatePublicProgramPopupClient({ publicPrograms, canD
     <>
       <button
         type="button"
-        className="inline-flex h-11 w-full items-center justify-center rounded-2xl bg-white px-5 text-sm font-extrabold text-[#341c44] ring-1 ring-black/10 hover:bg-[#f5f5f5]"
+        className="inline-flex h-11 w-full items-center justify-center rounded-2xl bg-white px-5 text-sm font-extrabold text-[color:var(--brand)] ring-1 ring-black/10 hover:bg-[#f5f5f5]"
         aria-label="Dupliquer"
         title="Dupliquer"
         onClick={() => setOpen(true)}
@@ -77,18 +79,15 @@ export default function DuplicatePublicProgramPopupClient({ publicPrograms, canD
                             className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-[#f5f5f5] p-3 ring-1 ring-black/10"
                           >
                             <div className="min-w-0">
-                              <div className="truncate text-sm font-extrabold text-[#341c44]">{p.title || 'Programme'}</div>
+                              <div className="truncate text-sm font-extrabold text-[color:var(--brand)]">{p.title || 'Programme'}</div>
                               <div className="mt-1 text-xs font-semibold text-black/50">Programme public</div>
                             </div>
 
                             <form action={forkPublicProgram}>
                               <input type="hidden" name="program_id" value={p.id} />
-                              <button
-                                type="submit"
-                                className="inline-flex h-10 items-center justify-center rounded-2xl bg-[#341c44] px-4 text-xs font-extrabold text-white shadow-sm hover:opacity-90"
-                              >
+                              <Button type="submit" size="sm" className="!h-10 !rounded-2xl !px-4 text-xs">
                                 Dupliquer
-                              </button>
+                              </Button>
                             </form>
                           </div>
                         ))

@@ -1,0 +1,153 @@
+{
+  "id": "roadmap",
+  "title": "Roadmap",
+  "description": "Ordre de build recommandé. Coche / annote le statut au fur et à mesure.",
+  "tree": [
+    {
+      "id": "step-1",
+      "label": "1. Spec validée"
+    },
+    {
+      "id": "step-2",
+      "label": "2. Schéma Supabase + types"
+    },
+    {
+      "id": "step-3",
+      "label": "3. Shell coach"
+    },
+    {
+      "id": "step-4",
+      "label": "4. Dashboard home KPIs"
+    },
+    {
+      "id": "step-5",
+      "label": "5. Clients + invitation"
+    },
+    {
+      "id": "step-6",
+      "label": "6. Programmes + builder"
+    },
+    {
+      "id": "step-7",
+      "label": "7. Chat"
+    },
+    {
+      "id": "step-8",
+      "label": "8. Calendrier RDV"
+    },
+    {
+      "id": "step-9",
+      "label": "9. Nutrition builder"
+    },
+    {
+      "id": "step-10",
+      "label": "10. Exercices"
+    },
+    {
+      "id": "step-11",
+      "label": "11. Drive"
+    },
+    {
+      "id": "step-12",
+      "label": "12. Bilans + Notifications"
+    },
+    {
+      "id": "step-13",
+      "label": "13. Comptabilités UI"
+    },
+    {
+      "id": "step-14",
+      "label": "14. Portail client"
+    },
+    {
+      "id": "step-15",
+      "label": "15. Stripe"
+    },
+    {
+      "id": "step-16",
+      "label": "16. Gating Starter → Scale/Studio"
+    }
+  ],
+  "blocks": {
+    "step-1": {
+      "bodyHtml": "<p><strong>Statut :</strong> quasi terminé (coach/clients/admin FIGÉ ; auth/gating détails mineurs).</p>",
+      "images": [],
+      "critiqueHtml": ""
+    },
+    "step-2": {
+      "bodyHtml": "<p><strong>Statut :</strong> 01+02 appliqués sur nouveau Supabase. Tranches dans <code>supabase/migrations/slices/</code>.</p>",
+      "images": [],
+      "critiqueHtml": ""
+    },
+    "step-3": {
+      "bodyHtml": "<p><strong>Statut :</strong> en cours — <code>/home</code> shell coach + essai 15j + branding. Ancien <code>/dashboard</code> redirige vers <code>/home</code>.</p>",
+      "images": [],
+      "critiqueHtml": ""
+    },
+    "step-4": {
+      "bodyHtml": "<p>KPIs mock puis réels.</p>",
+      "images": [],
+      "critiqueHtml": ""
+    },
+    "step-5": {
+      "bodyHtml": "<p>Liste, fiche, groupes, invite → showroom.</p>",
+      "images": [],
+      "critiqueHtml": ""
+    },
+    "step-6": {
+      "bodyHtml": "<p>5 onglets + program builder refondu.</p>",
+      "images": [],
+      "critiqueHtml": ""
+    },
+    "step-7": {
+      "bodyHtml": "<p>Messagerie pro multi-tenant.</p>",
+      "images": [],
+      "critiqueHtml": ""
+    },
+    "step-8": {
+      "bodyHtml": "<p>RDV + accept/refuse + notifs.</p>",
+      "images": [],
+      "critiqueHtml": ""
+    },
+    "step-9": {
+      "bodyHtml": "<p>5 onglets + nutrition builder.</p>",
+      "images": [],
+      "critiqueHtml": ""
+    },
+    "step-10": {
+      "bodyHtml": "<p>3 onglets + types + unités.</p>",
+      "images": [],
+      "critiqueHtml": ""
+    },
+    "step-11": {
+      "bodyHtml": "<p>Dossiers, upload, partage.</p>",
+      "images": [],
+      "critiqueHtml": ""
+    },
+    "step-12": {
+      "bodyHtml": "<p>Templates bilans, assignation, habitudes.</p>",
+      "images": [],
+      "critiqueHtml": ""
+    },
+    "step-13": {
+      "bodyHtml": "<p>UI GymPay mock.</p>",
+      "images": [],
+      "critiqueHtml": ""
+    },
+    "step-14": {
+      "bodyHtml": "<p><strong>En cours</strong> — showroom canon <code>/c/[slug]/showroom</code> + fiche presta + gating modules (drive/messagerie). Reste : onboarding questionnaire · profil infos/prestations · polish Accueil.</p>",
+      "images": [],
+      "critiqueHtml": ""
+    },
+    "step-15": {
+      "bodyHtml": "<p>Brancher paiements réels.</p>",
+      "images": [],
+      "critiqueHtml": "<p><strong>❓</strong> Stripe en step tardif alors que beaucoup d’écrans monétisation sont déjà spec — mock contractuel jusqu’ici ?</p>"
+    },
+    "step-16": {
+      "bodyHtml": "<p>canAccessFeature + limites clients.</p>",
+      "images": [],
+      "critiqueHtml": ""
+    }
+  }
+}

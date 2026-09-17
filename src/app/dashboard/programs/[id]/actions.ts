@@ -203,6 +203,7 @@ export async function publishProgramFromEditor(
 
   const publishPatch: {
     is_published: boolean
+    catalog_status: 'published'
     image_url: string
     goal: string
     level?: string | null
@@ -210,6 +211,7 @@ export async function publishProgramFromEditor(
     description?: string | null
   } = {
     is_published: true,
+    catalog_status: 'published',
     image_url: imageUrl,
     goal,
   }

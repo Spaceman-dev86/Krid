@@ -1,1 +1,1 @@
-export { default } from '../../../src/app/admin/templatemuscu/page'
+export { default } from '@/src/app/admin/templatemuscu/page'

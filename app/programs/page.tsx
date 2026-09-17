@@ -1,3 +1,1 @@
-import ProgramsMarketingPage from '../../src/app/programs/page'
-
-export default ProgramsMarketingPage
+export { default } from '@/src/app/programs/page'

@@ -1,3 +1,1 @@
-import NewProgramPage from '../../../src/app/dashboard/programs/new/page'
-
-export default NewProgramPage
+export { default } from '@/src/app/admin/new/page'

@@ -119,14 +119,12 @@ export async function persistSessionDuplicateSnapshot(
         session_id: sessionId,
         exercise_id: pe.libraryExerciseId,
         name: pe.subtitle ?? 'Exercice',
-        description: null,
         sets: pe.sets,
         reps: pe.reps,
         rest_time: pe.restTime,
         tempo: pe.tempo,
         load: pe.load,
         notes: pe.notes,
-        video_url: null,
         exercise_order: position,
       })
       if (peErr) throw peErr

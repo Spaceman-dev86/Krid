@@ -32,6 +32,7 @@ export type PreviewSessionBlockRow = {
   type: string
   title: string | null
   notes: string | null
+  objective?: string | null
 }
 
 export type PreviewProgramExerciseRow = {
@@ -255,7 +256,7 @@ export async function fetchProgramPreviewStructure(
   const [sessionBlocksRes, sessionItemsRes, programExercisesRes] = await Promise.all([
     supabase
       .from('session_blocks')
-      .select('id,program_session_id,position,type,title,notes')
+      .select('id,program_session_id,position,type,title,notes,objective')
       .in('program_session_id', sessionIds)
       .order('position', { ascending: true }),
     supabase

@@ -1,5 +1,7 @@
 import { redirect } from 'next/navigation'
 
-export default function ActuPage() {
-  redirect('/simulation')
+import { siteUrl } from '../../lib/urls'
+
+export default function MarketingRedirectPage() {
+  redirect(siteUrl('/actu'))
 }

@@ -70,7 +70,7 @@ function ExerciseLibraryPanelInner({ className = '', stickyFill = false }: Props
           <span className="hidden min-[868px]:inline"> d&apos;exercice</span>
           <span className="block min-[868px]:hidden">d&apos;exercice</span>
         </div>
-        <p className="mt-1 text-[10px] font-medium text-[var(--muted)]">Glisser dans une séance ou un bloc ouvert.</p>
+        <p className="mt-1 text-[10px] font-medium text-[color:var(--muted)]">Glisser dans une séance ou un bloc ouvert.</p>
 
         <div className="mt-2 grid grid-cols-1 gap-2">
           <input

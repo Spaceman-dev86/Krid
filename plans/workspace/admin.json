@@ -1,0 +1,369 @@
+{
+  "id": "admin",
+  "title": "Admin (plateforme)",
+  "description": "Back-office secret Trainly (toi seul V1). Ops · Coaches · Catalogue · Drive · Formation · SAV · Compta · Accès · Settings staff · Spec/Design. Essai = état compte 15j dès 1ʳᵉ connexion app.",
+  "featureMenuLayout": true,
+  "pageShellLayout": false,
+  "tree": [
+    {
+      "id": "ops",
+      "label": "Ops / Hub",
+      "route": "/admin",
+      "kind": "menu"
+    },
+    {
+      "id": "coaches",
+      "label": "Coaches",
+      "route": "/admin/coaches",
+      "kind": "menu"
+    },
+    {
+      "id": "catalog",
+      "label": "Catalogue Trainly",
+      "route": "/admin/catalog",
+      "kind": "menu"
+    },
+    {
+      "id": "drive-packs",
+      "label": "Drive & PDF",
+      "route": "/admin/drive-packs",
+      "kind": "menu"
+    },
+    {
+      "id": "formation",
+      "label": "Formation",
+      "route": "/admin/formation",
+      "kind": "menu"
+    },
+    {
+      "id": "sav",
+      "label": "SAV",
+      "route": "/admin/sav",
+      "kind": "menu"
+    },
+    {
+      "id": "billing",
+      "label": "Comptabilité",
+      "route": "/admin/billing",
+      "kind": "menu"
+    },
+    {
+      "id": "access",
+      "label": "Accès & sécurité",
+      "route": "/admin/access",
+      "kind": "menu"
+    },
+    {
+      "id": "settings",
+      "label": "Settings",
+      "route": "/admin/settings",
+      "kind": "menu"
+    },
+    {
+      "id": "tools",
+      "label": "Outils (Spec / Design)",
+      "route": "/admin/spec",
+      "kind": "menu"
+    }
+  ],
+  "blocks": {},
+  "menus": {
+    "ops": {
+      "arrival": {
+        "bodyHtml": "<p>Land <code>/admin</code> — cockpit (secret, toi seul V1).</p>\n<p><strong>KPIs V1</strong> (validés) :</p>\n<ol>\n<li><strong>Coaches</strong> — total · actifs (payants) · <strong>essai gratuit</strong> · past_due · nouveaux 7j</li>\n<li><strong>Essais</strong> — connectés en trial · temps restant / expirés 7j · conversions trial→payant</li>\n<li><strong>SaaS</strong> — MRR · abos actifs par plan</li>\n<li><strong>SAV</strong> — tickets ouverts · nouveaux 7j</li>\n<li><strong>Catalogue</strong> — brouillon / review / publiés (7j)</li>\n</ol>\n<p>Raccourcis : Coaches · Catalogue · SAV · Compta · Drive biblio.</p>",
+        "images": [],
+        "critiqueHtml": "<p><strong>✅</strong> KPIs validés + focus essais.</p>"
+      },
+      "features": [
+        {
+          "id": "f-adm-ops-kpis",
+          "label": "KPIs hub",
+          "route": "/admin",
+          "bodyHtml": "<p>Cartes cliquables. Carte Essais → liste filtrée coaches en trial.</p>",
+          "critiqueHtml": "<p><strong>✅</strong></p>",
+          "images": [],
+          "children": []
+        }
+      ]
+    },
+    "coaches": {
+      "arrival": {
+        "bodyHtml": "<p><code>/admin/coaches</code> — états &amp; fiches.</p>\n<p><strong>Liste</strong> : nom · e-mail · plan · statut (trial / actif / past_due / canceled) · inscription · nb clients (prod) · stockage % · dernier login · environnement (sandbox essai vs prod).</p>\n<p>Filtres : trial · payant · past_due · recherche.</p>\n<p><strong>Fiche</strong> :</p>\n<ul>\n<li>Compte · slug · abo SaaS · quota · SAV</li>\n<li>Clients finaux <strong>RO</strong> : nom · e-mail · prestas · dernier login/séance · modules · plan démarré</li>\n<li>Actions : note interne · renvoyer reset MDP · <strong>suspendre</strong> (login bloqué) V1</li>\n<li><strong>Pas d’impersonation</strong> V1</li>\n</ul>",
+        "images": [],
+        "critiqueHtml": "<p><strong>✅ FIGÉ intention</strong> · pas d’impersonation · suspend OK · clients RO · reset MDP.</p>"
+      },
+      "features": [
+        {
+          "id": "f-adm-coaches-list",
+          "label": "Liste coaches",
+          "route": "/admin/coaches",
+          "bodyHtml": "<p>Tableau + filtre essai / payant. Mise en avant des comptes en <strong>essai gratuit</strong> (sandbox).</p>",
+          "critiqueHtml": "<p><strong>✅</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-adm-coaches-detail",
+          "label": "Fiche coach",
+          "route": "/admin/coaches/[id]",
+          "bodyHtml": "<p>Détail + notes + SAV + reset MDP + suspend (bloque login).</p>\n<p><strong>Clients finaux RO</strong> : nom · e-mail · prestas · dernier login/séance · modules · plan démarré — pas messages ni bilans détail.</p>",
+          "critiqueHtml": "<p><strong>✅</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-adm-coaches-reset-pwd",
+          "label": "Reset mot de passe coach",
+          "route": "/admin/coaches/[id]",
+          "bodyHtml": "<p>Action fiche : générer / renvoyer lien reset → page publique reset MDP (partagée pattern client).</p>",
+          "critiqueHtml": "<p><strong>✅ intention</strong> · page reset = auth globale.</p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-adm-coaches-suspend",
+          "label": "Suspendre",
+          "route": "/admin/coaches/[id]",
+          "bodyHtml": "<p>Bloque le login coach (sandbox et/ou prod selon compte). Confirmation pop-up.</p>",
+          "critiqueHtml": "<p><strong>✅</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-adm-coaches-trial",
+          "label": "Essai gratuit (sandbox)",
+          "route": "/admin/coaches",
+          "bodyHtml": "<p>Voir feature dédiée menu Accès / modèle essai — listés ici avec temps restant.</p>",
+          "critiqueHtml": "<p><strong>✅</strong></p>",
+          "images": [],
+          "children": []
+        }
+      ]
+    },
+    "catalog": {
+      "arrival": {
+        "bodyHtml": "<p><code>/admin/catalog</code> — mêmes builders que coach → catalogue Trainly gratuit.</p>\n<p><strong>Workflow fitness (exos / blocs / séances / programmes)</strong> : <strong>Brouillon → Publié</strong> (pas d’étape Review). Publier = visible coaches. Confirm publish recommandé sur listes.</p>\n<p><strong>Dépublier</strong> (règle plateforme) :</p>\n<ul>\n<li>Le coach <strong>n’y a plus accès</strong> dans le catalogue (nouveaux ajouts / récupérations impossibles)</li>\n<li>Si déjà <strong>en cours chez un client final</strong> → ne bouge pas</li>\n<li>Si déjà <strong>modifié / récupéré</strong> par le coach dans son espace → ne bouge pas (copie locale)</li>\n</ul>\n<p>Contenu : programmes fitness · nutrition (plans + recettes + aliments) · exos · séances · blocs.</p>\n<p><strong>Droits catalogue fitness</strong> : flag <strong>duplicable</strong> (le coach peut récupérer une copie éditable). <strong>Téléchargeable</strong> = non pertinent ici (réservé Drive PDF).</p>",
+        "images": [],
+        "critiqueHtml": "<p><strong>✅ MAJ 2026-09-16</strong> workflow sans Review · duplicable oui / téléchargeable non (fitness) · dépublish inchangé.</p>"
+      },
+      "features": [
+        {
+          "id": "f-adm-cat-workflow",
+          "label": "Workflow Brouillon → Publié",
+          "route": "/admin/catalog",
+          "bodyHtml": "<p>Statuts <strong>Brouillon / Publié</strong> pour le catalogue fitness (exos, blocs, séances, programmes). Pas d’étape Review.</p>\n<p>Publier = visible coaches. Dépublier = retire du catalogue coach ; copies locales coach + plans clients en cours inchangés.</p>\n<p>Drive PDF / Formation peuvent garder leur propre confirm publish.</p>",
+          "critiqueHtml": "<p><strong>✅ MAJ 2026-09-16</strong> Review retiré du catalogue fitness.</p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-adm-cat-programs",
+          "label": "Programmes & séances",
+          "route": "/admin/programs",
+          "bodyHtml": "<p>Hub unique (comme Exercices &amp; blocs) : toggle <strong>Programmes</strong> | <strong>Séances</strong>.</p>\n<p><strong>Séances</strong> (<code>session_library</code>) : draft/publish · composition blocs + exos publiés + <strong>repos</strong> (<code>item_kind=rest</code>, 1 max entre deux items) · Rx exo standard · <strong>groupes de séries</strong> (même règle que builder coach) · héritage types/sports masquable · feedback client post-séance.</p>\n<p><strong>Blocs depuis séance / cycle de vie (FIGÉ 2026-09-16)</strong> :</p>\n<ul>\n<li>Créer depuis une séance <em>brouillon</em> → bloc brouillon + rattachement (ref)</li>\n<li>Créer depuis une séance <em>publiée</em> → bloc <strong>publié</strong> directement</li>\n<li><strong>Publier une séance</strong> → publie automatiquement tous les blocs brouillon liés (contraintes publish bloc : nom, sport, résultat, ≥1 exo)</li>\n<li><strong>Interdit</strong> : laisser un bloc brouillon dans une séance publiée · <strong>interdit</strong> de dépublier un bloc encore lié à une séance publiée</li>\n<li>Picker d’ajout = blocs publiés only · soft-delete bloc = lien séance conservé (admin)</li>\n</ul>\n<p><strong>Chaîne Trainly → coach → client</strong> : admin publie programmes/séances/blocs → visibles coaches (réutilisation). Coach : onglets brouillon (en construction) → templates validés → seul le <strong>programme final</strong> est « publié » au sens envoi (1 client ou groupe, lié à une presta). Le client ne voit que son plan ; pas le statut catalogue.</p>",
+          "critiqueHtml": "<p><strong>✅ 2026-09-17</strong> Création + shell + bandeau semaines (←→, rename, dup, delete, sync durée). Suite : calendrier/slots → palette session_library.</p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-adm-cat-spec-vs-code",
+          "label": "Spec ↔ code (séance / bloc / exo)",
+          "route": "/admin/programs?kind=sessions",
+          "bodyHtml": "<p><strong>Audit Spec ↔ Code — séance / bloc / exo</strong> (2026-09-16) pour sécuriser le nouveau program_builder.</p>\n<p><strong>Deux hiérarchies — ne pas fusionner</strong> :</p>\n<ul>\n<li><strong>Catalogue Trainly</strong> : <code>session_library</code> → slots (<code>block</code> | <code>exercise</code> | <code>rest</code>) → exos du bloc</li>\n<li><strong>Programme coach</strong> : semaines → <code>program_sessions</code> → timeline (<code>block</code> | <code>exercise</code>)</li>\n</ul>\n<p>« Section » UI (WeekSection) ≠ entité domaine ≠ template <code>session_library</code>.</p>\n<p><strong>Matrice</strong></p>\n<ul>\n<li><strong>MATCH</strong> — Slots block | exercise | rest · normalize rest · publish auto blocs · blocage dépublish bloc lié · publish catalogue ≥1 block|exercise · picker published-only · units value_mode/short_label</li>\n<li><strong>PARTIAL</strong> — Groupes de séries (admin OK, program_exercises sans <code>group</code>) · dépublish copies OK si snapshot · allow_download encore sur programmes · timer/expected_result à copier · feedback flags player partiel</li>\n<li><strong>CONFLICT</strong> — Spec = instance détachée vs code programme = live <code>exercise_id</code> FK · Review encore sur programmes admin</li>\n<li><strong>MISSING</strong> — Palette coach ne lit pas encore <code>session_library</code> / <code>block_library</code></li>\n</ul>\n<p><strong>Landmines</strong></p>\n<ol>\n<li>Trois repos : <code>item_kind=rest</code> · <code>rest_s</code> Rx · <code>rest_seconds</code> timer circuit</li>\n<li>Exo top-level séance vs exo nested dans un bloc (doublons historique)</li>\n<li>Ref live admin (<code>block_id</code> partagé) vs copie coach (spec détachée)</li>\n<li>« Objectif » : feedback séance · expected_result bloc · objectif suivi Historique</li>\n<li>Rx JSON catalogue ≠ colonnes <code>program_exercises</code></li>\n</ol>\n<p><strong>Décisions avant builder</strong></p>\n<ol>\n<li>Ingest palette = deep-copy arbre (recommandé séance/bloc) vs live FK</li>\n<li>Rest catalogue → item timeline ou <code>rest_time</code> sur exo précédent</li>\n<li>Groupes de séries → JSON Rx programme ou aplatir</li>\n<li>Copier <code>timer_note</code> + <code>expected_result</code> + objectifs feedback à l’insert</li>\n</ol>",
+          "critiqueHtml": "<p><strong>✅ 2026-09-16</strong> Correctifs : slice 53 trackée · publish catalogue aligné · blocage dépublish bloc lié · normalize rest. Fiche visible ici : <code>/admin/spec/admin</code> → Catalogue Trainly → Spec ↔ code.</p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-adm-cat-nutrition",
+          "label": "Nutrition (plans + recettes + aliments)",
+          "route": "/admin/catalog/nutrition",
+          "bodyHtml": "<p>V1 oui — plans, recettes, aliments. Même logique publication.</p>",
+          "critiqueHtml": "<p><strong>✅</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-adm-cat-exercises",
+          "label": "Exercices",
+          "route": "/admin/exercises",
+          "bodyHtml": "<p>Alimente la biblio globale Trainly (palette coach). Workflow brouillon → publié.</p>\n<p><strong>Visible builders / coach</strong> : uniquement <code>status=published</code> + non corbeille (drafts admin only).</p>\n<p><strong>Publier</strong> (fiche + liste) : nom + type + sport obligatoires.</p>\n<p><strong>Ponts</strong> : multi via <code>exercise_replacements</code> ; cibles = exos publiés uniquement.</p>\n<p><strong>Historique client (build futur)</strong> — Rx / unités :</p>\n<ul>\n<li>Sur <strong>blocs</strong>, prescriptions = JSON texte <code>[{unit_id, value, input_mode, varies}]</code> (value toujours string). Stats = parse à la lecture si <code>input_mode=number|time</code>.</li>\n<li>Quand on ajoutera des <strong>unités sur la fiche exercice</strong> : <strong>numérique only</strong> (plus simple pour l’historique / PR).</li>\n<li>Même shape admin → coach builder → snapshot séance client.</li>\n</ul>\n<p>Pas d’autosave fiche (save explicite = stable).</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ 2026-09-15</strong> published-only builders · publish nom+type+sport · ponts durcis · Rx texte blocs · unités exo futures = number · pas d’autosave.</p>",
+          "images": [],
+          "children": []
+        }
+      ]
+    },
+    "drive-packs": {
+      "arrival": {
+        "bodyHtml": "<p><code>/admin/drive-packs</code> — biblio PDF Trainly (V1 PDF only) → section <strong>Trainly</strong> du Drive coach (même pattern que Trainly exos / nutrition / programmes).</p>\n<p><strong>Stockage</strong> : bucket Supabase Storage dédié (décision produit).</p>\n<p><strong>Coach</strong> : ouvrir in-app + actions selon flags admin. <strong>Hors quota</strong> tant que consulté depuis la biblio partagée. Si le coach récupère (duplique) ou télécharge puis ré-upload dans <em>son</em> Drive → compte dans son quota.</p>\n<p><strong>Droits par document</strong> (même logique catalogue) : admin choisit <strong>duplicable</strong> (récupérer dans l’espace coach / envoyer à ses clients) et/ou <strong>téléchargeable</strong>.</p>\n<p><strong>Dépublier</strong> : disparaît du dossier de partage Trainly (plus de nouvelle récupération). Copies déjà dans l’espace coach / clients inchangées.</p>\n<p>Workflow brouillon → publié (confirm).</p>",
+        "images": [],
+        "critiqueHtml": "<p><strong>✅ FIGÉ 2026-03-13</strong> · PDF only V1 · Storage Supabase · section Drive Trainly · flags duplicable/téléchargeable · dépublish = plus de récup depuis partage · hors quota biblio · SQL 34 OK.</p>"
+      },
+      "features": [
+        {
+          "id": "f-adm-drive-lib",
+          "label": "Biblio docs Trainly",
+          "route": "/admin/drive-packs",
+          "bodyHtml": "<p>CRUD admin : upload PDF · titre · description · flags <code>allow_duplicate</code> / <code>allow_download</code> · publier / dépublier · preview · filtres.</p>\n<p>Coach <code>/drive</code> section Trainly : liste publiés · ouvrir · Dupliquer si autorisé · Télécharger si autorisé.</p>",
+          "critiqueHtml": "<p><strong>✅ live 2026-09-13</strong> filtres · preview · publier/dépublier · section coach.</p>",
+          "images": [],
+          "children": []
+        }
+      ]
+    },
+    "formation": {
+      "arrival": {
+        "bodyHtml": "<p><code>/admin/formation</code> — contenus de <strong>formation</strong> pour les coaches (séparé du Drive biblio docs).</p>\n<p>Médias V1 : <strong>PDF · vidéo · image</strong>. Coach = <strong>lecture seule</strong> (viewer in-app <code>/formation/[id]</code>).</p>\n<p>Sidebar coach : entrée <strong>Formation</strong> dédiée. Admin : section dédiée (cette page).</p>\n<p>Workflow brouillon → publié · dépublier = plus visible côté coach.</p>",
+        "images": [],
+        "critiqueHtml": "<p><strong>✅ FIGÉ + live 2026-09-13</strong> admin UX + viewer coach.</p>"
+      },
+      "features": [
+        {
+          "id": "f-adm-formation-lib",
+          "label": "Bibliothèque Formation",
+          "route": "/admin/formation",
+          "bodyHtml": "<p>Upload / métadonnées / publier. Types : pdf, video, image. Visible coaches sur <code>/formation</code> + viewer <code>/formation/[id]</code>.</p>",
+          "critiqueHtml": "<p><strong>✅ live</strong> filtres · preview · publish · viewer.</p>",
+          "images": [],
+          "children": []
+        }
+      ]
+    },
+    "sav": {
+      "arrival": {
+        "bodyHtml": "<p><code>/admin/sav</code> — tickets coaches. <strong>Canal unique</strong> admin↔coach (pas de 2ᵉ messagerie).</p>\n<p>Coach : Settings → Aide. Réponses <strong>in-app only</strong> + PJ.</p>\n<p>Statuts : Nouveau · En cours · Attente coach · Résolu.</p>\n<p><strong>SAV full (validé 2026-09-13)</strong> : inbox + badges unread par ticket · fil + PJ · <strong>fermer</strong> (→ Résolu) · <strong>relancer le coach</strong> (→ Attente coach + ping in-app) · <strong>rouvrir</strong> un ticket résolu · deep-link fiche coach.</p>",
+        "images": [],
+        "critiqueHtml": "<p><strong>✅ FIGÉ</strong> · SAV full validé 2026-09-13 (close / reopen / relance coach).</p>"
+      },
+      "features": [
+        {
+          "id": "f-adm-sav-inbox",
+          "label": "Inbox tickets",
+          "route": "/admin/sav",
+          "bodyHtml": "<p>Liste · filtres statut · filtre coach (<code>?coach=</code>) · badge unread <strong>par ligne</strong>.</p>",
+          "critiqueHtml": "<p><strong>✅ live</strong> badges Non lu + filtres.</p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-adm-sav-thread",
+          "label": "Ticket détail",
+          "route": "/admin/sav/[id]",
+          "bodyHtml": "<p>Fil · PJ · changer statut · deep-link coach.</p>\n<p><strong>Actions full</strong> : Fermer (résolu) · Relancer coach (attente_coach) · Rouvrir (depuis résolu → en_cours).</p>",
+          "critiqueHtml": "<p><strong>✅ live</strong> Fermer · Relancer · Rouvrir + PJ.</p>",
+          "images": [],
+          "children": []
+        }
+      ]
+    },
+    "settings": {
+      "arrival": {
+        "bodyHtml": "<p><code>/admin/settings</code> — Settings staff (validé 2026-09-13).</p>\n<ul>\n<li><strong>Compte</strong> : nom · e-mail (confirm) · mot de passe</li>\n<li><strong>Thème</strong> Black / White (lié compte ; peut rester aussi dans shell)</li>\n<li><strong>Sécurité</strong> : rappel solo admin V1 · lien Accès</li>\n</ul>\n<p>Hors V1 : multi-admins · impersonation · abo perso.</p>",
+        "images": [],
+        "critiqueHtml": "<p><strong>✅ FIGÉ + live 2026-09-13</strong></p>"
+      },
+      "features": [
+        {
+          "id": "f-adm-settings-account",
+          "label": "Compte staff",
+          "route": "/admin/settings",
+          "bodyHtml": "<p>Nom · e-mail · MDP · thème — miroir allégé du Settings coach.</p>",
+          "critiqueHtml": "<p><strong>✅ live</strong></p>",
+          "images": [],
+          "children": []
+        }
+      ]
+    },
+    "billing": {
+      "arrival": {
+        "bodyHtml": "<p><code>/admin/billing</code> — <strong>SaaS Trainly only V1</strong> (pas GMV Connect).</p>\n<p>MRR · abos par plan · past_due · factures Stripe Billing · export CSV plus tard.</p>",
+        "images": [],
+        "critiqueHtml": "<p><strong>✅ FIGÉ</strong> SaaS only V1.</p>"
+      },
+      "features": [
+        {
+          "id": "f-adm-bill-mrr",
+          "label": "Vue MRR / abos",
+          "route": "/admin/billing",
+          "bodyHtml": "<p>KPIs + tableau abos.</p>",
+          "critiqueHtml": "<p><strong>⏳</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-adm-bill-failed",
+          "label": "Paiements en échec",
+          "route": "/admin/billing/failed",
+          "bodyHtml": "<p>Past due · actions relance.</p>",
+          "critiqueHtml": "<p><strong>⏳</strong></p>",
+          "images": [],
+          "children": []
+        }
+      ]
+    },
+    "access": {
+      "arrival": {
+        "bodyHtml": "<p><strong>Toi seul V1</strong> · role platform_admin · pas d’inscription Admin · pas d’impersonation.</p>\n<p><strong>URLs FIGÉES</strong> : <strong>site</strong> = marketing only · <strong>app</strong> = produit (essai + payant, même URL).</p>\n<p><strong>Essai</strong> : 15 <strong>jours calendaires dès la 1ʳᵉ connexion app</strong> · clients fictifs · même e-mail · expire → login OK mais dashboard <strong>offres</strong> seulement · payer → même app, compte réel (démo non migrée).</p>",
+        "images": [],
+        "critiqueHtml": "<p><strong>✅ FIGÉ Accès / essai</strong> · option URL 2 · 15 j dès 1ʳᵉ connexion · expire → offres · solo admin.</p>"
+      },
+      "features": [
+        {
+          "id": "f-adm-access-auth",
+          "label": "Auth staff",
+          "route": "/admin/access",
+          "bodyHtml": "<p>Whitelist toi · session Admin.</p>",
+          "critiqueHtml": "<p><strong>✅</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-adm-access-trial-model",
+          "label": "Modèle essai vs prod (Ekklo-like)",
+          "route": "/admin/access",
+          "bodyHtml": "<p><strong>URLs (option 2 FIGÉE)</strong> :</p>\n<ul>\n<li><strong>Site</strong> — marketing only (landing, pricing, CTA essayer / signup)</li>\n<li><strong>App</strong> — produit unique : essai <em>et</em> payant (état de compte). Une PWA.</li>\n</ul>\n<p><strong>Essai</strong> : badge Essai · clients fictifs · <strong>15 jours calendaires à partir de la 1ʳᵉ connexion à l’app</strong> · même e-mail que prod.</p>\n<p><strong>Expiration sans pay</strong> : login OK → dashboard offres abo uniquement.</p>\n<p><strong>Après paiement</strong> : même URL app · accès métier réel · données démo non migrées.</p>\n<p>Admin Ops : essais actifs · temps restant · conversions.</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-adm-access-audit",
+          "label": "Audit log",
+          "route": "/admin/access/audit",
+          "bodyHtml": "<p>Reporté V1 (solo) — nice-to-have.</p>",
+          "critiqueHtml": "<p><strong>⏳ reporté</strong></p>",
+          "images": [],
+          "children": []
+        }
+      ]
+    },
+    "tools": {
+      "arrival": {
+        "bodyHtml": "<p>Outils internes : Spec <code>/admin/spec</code> · Design <code>/admin/design</code>.</p><p><strong>Règle DA</strong> : la page Design est le <em>verrou</em> visuel de la plateforme (couleurs, boutons, typo, surfaces). L’app coach <code>/home</code> et le portail client doivent coller à ce système — pas une DA improvisée écran par écran.</p>",
+        "images": [],
+        "critiqueHtml": "<p><strong>✅ FIGÉ intention</strong> · Design = source de vérité visuelle avant polish massif des écrans métier.</p>"
+      },
+      "features": [
+        {
+          "id": "f-adm-tools-spec",
+          "label": "Spec workspace",
+          "route": "/admin/spec",
+          "bodyHtml": "<p>Ce workspace de spec.</p>",
+          "critiqueHtml": "<p><strong>✅</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-adm-tools-design",
+          "label": "Design system",
+          "route": "/admin/design",
+          "bodyHtml": "<p><strong>Route</strong> : <code>/admin/design</code> (existe déjà — à enrichir).</p><p><strong>Rôle</strong> : page où on <strong>bloque / fige</strong> le design system Trainly :</p><ul><li>Tokens couleurs (brand, bg, surface, accent, text, muted, border)</li><li>Boutons (primary / secondary / ghost) · états hover/disabled</li><li>Radii · ombres · typo</li><li>Cards / surfaces app (shell coach, portail)</li><li>Référence visuelle alignée sur le <strong>site vitrine</strong> (même famille, pas un look admin gris séparé)</li></ul><p><strong>Process</strong> : 1) figer ici · 2) appliquer aux shells <code>/home</code> puis écrans métier · 3) white-label coach (branding) = surcharge contrôlée des tokens, pas un 2ᵉ design system.</p><p><strong>Hors scope immédiat</strong> : ne pas refaire toute la DA app pendant les tranches SQL/CRM — d’abord fondations, puis passe Design lock, puis apply.</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ produit</strong> : page Design = verrou couleurs + boutons + composants. Alignement vitrine obligatoire. Timing : après tranche Clients (ou dès que le shell est stable), pas pendant chaque feature.</p>",
+          "images": [],
+          "children": []
+        }
+      ]
+    }
+  }
+}

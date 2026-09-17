@@ -1,0 +1,1695 @@
+{
+  "id": "coach",
+  "title": "Coach",
+  "description": "Sidebar coach — routes courtes (sans /dashboard). Accueil coach = /home (pour ne pas collisionner avec le marketing /).",
+  "featureMenuLayout": true,
+  "pageShellLayout": false,
+  "tree": [
+    {
+      "id": "f-topbar",
+      "label": "Top-bar (shell)",
+      "route": "(global)",
+      "kind": "menu"
+    },
+    {
+      "id": "dashboard",
+      "label": "Dashboard",
+      "route": "/home",
+      "kind": "menu"
+    },
+    {
+      "id": "clients",
+      "label": "Clients",
+      "route": "/clients",
+      "kind": "menu"
+    },
+    {
+      "id": "chat",
+      "label": "Chat",
+      "route": "/chat",
+      "kind": "menu"
+    },
+    {
+      "id": "programs",
+      "label": "Programme",
+      "route": "/programs",
+      "kind": "menu"
+    },
+    {
+      "id": "nutrition",
+      "label": "Nutrition",
+      "route": "/nutrition",
+      "kind": "menu"
+    },
+    {
+      "id": "exercises",
+      "label": "Exercices",
+      "route": "/exercises",
+      "kind": "menu"
+    },
+    {
+      "id": "drive",
+      "label": "Drive",
+      "route": "/drive",
+      "kind": "menu"
+    },
+    {
+      "id": "formation",
+      "label": "Formation",
+      "route": "/formation",
+      "kind": "menu"
+    },
+    {
+      "id": "payments",
+      "label": "Comptabilités",
+      "route": "/payments",
+      "kind": "menu"
+    },
+    {
+      "id": "profile",
+      "label": "Profil public",
+      "route": "/profile",
+      "kind": "menu"
+    }
+  ],
+  "blocks": {},
+  "menus": {
+    "dashboard": {
+      "arrival": {
+        "bodyHtml": "\n<p><strong>Environnement</strong> : essai (même app, 15 j dès 1ʳᵉ connexion, fictif)</p>\n<p><strong>Essai expiré</strong> : login OK → dashboard offres abo seulement.</p>\n<p><strong>Environnement</strong> : une URL app (essai ou payant selon compte) · site marketing séparé · essai 15 j dès 1ʳᵉ connexion · expire → offres.</p>",
+        "images": [],
+        "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Layout graphique + logo · KPI programmes/nutrition = <strong>plans clients</strong> En cours seulement (pas showroom / pas « À créer ») · RDV groupe = réponse individuelle + détail coach · Google Calendar hors V1 · 0 ❓.</p>"
+      },
+      "features": [
+        {
+          "id": "f-home-layout",
+          "label": "Mise en page /home",
+          "route": "/home",
+          "bodyHtml": "<p><strong>Direction visuelle</strong> : une composition (pas un mur de widgets). Espace dédié <strong>logo / identité coach</strong> (ou Trainly) en hero léger / bandeau.</p>\n<p>Blocs flottants / asymétriques plutôt que 2 colonnes strictes Ekklo :</p>\n<ul>\n<li>Accueil personnalisé (« Hello {prénom} »)</li>\n<li>Rangée KPI compacte (5 métriques, style Gymkee cards légères)</li>\n<li>Planning du jour (liste visuelle + CTA Ajouter RDV)</li>\n<li>Fil d’activité client récente (séances, retours, bilans) — scroll, filtres légers</li>\n<li>Aperçu paiements du mois / derniers versements (deep-link Compta)</li>\n</ul>\n<p>Pas de graphique revenus lourd en V1 (déjà dans Stats Scale / Compta). Pas de mascotte obligatoire.</p>",
+          "critiqueHtml": "<p><strong>✅</strong> Graphique + logo · moins structuré qu’Ekklo.</p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-kpi-clients",
+          "label": "KPI · Nb clients",
+          "route": "/clients/list",
+          "bodyHtml": "<p>Clients actifs = presta en cours. Cash → Compta puis grant. Showroom sans presta = 0. Clic → liste clients.</p>",
+          "critiqueHtml": "<p><strong>✅</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-kpi-programs",
+          "label": "KPI · Nb programmes",
+          "route": "/programs",
+          "bodyHtml": "<p>Compte uniquement les <strong>plans clients</strong> fitness En cours (démarré ou en pause) — <strong>1 = 1 client = 1 plan</strong>. N’inclut <em>pas</em> les lignes ops « offre showroom 0 client » ni « À créer ». Clic → <code>/programs</code>.</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ</strong> KPI ≠ total des lignes du tableau En cours (ops board élargi).</p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-kpi-nutrition",
+          "label": "KPI · Nb nutrition",
+          "route": "/nutrition",
+          "bodyHtml": "<p>Compte uniquement les <strong>plans clients</strong> nutrition En cours (démarré ou en pause) — 1 = 1 client. N’inclut <em>pas</em> showroom 0 client ni « À créer ». Clic → <code>/nutrition</code>.</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Même règle que KPI programmes.</p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-kpi-revenue",
+          "label": "KPI · Revenus du mois",
+          "route": "/payments",
+          "bodyHtml": "<p>= définition Compta (Stripe + manuels + liens Payé). Clic → <code>/payments</code>.</p>",
+          "critiqueHtml": "<p><strong>✅</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-kpi-calendar",
+          "label": "KPI · Planning du jour",
+          "route": "/home/calendar",
+          "bodyHtml": "<p>RDV du jour. Clic → calendrier. Création aussi fiche client / chat. Google Calendar hors V1.</p>",
+          "critiqueHtml": "<p><strong>✅</strong></p>",
+          "images": [],
+          "children": [
+            {
+              "id": "f-home-rdv-add",
+              "label": "Ajouter un RDV",
+              "route": "/home/calendar",
+              "bodyHtml": "<p>1 client ou groupe · physique/visio + lieu.</p>\n<p><strong>Chaque membre</strong> du groupe répond individuellement (accept / refuse). Le coach voit le <strong>détail des réponses</strong> (qui a accepté / refusé / en attente) + compteurs sur le calendrier.</p>\n<p><strong>Refus client</strong> → notif cloche coach → <code>/home/calendar</code> · événement en <strong>contour rouge</strong> · le coach peut supprimer l’événement.</p>",
+              "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Réponse individuelle + refus → cloche / calendar rouge.</p>",
+              "images": [],
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "f-home-activity",
+          "label": "Fil activité clients",
+          "route": "/home",
+          "bodyHtml": "<p>Feed récent : séances validées · retours prog/nutri · bilans soumis · (habitudes hors V1). Deep-link fiche / chat. Style aéré type Gymkee « Activité », sans IA assistant.</p>",
+          "critiqueHtml": "<p><strong>✅</strong> V1 feed métier, pas Demander à Dwayne.</p>",
+          "images": [],
+          "children": []
+        }
+      ]
+    },
+    "clients": {
+      "arrival": {
+        "bodyHtml": "<p></p>",
+        "images": [],
+        "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Multi-prestations OK · <strong>1 fitness démarré</strong> + <strong>1 nutrition démarré</strong> (pause pour changer) · accès = prestation · groupes auto + manuels sans assign programme · Bilans figés · Notifications hors V1.</p>\n<p><strong>✅ Avis tranché</strong> : pas de multi-programmes fitness (ni nutrition) actifs en parallèle — pause = bon modèle.</p>\n<p><strong>✅ Avis tranché</strong> (bonus « étirements » via groupe) : non en V1. Contenu bonus = Drive ou message ; un 2ᵉ programme gratuit hors prestation casse la promesse « accès = offre ».</p>"
+      },
+      "features": [
+        {
+          "id": "f-cli-tab-list",
+          "label": "Onglet Liste",
+          "route": "/clients/list",
+          "bodyHtml": "<p><code>/clients/list</code> — tableau : nom · prestation(s) en cours · avancement du fitness <em>démarré</em> · date dernière séance. Header onglets toujours visible.</p>",
+          "images": [],
+          "children": [
+            {
+              "id": "f-cli-row",
+              "label": "Fiche client",
+              "route": "/clients/list/[id]",
+              "bodyHtml": "<p><code>/clients/list/[id]</code>. Avancement affiché = programme fitness démarré uniquement. Actions : Programme · Nutrition · Prestation · Bilans · Notification (grisé) · Message · RDV.</p>",
+              "images": [],
+              "children": [
+                {
+                  "id": "f-1784708261405-0zwhw",
+                  "label": "Programme (fitness)",
+                  "route": "/clients/list/[id]/program",
+                  "bodyHtml": "<p><code>/clients/list/[id]/program</code>. Filtre (aligné Programmes) : <strong>En cours</strong> (défaut — démarré ou envoyé pas encore démarré = côté client <strong>En attente</strong>) · <strong>En pause</strong> · <strong>Passé</strong> (terminé). Pas de filtre « À venir ».</p>\n<p>Vue du programme <em>réalisé</em> (retours séance, exos modifiés/ajoutés) — type aperçu /preview (semaines en bandeau + séances + retours). Badge onglet si retour client non lu coach (disparait à l’ouverture ; pas de notif client).</p>\n<p><strong>Aligné client</strong> : achat / envoi coach ≠ démarrage auto · le client démarre depuis Accueil · 1 démarré / track · pause pour basculer · fitness et nutrition indépendants.</p>\n<p><strong>Calendrier réalisé client</strong> (miroir RO de la card Accueil filtre Séances) : mêmes styles Fait / Fait-édité / Libre / Pas fait / En cours · multi pastilles / jour · reposition retard. Lecture seule coach.</p>",
+                  "images": [],
+                  "children": [
+                    {
+                      "id": "f-cli-prog-page",
+                      "label": "Éditer le plan client (snapshot)",
+                      "route": "/clients/list/[id]/program/[progId]",
+                      "bodyHtml": "<p><code>/clients/list/[id]/program/[progId]</code> — ouvre le builder en mode <strong>plan client</strong> (snapshot).</p>\n<ul>\n<li><strong>Pour ce client</strong> — défaut : modifie son snapshot (ex. blessure).</li>\n<li><strong>Mettre à jour le template source</strong> (si lié) — futures affectations only, pas les autres clients déjà en cours.</li>\n</ul>\n<p>Pas de sync live multi-clients.</p>",
+                      "images": [],
+                      "children": [],
+                      "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Snapshot-first.</p>"
+                    }
+                  ],
+                  "critiqueHtml": "<p><strong>✅ FIGÉ</strong> + miroir calendrier Accueil client RO.</p>"
+                },
+                {
+                  "id": "f-1784721937006-ye9t1",
+                  "label": "Nutrition",
+                  "route": "/clients/list/[id]/nutrition",
+                  "bodyHtml": "<p><code>/clients/list/[id]/nutrition</code> — filtres : <strong>En cours</strong> (défaut) · <strong>En pause</strong> · <strong>Passé</strong>. Plan, avancement, retours (réponse via message).</p>\n<p><strong>Infos affichées</strong> : taille, <strong>poids du dernier bilan soumis</strong> (lecture initiale), sexe, âge, calories maintien / objectif. Le coach peut ensuite <strong>modifier</strong> ces valeurs dans cette section pour le suivi nutrition — ça n’écrase <em>pas</em> automatiquement « Mes infos » côté client (seule une nouvelle soumission de bilan le fait).</p>\n<p>Badge onglet si retour non lu coach.</p>\n<p><strong>Calendrier nutrition client</strong> — miroir RO Accueil filtre Repas (validé / non).</p>",
+                  "images": [],
+                  "children": [
+                    {
+                      "id": "f-1784728853341-yqv2k",
+                      "label": "Éditer le plan nutrition (snapshot)",
+                      "route": "/clients/list/[id]/nutrition/[nutId]",
+                      "bodyHtml": "<p><code>/clients/list/[id]/nutrition/[nutId]</code> — même logique snapshot que le fitness : défaut = ce client · option = Mettre à jour le template source (futures only).</p>",
+                      "images": [],
+                      "children": [],
+                      "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Snapshot-first (miroir fitness).</p>"
+                    }
+                  ],
+                  "critiqueHtml": "<p><strong>✅</strong> + miroir calendrier Accueil nutrition RO.</p>"
+                },
+                {
+                  "id": "f-cli-btn-gympay",
+                  "label": "Prestation",
+                  "route": "/clients/list/[id]/prestation",
+                  "bodyHtml": "<p><code>/clients/list/[id]/prestation</code> — résumé prestations / abonnements / accès modules (Fitness, Nutrition, Drive, À la demande, Messagerie, Habitudes).</p>",
+                  "images": [],
+                  "children": [
+                    {
+                      "id": "f-1784728932195-ueuwp",
+                      "label": "Gérer prestation (Profil public)",
+                      "route": "/profile",
+                      "bodyHtml": "<p>Redirect hub Prestations du Profil public.</p>",
+                      "images": [],
+                      "children": [],
+                      "critiqueHtml": "<p><strong>✅</strong></p>"
+                    }
+                  ],
+                  "critiqueHtml": "<p><strong>✅</strong> Source de vérité des accès.</p>"
+                },
+                {
+                  "id": "f-cli-btn-bilan",
+                  "label": "Bilan client",
+                  "route": "/clients/list/[id]/bilan",
+                  "bodyHtml": "<p><code>/clients/list/[id]/bilan</code> — bilans du client. Badge si réponse non lue coach.</p>",
+                  "images": [],
+                  "children": [
+                    {
+                      "id": "f-cli-bilan-assign",
+                      "label": "Assigner un bilan",
+                      "route": "/clients/bilans/envoyer",
+                      "bodyHtml": "<p>Redirect <code>/clients/bilans/envoyer</code> (client préselectionné). Hub unique d’affectation.</p>",
+                      "images": [],
+                      "children": [],
+                      "critiqueHtml": "<p><strong>✅</strong></p>"
+                    }
+                  ],
+                  "critiqueHtml": "<p><strong>✅</strong></p>"
+                },
+                {
+                  "id": "f-cli-btn-notif",
+                  "label": "notification",
+                  "route": "/clients/list/[id]/notif",
+                  "bodyHtml": "<p><code>/clients/list/[id]/notif</code> — <strong>grisé hors V1</strong>.</p>",
+                  "images": [],
+                  "children": [],
+                  "critiqueHtml": "<p><strong>✅</strong> Hors V1.</p>"
+                },
+                {
+                  "id": "f-cli-msg",
+                  "label": "icon Envoyer un message",
+                  "route": "/chat/[threadId]",
+                  "bodyHtml": "<p>Ouvre (ou crée) le thread 1:1 → <code>/chat/[threadId]</code>. Toujours possible pour un client lié (presta active ou passée), aligné portail client « Écrire au coach ».</p>",
+                  "images": [],
+                  "children": [],
+                  "critiqueHtml": "<p><strong>✅</strong> 1:1 sans gate Messagerie presta.</p>"
+                },
+                {
+                  "id": "f-cli-rdv",
+                  "label": "Ajouter un RDV",
+                  "route": "/clients/list/[id]",
+                  "bodyHtml": "<p>Pop-up RDV sur la fiche (conflit → avertissement). Lien optionnel <code>/home/calendar</code>.</p>",
+                  "images": [],
+                  "children": [
+                    {
+                      "id": "f-1784731013737-myylm",
+                      "label": "bouton redirection vers le calendrier",
+                      "route": "/home/calendar",
+                      "bodyHtml": "<p>Bouton dans la pop-up RDV → calendrier.</p>",
+                      "images": [],
+                      "children": [],
+                      "critiqueHtml": "<p><strong>✅</strong></p>"
+                    }
+                  ],
+                  "critiqueHtml": "<p><strong>✅</strong></p>"
+                }
+              ],
+              "critiqueHtml": "<p><strong>✅</strong> 1 fitness actif · multi-prestations.</p>"
+            },
+            {
+              "id": "f-cli-filters",
+              "label": "Filtres / recherche",
+              "route": "/clients/list",
+              "bodyHtml": "<p>Recherche + filtres : prestation, groupe, programme, nom.</p>",
+              "images": [],
+              "children": [],
+              "critiqueHtml": "<p><strong>✅</strong></p>"
+            },
+            {
+              "id": "f-cli-invite",
+              "label": "Inviter / partager (cible)",
+              "route": "/c/[coachSlug]/showroom",
+              "bodyHtml": "<p><strong>Cible</strong> : ne plus créer une fiche client avant le lien. Partage = <strong>showroom</strong> <code>/c/[slug]/showroom</code>.</p><p>Cash sans compte app : <strong>code d’accès</strong> (hub Clients → Codes). Client déjà lié : <strong>Accorder</strong> + pop-up paiement/don.</p><p>Hub <code>/clients/codes</code> : promo + accès.</p><p>Legacy : invite token CRM — à remplacer.</p>",
+              "images": [],
+              "children": [],
+              "critiqueHtml": "<p><strong>⏳</strong> Hub Codes sous Clients · Accorder = pop-up compta.</p>"
+            }
+          ],
+          "critiqueHtml": "<p><strong>✅</strong></p>"
+        },
+        {
+          "id": "f-cli-tab-groupes",
+          "label": "Onglet Groupes",
+          "route": "/clients/groupes",
+          "bodyHtml": "<p><code>/clients/groupes</code>.</p>\n<p><strong>Règles figées</strong> :</p>\n<ul>\n<li><strong>Groupe auto</strong> : tous les clients d’une même prestation (le programme de la prestation est le « lien » implicite — showroom / rejoindre une offre = ce groupe).</li>\n<li><strong>Groupe manuel</strong> (« Ajouter un groupe ») : sous-ensemble de clients pour chat et/ou Drive et/ou envoi de bilans. Le coach coche s’il veut un chat de groupe et/ou un partage Drive.</li>\n<li><strong>Interdit</strong> : assigner / partager un programme fitness ou nutrition via un groupe. Tout accès programme = prestation.</li>\n</ul>",
+          "images": [],
+          "children": [
+            {
+              "id": "f-cli-grp-list",
+              "label": "Liste des groupes",
+              "route": "/clients/groupes",
+              "bodyHtml": "<p>Liste : nom · type (auto / manuel) · prestation liée (si auto) · membres · date. Clic → <code>/clients/groupes/[id]</code>.</p>",
+              "images": [],
+              "children": [],
+              "critiqueHtml": "<p><strong>✅</strong> Plus de colonne « programme assigné » comme action — seulement le contexte prestation/auto.</p>"
+            },
+            {
+              "id": "f-cli-grp-add",
+              "label": "Ajouter un groupe",
+              "route": "/clients/groupes",
+              "bodyHtml": "<p>Pop-up « Ajouter un groupe » (manuel) : nom, note, membres, options <strong>chat de groupe</strong> et/ou <strong>partage Drive</strong>. Pas de champ programme / nutrition / notifs V1.</p>",
+              "images": [],
+              "children": [],
+              "critiqueHtml": "<p><strong>✅</strong> Sous-groupes manuels uniquement. Pas d’assign programme (avis : bonus hors prestation = non V1, utiliser Drive).</p>"
+            },
+            {
+              "id": "f-cli-grp-filters",
+              "label": "Filtres groupes",
+              "route": "/clients/groupes",
+              "bodyHtml": "<p>Filtres : nom groupe, client, prestation, type auto/manuel.</p>",
+              "images": [],
+              "children": [],
+              "critiqueHtml": "<p><strong>✅</strong></p>"
+            },
+            {
+              "id": "f-cli-grp-detail",
+              "label": "Détail groupe",
+              "route": "/clients/groupes/[id]",
+              "bodyHtml": "<p><code>/clients/groupes/[id]</code> — membres · chat (si ON) · Drive (si ON).</p>\n<p><strong>V1</strong> : gérer membres · ouvrir chat · Drive · envoyer bilan (→ <code>/clients/bilans/envoyer</code>, groupe préselectionné).</p>\n<p><strong>Hors V1</strong> : notifications / habitudes. <strong>Jamais</strong> : assigner un programme.</p>",
+              "images": [],
+              "children": [],
+              "critiqueHtml": "<p><strong>✅</strong> Parité partielle : bilans oui · programmes non · notifs hors V1.</p>"
+            }
+          ],
+          "critiqueHtml": "<p><strong>✅</strong> Auto = prestation · Manuel = chat/drive/bilans · pas de programme via groupe.</p>"
+        },
+        {
+          "id": "f-cli-tab-bilans",
+          "label": "Onglet Bilans",
+          "route": "/clients/bilans",
+          "bodyHtml": "<p>Hub <code>/clients/bilans</code>.</p>\n<p><strong>Flux</strong> :</p>\n<ol>\n<li>Coach <strong>crée un template</strong> (pop-up) → Templates si enregistré ; sinon brouillon <code>/clients/bilans/brouillon</code>.</li>\n<li>Coach <strong>envoie / assigne</strong> (clients et/ou groupes) → 1ʳᵉ instance + éventuelle récurrence.</li>\n<li>Client remplit côté portail (photos libres, mensurations/questions selon template).</li>\n<li>Coach ouvre <code>/clients/bilans/[id]</code> ; navigation flèche vers le bilan précédent du même client.</li>\n</ol>\n<p><strong>En-tête</strong> : Filtres · Créer · Compléter · Envoyer.</p>\n<p><strong>Onglets</strong> : Tous · Templates. Tableau Tous : date · nom · client · photos · mensurations · statut lecture / réponse.</p>\n<p><strong>Règles clés</strong> : schéma figé à la création d’instance ; deadline apparition + 14 j → formulaire client verrouillé + statut coach « Sans réponse » ; récurrence = renvoi auto (ex. chaque 3 du mois) si prestation encore active ; modif template → prochain renvoi = nouveau schéma.</p>",
+          "images": [],
+          "children": [
+            {
+              "id": "f-cli-bilans-tab-templates",
+              "label": "Onglet Templates de bilans",
+              "route": "/clients/bilans?tab=templates",
+              "bodyHtml": "<p>Catalogue des <strong>modèles</strong> créés via « Créer un bilan ».</p>\n<p>Sur chaque template : <strong>modifier</strong> (rouvre la config) ou <strong>supprimer</strong> (pop-up de confirmation).</p>\n<p>Un template définit quels blocs sont actifs (Photos · Mensurations · Questions) et les listes exactes de champs / questions. Ces listes varient d’un template à l’autre.</p>\n<p><strong>Modification</strong> : n’impacte que les envois <em>futurs</em> (clients qui n’ont pas encore reçu ce template, ou prochains envois). Les instances déjà créées / déjà reçues restent sur le schéma figé à l’envoi.</p>\n<p><strong>Suppression</strong> : si le template a déjà été envoyé au moins une fois → <strong>soft-delete</strong> (masqué du catalogue / plus sélectionnable à l’envoi, instances historiques conservées). Sinon suppression définitive après confirmation.</p>",
+              "images": [],
+              "children": [],
+              "critiqueHtml": "<p><strong>✅</strong> Edit = futurs envois / prochaines occurrences de série ; instances passées figées.</p>\n<p><strong>✅</strong> Delete = confirmation ; soft-delete si déjà envoyé.</p>\n<p><strong>✅</strong> Série récurrente : chaque nouvel envoi snapshotte le template <em>courant</em> (si modifié entre-temps → nouveau schéma).</p>"
+            },
+            {
+              "id": "f-cli-bilans-filters",
+              "label": "Filtres & recherche",
+              "route": "/clients/bilans",
+              "bodyHtml": "<p>Rechercher. Filtres Client · Statut · État de lecture. Compteurs non lus / total.</p>",
+              "images": [],
+              "children": [],
+              "critiqueHtml": "<p></p>"
+            },
+            {
+              "id": "f-cli-bilans-create",
+              "label": "pop up Créer un bilan (template)",
+              "route": "/clients/bilans/new",
+              "bodyHtml": "<p><strong>Pop-up « Nouveau bilan »</strong> (pas une page pleine).</p>\n<ul>\n<li>Titre / consigne (texte riche)</li>\n<li>Section <strong>Contenu du bilan</strong> — 3 blocs activables : <strong>Photos</strong> · <strong>Mensurations</strong> · <strong>Questions</strong></li>\n<li><strong>Mensurations ON</strong> : liste prédéfinie + champs custom dans la pop-up</li>\n<li><strong>Questions ON</strong> : le coach crée les questions dans la pop-up</li>\n<li><strong>Photos ON</strong> : active simplement la possibilité d’ajouter des photos — <em>pas</em> de quota ni de slots imposés. Côté client : autant de photos qu’il veut ; il peut les nommer ou non</li>\n<li>Actions : Annuler · Créer. Fermeture sans enregistrer → <code>/clients/bilans/brouillon</code></li>\n</ul>\n<p>Après Créer → onglet Templates. Aucun envoi à cette étape.</p>",
+              "images": [],
+              "children": [],
+              "critiqueHtml": "<p><strong>✅</strong> Photos = toggle libre (client choisit quantité + noms optionnels). Mensurations = liste + custom. Questions = créées dans la pop-up.</p>"
+            },
+            {
+              "id": "f-cli-bilans-complete",
+              "label": "Compléter un bilan",
+              "route": "/clients/bilans/brouillon",
+              "bodyHtml": "<p><strong>Compléter un bilan</strong> = reprendre un <strong>brouillon de template</strong> non enregistré (<code>/clients/bilans/brouillon</code>), pas remplir les réponses d’un client.</p>\n<p>Permet de finaliser / enregistrer le modèle pour qu’il passe dans l’onglet Templates, puis puisse être envoyé.</p>",
+              "images": [],
+              "children": [],
+              "critiqueHtml": "<p><strong>✅</strong> « Compléter » = brouillons de templates.</p>\n<p><strong>✅</strong> Pas d’obligation de réponse ; après 14 j le formulaire client se verrouille et le statut coach devient « Sans réponse » (ou libellé pro équivalent).</p>"
+            },
+            {
+              "id": "f-cli-bilans-send",
+              "label": "Envoyer / Assigner un bilan",
+              "route": "/clients/bilans/envoyer",
+              "bodyHtml": "<p><strong>Pop-up « Assigne un bilan »</strong>.</p>\n<ol>\n<li><strong>Modèle</strong> — templates enregistrés (pas soft-deleted)</li>\n<li><strong>Destinataires V1</strong> — clients et/ou <strong>groupes</strong> (groupe = tous les membres)</li>\n<li><strong>Récurrence</strong> — une seule fois, ou périodique (ex. <strong>chaque 3 du mois</strong>) : on crée la 1ʳᵉ instance avec le template courant, puis à chaque échéance on <strong>renvoie le même template</strong> (ou le template mis à jour s’il a changé) aux mêmes personnes/groupe <strong>uniquement si leur prestation est toujours en cours</strong></li>\n<li><strong>Date d’apparition</strong> — quand le bilan apparaît / notifie le client</li>\n<li><strong>Deadline = apparition + 14 jours</strong> — au-delà : formulaire client <strong>verrouillé</strong> ; statut coach <strong>Sans réponse</strong></li>\n<li>Aperçu prochaines dates · Annuler · Envoyer</li>\n</ol>\n<p>Chaque instance snapshotte le schéma du template au moment de sa création.</p>",
+              "images": [],
+              "children": [],
+              "critiqueHtml": "<p><strong>✅</strong> Récurrence = renvoi calendaire (ex. 3 du mois) du template courant si prestation encore active ; 1ʳᵉ + suivants auto.</p>\n<p><strong>✅</strong> Groupes V1 · apparition + 14 j · lock client + statut Sans réponse.</p>"
+            },
+            {
+              "id": "f-cli-bilans-detail",
+              "label": "Détail bilan (instance)",
+              "route": "/clients/bilans/[id]",
+              "bodyHtml": "<p>Détail d’une instance <code>/clients/bilans/[id]</code>.</p>\n<p><strong>Header</strong> : fil d’Ariane · titre + date · client · Lu/Non lu · statut (En cours / Rempli / <strong>Sans réponse</strong>…).</p>\n<p><strong>Navigation</strong> : flèche vers le <strong>bilan précédent</strong> du même client (accès rapide, pas de dropdown de comparaison complexe).</p>\n<p><strong>Onglets</strong> :</p>\n<ul>\n<li><strong>Résumé</strong> — synthèse + questions/réponses</li>\n<li><strong>Photos</strong> — photos ajoutées librement par le client (libellés optionnels)</li>\n<li><strong>Mensurations</strong> — champs du template + valeurs</li>\n</ul>\n<p>Fin de remplissage → notif coach. Après J+14 sans soumission → lock client + Sans réponse.</p>",
+              "images": [],
+              "children": [
+                {
+                  "id": "f-cli-bilans-detail-resume",
+                  "label": "Onglet Résumé",
+                  "route": "/clients/bilans/[id]",
+                  "bodyHtml": "<p>Synthèse de l’instance (statut, dates, extraits clés questions / mensurations).</p>",
+                  "images": [],
+                  "children": [],
+                  "critiqueHtml": "<p></p>"
+                },
+                {
+                  "id": "f-cli-bilans-detail-photos",
+                  "label": "Onglet Photos de progression",
+                  "route": "/clients/bilans/[id]?tab=photos",
+                  "bodyHtml": "<p>Photos ajoutées par le client : quantité libre, noms optionnels (décidés par le client). Le template active seulement le bloc Photos.</p>",
+                  "images": [],
+                  "children": [],
+                  "critiqueHtml": "<p><strong>✅</strong> Pas de slots/quota coach ; client libre.</p>"
+                },
+                {
+                  "id": "f-cli-bilans-detail-mensurations",
+                  "label": "Onglet Mensurations",
+                  "route": "/clients/bilans/[id]?tab=mensurations",
+                  "bodyHtml": "<p>Liste dynamique des mensurations du template + valeurs saisies par le client (unités incluses).</p>",
+                  "images": [],
+                  "children": [],
+                  "critiqueHtml": "<p></p>"
+                },
+                {
+                  "id": "f-cli-bilans-detail-questions",
+                  "label": "Questions (dans Résumé)",
+                  "route": "/clients/bilans/[id]",
+                  "bodyHtml": "<p>Questions du template + réponses : affichées dans l’onglet <strong>Résumé</strong> (pas d’onglet Questions dédié).</p>",
+                  "images": [],
+                  "children": [],
+                  "critiqueHtml": "<p><strong>✅</strong> Questions = dans Résumé uniquement.</p>"
+                },
+                {
+                  "id": "f-cli-bilans-detail-compare",
+                  "label": "Bilan précédent (flèche)",
+                  "route": "/clients/bilans/[id]",
+                  "bodyHtml": "<p>Depuis le détail d’une instance : <strong>flèche</strong> pour ouvrir facilement le bilan <strong>précédent</strong> du même client (chronologique). Pas de mode « comparer deux schémas côte à côte » en V1.</p>",
+                  "images": [],
+                  "children": [],
+                  "critiqueHtml": "<p><strong>✅</strong> Accès bilan précédent via flèche — pas de dropdown multi-bilans / merge de schémas en V1.</p>"
+                }
+              ],
+              "critiqueHtml": "<p><strong>✅</strong> Flèche bilan précédent (pas comparateur multi-schémas). Questions dans Résumé. Photos libres client.</p>"
+            }
+          ],
+          "critiqueHtml": "<p><strong>✅ FIGÉ</strong> (voir corps) — templates, assign clients+groupes, récurrence si prestation active, J+14 Sans réponse + lock, photos libres, questions Résumé, flèche précédent.</p>"
+        },
+        {
+          "id": "f-cli-tab-notifs",
+          "label": "Onglet Notifications",
+          "route": "/clients/notifications",
+          "bodyHtml": "<p><code>/clients/notifications</code> — <strong>hors V1, grisé</strong>. Libellé figé : <strong>Notifications</strong> (pas Alertes / Inbox).</p>",
+          "images": [],
+          "children": [
+            {
+              "id": "f-cli-notifs-add",
+              "label": "Ajouter une notification — hors V1",
+              "route": "/clients/notifications",
+              "bodyHtml": "<p><strong>Hors V1.</strong> Pas d’UI d’ajout. Phase 2 : habitudes éventuelles.</p>",
+              "images": [],
+              "children": [],
+              "critiqueHtml": "<p><strong>✅</strong> Hors V1.</p>"
+            }
+          ],
+          "critiqueHtml": "<p><strong>✅</strong> Hors V1 · libellé « Notifications ».</p>"
+        }
+      ],
+      "route": "/clients"
+    },
+    "chat": {
+      "route": "/chat",
+      "arrival": {
+        "bodyHtml": "",
+        "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Inbox 2 volets · + 1:1/groupe · orphelin = lecture seule · Nouveau chat : clients sans Messagerie = <strong>affichés grisés</strong> (« Messagerie non incluse ») · 0 ❓.</p>",
+        "images": []
+      },
+      "features": [
+        {
+          "id": "f-chat-inbox",
+          "label": "Inbox (liste conversations)",
+          "route": "/chat",
+          "bodyHtml": "<p><code>/chat</code> — colonne gauche.</p>\n<ul>\n<li>Tri par dernier message</li>\n<li>Items 1:1 (avatar client) et groupe (avatar groupe / icône)</li>\n<li>Extrait + horodatage (« il y a 30 minutes ») + badge non lus</li>\n<li>Pastille verte = en ligne (si dispo)</li>\n<li>Clic → <code>/chat/[threadId]</code> (panneau droit)</li>\n<li>État vide droite : « Sélectionne une conversation »</li>\n</ul>",
+          "critiqueHtml": "<p><strong>✅</strong></p>",
+          "images": [],
+          "children": [
+            {
+              "id": "f-chat-search",
+              "label": "Recherche client / groupe",
+              "route": "/chat",
+              "bodyHtml": "<p>Input sous le header « Messages » : filtre live sur <strong>nom client</strong> ou <strong>nom de groupe</strong> (conversations existantes). Pas une recherche full-text dans les messages en V1.</p>",
+              "critiqueHtml": "<p><strong>✅</strong> Recherche = inbox uniquement (pas le contenu des messages V1).</p>",
+              "images": [],
+              "children": []
+            },
+            {
+              "id": "f-chat-create",
+              "label": "Créer (+) — chat 1:1 ou groupe",
+              "route": "/chat/nouveau",
+              "bodyHtml": "<p>Bouton <strong>+</strong> orange → pop-up <code>/chat/nouveau</code>.</p>\n<p><strong>Type</strong> :</p>\n<ol>\n<li><strong>Chat client (1:1)</strong> — choisir un client. Thread unique <code>/chat/[threadId]</code>. Le client peut aussi initier le 1:1 depuis son app (même s’il n’a plus de presta active). Le module <strong>Messagerie</strong> de la presta ne bloque plus le 1:1.</li>\n<li><strong>Chat de groupe</strong> — nom * · description · membres. Lié au module Messagerie / groupes manuels chat ON.</li>\n</ol>",
+              "critiqueHtml": "<p><strong>✅ Réaligné client</strong> : 1:1 toujours (relation coach) · Messagerie presta ≈ groupes.</p>",
+              "images": [],
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "f-chat-thread",
+          "label": "Fil de discussion",
+          "route": "/chat/[threadId]",
+          "bodyHtml": "<p><code>/chat/[threadId]</code> — panneau droit.</p>\n<ul>\n<li>Header : nom (client ou groupe) · statut · avatar · menu <strong>⋮</strong></li>\n<li>Bulles reçues (gris, avatar à gauche) / envoyées (orange, initiales à droite)</li>\n<li>Séparateurs de date</li>\n<li>Composer texte en bas</li>\n</ul>\n<p>1:1 : un seul thread par client (même id que deep-link fiche). Groupe : un thread par groupe (si chat activé).</p>",
+          "critiqueHtml": "<p><strong>✅</strong> Route canonique <code>/chat/[threadId]</code> (remplace l’ambigu <code>/chat/[id]</code> / <code>/chat/[clientId]</code>).</p>",
+          "images": [],
+          "children": [
+            {
+              "id": "f-chat-rename-group",
+              "label": "Renommer le groupe",
+              "route": "/chat/[threadId]",
+              "bodyHtml": "<p>Menu ⋮ (thread groupe uniquement) → « Modifier le nom / description » → pop-up. Met à jour le groupe côté <code>/clients/groupes/[id]</code> (même entité).</p>\n<p>Pas de renommage du nom affiché d’un chat 1:1 (c’est le nom du client).</p>",
+              "critiqueHtml": "<p><strong>✅</strong> Rename groupe après création · sync fiche groupe Clients.</p>",
+              "images": [],
+              "children": []
+            },
+            {
+              "id": "f-chat-clear-history",
+              "label": "Supprimer l’historique",
+              "route": "/chat/[threadId]",
+              "bodyHtml": "<p>Menu ⋮ → « Supprimer l’historique » → confirmation.</p>\n<p><strong>Effet</strong> : efface tous les messages du thread côté coach <em>et</em> client (historique vide). La conversation reste dans l’inbox (on peut réécrire). Ce n’est pas « quitter / supprimer le groupe ».</p>",
+              "critiqueHtml": "<p><strong>✅</strong> Clear history ≠ delete thread.</p><p><strong>✅</strong> Action <strong>coach only</strong> · effet global (vidé aussi côté client).</p>",
+              "images": [],
+              "children": []
+            },
+            {
+              "id": "f-chat-media",
+              "label": "Pièces jointes",
+              "route": "/chat/[threadId]",
+              "bodyHtml": "<p>Depuis le composer : PDF, photo, vidéo, message vocal. Affichage inline / téléchargeable dans le fil.</p>\n<p><strong>Stockage V1</strong> : bucket / espace <strong>chat</strong> (pas mélangé automatiquement au Drive). Option ultérieure « Enregistrer dans le Drive ».</p>",
+              "critiqueHtml": "<p><strong>✅</strong> Médias = stockage chat dédié V1 (pas Drive auto).</p>",
+              "images": [],
+              "children": []
+            },
+            {
+              "id": "f-chat-reply",
+              "label": "Répondre à un message (quote)",
+              "route": "/chat/[threadId]",
+              "bodyHtml": "<p>Reply style WhatsApp : citer un message puis répondre.</p>",
+              "critiqueHtml": "<p><strong>✅</strong></p>",
+              "images": [],
+              "children": []
+            },
+            {
+              "id": "f-chat-to-client",
+              "label": "Lien fiche client / groupe",
+              "route": "/chat/[threadId]",
+              "bodyHtml": "<p>Clic nom / avatar header :</p>\n<ul>\n<li>1:1 → <code>/clients/list/[id]</code></li>\n<li>Groupe → <code>/clients/groupes/[id]</code></li>\n</ul>",
+              "critiqueHtml": "<p><strong>✅</strong></p>",
+              "images": [],
+              "children": []
+            },
+            {
+              "id": "f-chat-rdv",
+              "label": "Ajouter un RDV",
+              "route": "/chat/[threadId]",
+              "bodyHtml": "<p>Même pop-up que fiche client (physique/visio, lieu, conflit). Le RDV apparaît au calendrier <code>/home/calendar</code> et sur la fiche client (prochain RDV). Depuis un chat groupe : choisir le/les destinataires membres ou tout le groupe.</p>\n<p>Refus client → cloche → <code>/home/calendar</code> (contour rouge, suppressible).</p>",
+              "critiqueHtml": "<p><strong>✅</strong> Une seule source RDV · visible fiche + calendrier.</p>",
+              "images": [],
+              "children": []
+            },
+            {
+              "id": "f-chat-orphan",
+              "label": "Accès Messagerie / client archivé",
+              "route": "/chat/[threadId]",
+              "bodyHtml": "<p><strong>1:1</strong> : reste ouvert tant que le compte client est lié à ce coach (presta active ou terminée) — composer OK. Archivage coach explicite = lecture seule.</p>\n<p><strong>Groupes</strong> : si plus de membership / Messagerie off et hors groupe manuel → lecture seule ou disparition selon règles groupe.</p>",
+              "critiqueHtml": "<p><strong>✅</strong> 1:1 post-presta OK · archive coach = lecture seule.</p>",
+              "images": [],
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    "programs": {
+      "arrival": {
+        "bodyHtml": "",
+        "images": [],
+        "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Miroir Nutrition (y compris composition En cours) · Templates hub · pause datée · envoi auto/notif · Program builder complet · 0 ❓ ouvertes.</p>"
+      },
+      "features": [
+        {
+          "id": "f-prog-tab-encours",
+          "label": "Onglet En cours",
+          "route": "/programs",
+          "bodyHtml": "<p>Land. Tableau type Gymkee :</p>\n<p><strong>Types de lignes</strong> :</p>\n<ol>\n<li><strong>Plan client</strong> — Programme · Client · Début · Fin · Progression · Démarré ou <em>En pause depuis JJ/MM/AAAA</em>.</li>\n<li><strong>Offre showroom (0 client)</strong> — programme lié presta visible showroom, pas encore de client.</li>\n<li><strong>En attente de programme</strong> — client a payé une presta <em>perso</em> (Fitness sans template lié) · badge « À créer » · deep-link notif / builder Envoyer.</li>\n</ol>\n<p>Filtres + recherche + CTA <strong>+ Créer un programme</strong>. Pastille retour → fiche client programme.</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Ops board 3 types · KPI home = plans clients only.</p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-prog-tab-terminees",
+          "label": "Onglet Terminées",
+          "route": "/programs/done",
+          "bodyHtml": "<p>Affectations terminées / archivées. Corbeille J30. Pas « jeter » un En cours — on termine / coupe via presta.</p>",
+          "critiqueHtml": "<p><strong>✅</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-prog-tab-brouillons",
+          "label": "Onglet Brouillons",
+          "route": "/programs/brouillon",
+          "bodyHtml": "<p>Création quittée sans « Enregistrer comme template » ni « Envoyer ». Rééditables. Suppressibles.</p>",
+          "critiqueHtml": "<p><strong>✅</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-prog-tab-templates",
+          "label": "Onglet Templates (hub)",
+          "route": "/programs/template",
+          "bodyHtml": "<p>Hub briques réutilisables — 3 sous-onglets :</p>\n<ol>\n<li><strong>Programmes</strong> — moules de plans (seuls assignables via Envoyer). CTA sous-onglet : pas obligatoire ici (création via « Créer un programme » → Enregistrer comme template).</li>\n<li><strong>Séances</strong> — biblio de templates séance. CTA <strong>+ Créer un template de séance</strong> → s’ajoute à cette biblio (utilisable palette builder).</li>\n<li><strong>Blocs</strong> — biblio de templates bloc. CTA <strong>+ Créer un bloc</strong> → s’ajoute à cette biblio.</li>\n</ol>\n<p>Actions ligne : ouvrir · Dupliquer · corbeille J30.</p>\n<p>Éditer template <strong>programme</strong> → Mettre à jour (futures only) ou Envoyer. Séances/blocs = briques, jamais envoyés seuls à un client.</p>\n<p>Compteur clients actifs sur anciennes versions (sans les écraser).</p>\n<p><strong>Objectif de suivi (bloc)</strong> — à la création / édition d’un template bloc (et instance posée) : objectif optionnel qui pilote Historique &amp; Records client. Ex. : temps (AMRAP / for time) · charge/poids · reps · tonnage · aucun. Champ <strong>optionnel</strong> (sans objectif = métriques génériques).</p>\n<p><strong>Catalogue Trainly (Admin)</strong> : programmes / séances / blocs <em>publiés</em> apparaissent ici (ou palette) pour usage gratuit — copie détachée à l’ajout. Contenu en review Admin n’est pas visible coach.</p>",
+          "critiqueHtml": "<p><strong>✅</strong> CTAs créer séance/bloc dans Templates = même idée que créer recette/aliment côté Nutrition.</p><p><strong>✅</strong> Objectif bloc optionnel (aligné Historique client).</p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-prog-create",
+          "label": "Créer un programme",
+          "route": "/programs/new",
+          "bodyHtml": "<p>CTA global. Flux :</p>\n<ol>\n<li>Pop-up : <strong>Partir d’un template programme ?</strong>\n<ul>\n<li><strong>Oui</strong> → choisir template → builder prérempli (durée/semaines du template, mode calendrier selon template ou défaut).</li>\n<li><strong>Non</strong> → <strong>Infos générales</strong> : nom * · description · objectif · <strong>niveau</strong> (débutant | intermédiaire | avancé) · <strong>durée (nb semaines)</strong> · case <strong>Suivre un calendrier</strong>. Valider → crée N semaines <em>vides</em> (ex. 5 → 5 semaines) puis ouvre le builder.</li>\n</ul></li>\n</ol>\n<p><strong>Sorties builder</strong> : Enregistrer comme template · Envoyer (cas perso) · sinon Brouillon. Pas de Dupliquer dans le header.</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Infos générales + durée → semaines vides · case calendrier · niveau fermé débutant / intermédiaire / avancé.</p>",
+          "images": [],
+          "children": [
+            {
+              "id": "f-prog-builder",
+              "label": "Program builder (layout)",
+              "route": "/programs/new",
+              "bodyHtml": "<p>Plein écran. Header sticky (dépliable) · palette gauche · bandeau semaines · timeline centre. Pas de colonne droite. Jumeau Nutrition côté chrome.</p>",
+              "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Layout + règles builder · 0 ❓.</p>",
+              "images": [],
+              "children": [
+                {
+                  "id": "f-prog-builder-header",
+                  "label": "Header (dépliable)",
+                  "route": "/programs/new",
+                  "bodyHtml": "<p><strong>Compact</strong> : nom · Voir le rendu · Enregistrer comme template · Envoyer · Fermer.</p>\n<p><strong>Déplié</strong> : infos générales (nom, description, objectif, <strong>niveau</strong> débutant|intermédiaire|avancé, durée) · case <strong>Suivre un calendrier</strong> · <strong>date de début</strong> optionnelle (si calendrier).</p>\n<p><strong>Cocher calendrier</strong> (programme déjà commencé) → confirm → séances existantes 1…n réparties Lun→Sam dans l’ordre.</p>\n<p><strong>Décocher calendrier</strong> → pop-up : explique le mode slots (max 6 séances/semaine) · si &gt;6 séances déjà créées, celles au-delà seront <strong>supprimées</strong>. Si OK : aplatir Lun→Dim (ordre dans le jour conservé) → les <strong>6 premières</strong> deviennent séances 1…6 du mode slots · le reste est supprimé. Ex. 2 séances le lundi → elles deviennent séance 1 puis séance 2 du mode général.</p>",
+                  "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Niveau fermé · toggle calendrier bidirectionnel avec règles de redistribution / purge &gt;6.</p>",
+                  "images": [],
+                  "children": []
+                },
+                {
+                  "id": "f-prog-palette",
+                  "label": "Palette gauche",
+                  "route": "/programs/new",
+                  "bodyHtml": "<p>Case <strong>« Uniquement ma bibliothèque »</strong> : masque Trainly.</p>\n<p><strong>Séances</strong> : filtre sport + recherche. Card : titre · sport · aperçu. Icône <strong>i</strong> → détail + « Ajouter à mon entraînement » → dropdown des séances de la <em>semaine ouverte</em>.</p>\n<p><strong>Blocs</strong> : idem filtre sport + recherche · i + ajouter.</p>\n<p><strong>Exercices</strong> : Filtrer par sport|muscle|type → 2ᵉ dropdown + recherche · i + ajouter.</p>\n<p><strong>Si la semaine ouverte n’a encore aucune séance</strong> : le dropdown « Ajouter… » propose <strong>« Créer une séance puis ajouter »</strong> (crée une séance vide dans le 1er slot/jour dispo, puis y place l’élément) — plutôt qu’un dropdown vide bloquant.</p>",
+                  "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Semaine vide → « Créer une séance puis ajouter ».</p>",
+                  "images": [],
+                  "children": []
+                },
+                {
+                  "id": "f-prog-weeks",
+                  "label": "Bandeau semaines",
+                  "route": "/programs/new",
+                  "bodyHtml": "<p>Flèches ← → · clic semaine ouverte · dupliquer · supprimer · éditer titre. <strong>Pas de DnD inter-semaines</strong> (ni séances, ni blocs, ni exos).</p>\n<p>Nb semaines = durée infos générales ; +semaine possible si on augmente la durée / action dédiée (aligné durée header).</p>",
+                  "critiqueHtml": "<p><strong>✅</strong></p>",
+                  "images": [],
+                  "children": []
+                },
+                {
+                  "id": "f-prog-mode-calendrier",
+                  "label": "Mode calendrier (7 jours)",
+                  "route": "/programs/new",
+                  "bodyHtml": "<p>Si <strong>Suivre un calendrier</strong> ON : semaine = <strong>7 colonnes</strong> Lun→Dim.</p>\n<ul>\n<li>Multi-séances / jour · clic séance → élargit · + sur jour / sous séances</li>\n<li>DnD séances entre jours (même semaine)</li>\n<li><strong>Date de début</strong> (optionnelle, header) :\n<ul>\n<li><strong>Renseignée</strong> → les colonnes affichent les <strong>jours datés</strong> (ex. Lun 3 mars…)</li>\n<li><strong>Absente</strong> → colonnes Lun→Dim sans dates ; <strong>le client choisit</strong> sa date de début à l’ouverture du programme</li>\n</ul></li>\n</ul>",
+                  "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Date début optionnelle coach · sinon choix client. Colonnes datées seulement si date renseignée.</p>",
+                  "images": [],
+                  "children": []
+                },
+                {
+                  "id": "f-prog-mode-slots",
+                  "label": "Mode hors calendrier (max 6 séances)",
+                  "route": "/programs/new",
+                  "bodyHtml": "<p>Si calendrier OFF : max <strong>6 séances / semaine</strong>.</p>\n<ul>\n<li>Au départ : <strong>3 colonnes</strong> avec boutons pour créer des séances</li>\n<li>Bouton <strong>+</strong> à droite pour ajouter une 4ᵉ, 5ᵉ, 6ᵉ colonne/séance</li>\n<li>DnD séances <strong>dans la même semaine</strong> (réordonner les slots)</li>\n</ul>",
+                  "critiqueHtml": "<p><strong>✅</strong> Max 6 · conversion depuis calendrier = 6 premières après aplati Lun→Dim.</p>\n<p><strong>⚠️</strong> Asymétrie volontaire : hors calendrier ≤6 séances/semaine · calendrier = N séances/jour possibles.</p>",
+                  "images": [],
+                  "children": []
+                },
+                {
+                  "id": "f-prog-dnd",
+                  "label": "Règles DnD",
+                  "route": "/programs/new",
+                  "bodyHtml": "<p><strong>Autorisé (même semaine uniquement)</strong> :</p>\n<ul>\n<li>Séances entre jours (calendrier) / entre slots (hors calendrier)</li>\n<li>Blocs : séance A → séance B</li>\n<li>Exercices : séance↔séance · séance→bloc · bloc→séance · <strong>y compris exos déjà dans un bloc</strong> vers une autre séance ou un autre bloc</li>\n<li>Exercices / blocs depuis la palette → séances (ou exos → blocs)</li>\n</ul>\n<p><strong>Interdit</strong> : tout vers une autre semaine · poser bloc/exo au niveau semaine hors séance.</p>\n<p>Insertion = instance détachée.</p>",
+                  "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Mobilité complète blocs+exos entre séances de la même semaine (y compris exos dans blocs).</p>",
+                  "images": [],
+                  "children": []
+                },
+                {
+                  "id": "f-prog-session-bloc",
+                  "label": "Séances & blocs (édition)",
+                  "route": "/programs/new",
+                  "bodyHtml": "<p><strong>Séance</strong> : éditer titre · dupliquer · supprimer.</p>\n<p><strong>Sport de la séance</strong> : champ optionnel. Si créée depuis un template séance → sport hérité (modifiable). Si créée via <strong>+</strong> (vide) → sport vide, le coach peut le renseigner plus tard (filtre palette / affichage card). Pas obligatoire pour sauvegarder.</p>\n<p><strong>Bloc</strong> : éditer titre (même UX) · dupliquer · supprimer · contient des exercices.</p>\n<p><strong>Objectif de suivi</strong> (optionnel) sur le bloc : temps · poids/charge · reps · tonnage · aucun. Défini à la création du template ou à l’édition dans le builder. Sert de métrique principale côté client Historique/Records. Modif ultérieure = futures occurrences / affichage ; ne réécrit pas les records passés déjà figés.</p>",
+                  "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Sport optionnel · <strong>objectif de suivi bloc</strong> optionnel (Historique client).</p>",
+                  "images": [],
+                  "children": []
+                },
+                {
+                  "id": "f-prog-exo-fields",
+                  "label": "Exercices posés (champs)",
+                  "route": "/programs/new",
+                  "bodyHtml": "<p>Une fois inséré (séance ou bloc) :</p>\n<ul>\n<li>Nb séries · nb reps · temps de repos · RPE</li>\n<li>Icône <strong>unités</strong> : tempo, charge, km, heure… + <strong>créer une unité</strong> propre au coach (persistante pour lui). Changer la définition d’une unité plus tard <strong>ne réécrit pas</strong> les séances déjà posées.</li>\n<li>Icône <strong>dupliquer</strong> :\n<ul>\n<li><strong>Dupliquer l’exercice</strong> — nouvelle card exo (copie détachée)</li>\n<li><strong>Dupliquer les séries</strong> — ajoute dans le <em>même</em> exercice un <strong>groupe de séries</strong> (séries/reps/RPE/repos/…) avec séparateur ; chaque groupe a ses propres valeurs → consignes spécifiques par plage de séries (ex. séries 1–3 @ RPE6, séries 4–6 @ RPE8) ; la <strong>note d’exercice</strong> reste unique (partagée)</li>\n</ul></li>\n<li><strong>Supprimer</strong> OK · <strong>pas de rename</strong> du nom d’exo (nom = fiche biblio)</li>\n</ul>\n<p>Même règles si l’exo est dans un bloc. <strong>Catalogue admin séance</strong> : Rx plate (1 ligne) pour l’instant — groupes de séries = builder programme coach.</p>",
+                  "critiqueHtml": "<p><strong>✅</strong> Groupes de séries = règle générale (admin séance + builder coach). 2026-09-16.</p>",
+                  "images": [],
+                  "children": []
+                },
+                {
+                  "id": "f-prog-preview",
+                  "label": "Voir le rendu",
+                  "route": "/programs/new",
+                  "bodyHtml": "<p>1 shell preview. Builder → souvent semaine 1. Fiche client → programme réalisé / retours. Token share → même UI.</p>",
+                  "critiqueHtml": "<p><strong>✅</strong></p>",
+                  "images": [],
+                  "children": []
+                },
+                {
+                  "id": "f-prog-send",
+                  "label": "Envoi programme (auto vs perso)",
+                  "route": "/programs/new",
+                  "bodyHtml": "<p>Au grant / envoi :</p>\n<ol>\n<li>Presta avec template programme lié → <strong>envoi auto</strong> (snapshot).</li>\n<li>Presta perso sans programme → notif coach → builder → <strong>Envoyer</strong>.</li>\n</ol>\n<p><strong>Destinataires</strong> (décision 2026-09-16) : <strong>1 client</strong> <em>ou</em> un <strong>groupe de clients</strong> — chaque membre reçoit son propre plan/snapshot (pas un plan partagé multi-joueurs).</p>\n<p>Envoyer perso = snapshot par destinataire ; « en faire le template de la presta » = action explicite optionnelle.</p>\n<p><em>Note</em> : l’ancienne règle « jamais assigner un programme via un groupe » (onglet Groupes = chat/Drive/bilans) reste pour les groupes manuels hors flux Envoyer. L’envoi programme multi-clients passe par le builder Envoyer (cible client ou groupe).</p>",
+                  "critiqueHtml": "<p><strong>✅ MAJ 2026-09-16</strong> envoi programme → 1 client ou groupe (1 snapshot / membre).</p>",
+                  "images": [],
+                  "children": []
+                },
+                {
+                  "id": "f-prog-client-edit",
+                  "label": "Édition plan client en cours",
+                  "route": "/programs/[assignmentId]",
+                  "bodyHtml": "<p>Modif prochaines séances du snapshot → notif client. Pause = reste En cours + date. Pas de sync live multi-clients.</p>",
+                  "critiqueHtml": "<p><strong>✅</strong></p>",
+                  "images": [],
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "f-prog-presta-views",
+          "label": "Où voir « programmes × presta × clients »",
+          "route": "/profile/prestations",
+          "bodyHtml": "<p><strong>3 vues complémentaires</strong> (éviter une seule liste confuse) :</p>\n<ol>\n<li><strong>/programs En cours</strong> — ops board : plans clients (démarré/pause) + offres showroom 0 client + lignes « À créer ». Le KPI home ne compte que les plans clients.</li>\n<li><strong>Templates / Programmes</strong> — « ce moule est used par X clients actifs (snapshots) · lié à Y prestas »</li>\n<li><strong>Fiche presta</strong> (<code>/profile/prestations</code>) — template programme lié (0..1) · clients de la presta · lesquels ont déjà reçu le programme / pas encore (CTA Envoyer)</li>\n</ol>\n<p>Mieux que « liste des programmes affectés à une presta » seule : on sépare <em>catalogue offre</em>, <em>moule</em>, et <em>suivi ops</em>.</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ</strong> En cours = ops board élargi · KPI = plans clients only.</p>",
+          "images": [],
+          "children": []
+        }
+      ]
+    },
+    "nutrition": {
+      "arrival": {
+        "bodyHtml": "<p>Sidebar <strong>Nutrition</strong> → land <code>/nutrition</code> (En cours), <strong>même IA que Programme</strong>.</p>\n<p><strong>4 onglets</strong> : En cours · Terminées · Brouillons · Templates (Plans | Recettes | Aliments).</p>\n<p><strong>Modèle</strong> : Template = moule · Presta = droit · Plan client = snapshot. Envoi auto si plan lié à la presta · notif + Envoyer si perso. <strong>1 nutrition démarré</strong> / pause (reste En cours + date) — même règle que fitness.</p>\n<p><strong>En cours (ops board)</strong> = plans clients · offres showroom 0 client · « À créer » (perso payé sans template).</p>",
+        "images": [],
+        "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Miroir Programme · En cours ops board · 1 nutrition démarré · builder jumeau · pas d’auto-génération menus · cibles kcal/macros header · 0 ❓ ouvertes.</p>"
+      },
+      "features": [
+        {
+          "id": "f-nut-tab-encours",
+          "label": "Onglet En cours",
+          "route": "/nutrition",
+          "bodyHtml": "<p>Land. Tableau type Gymkee — <strong>même composition que Programmes En cours</strong> :</p>\n<ol>\n<li><strong>Plan client</strong> — Plan · Client · Début · Fin · Progression · Démarré ou <em>En pause depuis JJ/MM/AAAA</em>.</li>\n<li><strong>Offre showroom (0 client)</strong> — plan lié presta visible showroom, pas encore de client.</li>\n<li><strong>En attente de plan</strong> — client a payé une presta <em>perso</em> (Nutrition sans template lié) · badge « À créer » · deep-link notif / builder Envoyer.</li>\n</ol>\n<p>Filtres + recherche + CTA <strong>+ Créer un programme</strong>. Pastille retour → <code>/clients/list/[id]/nutrition</code>.</p>\n<p>Clic ligne plan client → détail : semaines ← → · presta associée · édition des prochains jours (notif client si changement).</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Ops board miroir Programmes · KPI home = plans clients only.</p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-nut-tab-terminees",
+          "label": "Onglet Terminées",
+          "route": "/nutrition/done",
+          "bodyHtml": "<p>Affectations terminées (mêmes colonnes). Corbeille J30 possible.</p>",
+          "critiqueHtml": "<p><strong>✅</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-nut-tab-brouillons",
+          "label": "Onglet Brouillons",
+          "route": "/nutrition/brouillon",
+          "bodyHtml": "<p>Plans non validés (création quittée sans « Enregistrer comme template » ni « Envoyer »). Rééditables. Suppressibles.</p>",
+          "critiqueHtml": "<p><strong>✅</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-nut-tab-templates",
+          "label": "Onglet Templates (hub)",
+          "route": "/nutrition/template",
+          "bodyHtml": "<p>Hub réutilisable — 3 sous-onglets (miroir Programmes) :</p>\n<ol>\n<li><strong>Plans</strong> — moules nutrition (seuls assignables via Envoyer). Création via « Créer un programme » nutrition → Enregistrer comme template.</li>\n<li><strong>Recettes</strong> — biblio. CTA <strong>+ Créer une recette</strong> → s’ajoute à Mes recettes (Trainly taggés séparés / transfert détaché).</li>\n<li><strong>Aliments</strong> — biblio. CTA <strong>+ Ajouter un aliment</strong> → s’ajoute à la biblio (sans badge Trainly).</li>\n</ol>\n<p>Routes profondes : <code>/nutrition/recettes</code> · <code>/nutrition/aliments</code> = sous-vues de ce hub.</p>\n<p>Éditer plan → Mettre à jour (futures) ou Envoyer. Recette/aliment modifié ≠ cascade plans déjà envoyés.</p>",
+          "critiqueHtml": "<p><strong>✅</strong> CTAs Créer recette / Ajouter aliment visibles dans Templates — symétrique séances/blocs Programme.</p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-nut-create",
+          "label": "Créer un programme",
+          "route": "/nutrition/new",
+          "bodyHtml": "<p>CTA global. Pop-up : <strong>Partir d’un template ?</strong> Oui → choisir · Non → plan vide → builder.</p>\n<p><strong>Sorties</strong> : Enregistrer comme template · Envoyer le plan (client + presta active) · sinon Brouillon.</p>\n<p>Pas de « Dupliquer en template » dans le header — duplication depuis la liste Templates seulement.</p>",
+          "critiqueHtml": "<p><strong>✅</strong></p>",
+          "images": [],
+          "children": [
+            {
+              "id": "f-nut-builder",
+              "label": "Nutrition builder (layout)",
+              "route": "/nutrition/new",
+              "bodyHtml": "<p><strong>Jumeau visuel du program builder</strong> : header sticky · palette gauche · timeline centre · bandeau semaines. <strong>Pas de colonne droite.</strong></p>\n<p>Analogie : Plan≈programme · Jour≈séance · Repas≈bloc · Recette≈exercice · Aliment≈ingrédient.</p>",
+              "critiqueHtml": "<p><strong>✅</strong></p>",
+              "images": [],
+              "children": [
+                {
+                  "id": "f-nut-builder-header",
+                  "label": "Header builder",
+                  "route": "/nutrition/new",
+                  "bodyHtml": "<p>Nom · Voir le rendu · Enregistrer comme template · Envoyer le plan.</p>\n<p><strong>Recherche client</strong> → cibles : total kcal via <strong>% objectif</strong> (éditable) · macros Prot/Lipides en <strong>g/kg PDC</strong> · Glucides = calories restantes (total kcal inchangé).</p>\n<p>Pas d’auto-génération des menus : templates à adapter manuellement.</p>",
+                  "critiqueHtml": "<p><strong>✅</strong> P+L g/kg · G complète · kcal piloté par %.</p>",
+                  "images": [],
+                  "children": []
+                },
+                {
+                  "id": "f-nut-builder-weeks",
+                  "label": "Bandeau semaines",
+                  "route": "/nutrition/new",
+                  "bodyHtml": "<p>Flèches ← → · clic semaine · dupliquer / renommer / supprimer. Pas de DnD inter-semaines.</p>",
+                  "critiqueHtml": "<p><strong>✅</strong></p>",
+                  "images": [],
+                  "children": []
+                },
+                {
+                  "id": "f-nut-builder-palette",
+                  "label": "Palette gauche",
+                  "route": "/nutrition/new",
+                  "bodyHtml": "<p>Recettes (Trainly taggés + coach) · Aliments (sans badge / sans tag « mes aliments »). DnD vers timeline.</p>",
+                  "critiqueHtml": "<p><strong>✅</strong></p>",
+                  "images": [],
+                  "children": []
+                },
+                {
+                  "id": "f-nut-builder-timeline",
+                  "label": "Timeline centrale (4 étages)",
+                  "route": "/nutrition/new",
+                  "bodyHtml": "<p>4 étages : Petit-déj · Déjeuner · Dîner · collations (+). Sections suppressibles ; vides = invisibles côté client.</p>\n<p>DnD recettes et/ou aliments + note. Recette insérée = <strong>instance détachée</strong> (modif locale ≠ bibliothèque ; duplicata jour garde la version modifiée). Aliments : g ou unités (1 banane…) avec équivalent g.</p>",
+                  "critiqueHtml": "<p><strong>✅</strong></p>",
+                  "images": [],
+                  "children": []
+                },
+                {
+                  "id": "f-nut-builder-totals",
+                  "label": "Totaux visibles",
+                  "route": "/nutrition/new",
+                  "bodyHtml": "<p>kcal + P/G/L : <strong>repas</strong> · <strong>journée</strong> · <strong>semaine</strong>. Vs cibles header si client sélectionné.</p>",
+                  "critiqueHtml": "<p><strong>✅</strong></p>",
+                  "images": [],
+                  "children": []
+                },
+                {
+                  "id": "f-nut-builder-send",
+                  "label": "Envoi plan nutrition (auto vs perso)",
+                  "route": "/nutrition/new",
+                  "bodyHtml": "<p><strong>Même règle que Programme</strong> :</p>\n<ol>\n<li>Presta avec plan nutrition déjà lié → envoi <strong>automatique</strong> au grant.</li>\n<li>Presta perso sans plan → notif coach → construire puis <strong>Envoyer le plan</strong>.</li>\n</ol>",
+                  "critiqueHtml": "<p><strong>✅</strong> Aligné Programme.</p>",
+                  "images": [],
+                  "children": []
+                },
+                {
+                  "id": "f-nut-builder-client-edit",
+                  "label": "Édition plan client en cours",
+                  "route": "/nutrition/[assignmentId]",
+                  "bodyHtml": "<p>Modifier prochains jours → notif client. N’écrase pas le template source.</p>",
+                  "critiqueHtml": "<p><strong>✅</strong></p>",
+                  "images": [],
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "f-nut-lib-recettes",
+          "label": "Bibliothèque Recettes",
+          "route": "/nutrition/recettes",
+          "bodyHtml": "<p>Trainly (badge) + mes recettes. Transférer = copie détachée. Édition fiche ≠ cascade plans envoyés.</p>",
+          "critiqueHtml": "<p><strong>✅</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-nut-lib-aliments",
+          "label": "Bibliothèque Aliments",
+          "route": "/nutrition/aliments",
+          "bodyHtml": "<p>Trainly + coach, sans badge. Unités + eq. g. Non-cascade plans envoyés.</p>",
+          "critiqueHtml": "<p><strong>✅</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-nut-presta-rules",
+          "label": "Lien presta / évolution",
+          "route": "/profile/prestations",
+          "bodyHtml": "<p>Accès = presta. Envoyer = choisir presta active. Évolution offre/prix = <code>/profile/prestations</code> (renouvellement / Compta pour clients actuels).</p>",
+          "critiqueHtml": "<p><strong>✅</strong></p>",
+          "images": [],
+          "children": []
+        }
+      ]
+    },
+    "exercises": {
+      "route": "/exercises",
+      "arrival": {
+        "bodyHtml": "\n<p><strong>Exos Trainly</strong> : alimentés / validés depuis Admin (publié seulement). Coach peut aussi créer les siens.</p>",
+        "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Shell 3 onglets + 2 CTA · autosave création local · Save → mine · fermeture → brouillon · brouillon ≠ programme · types uniques · remplacements multi (pas soi) · Transférer Trainly = copie détachée · unités au builder.</p><p><strong>✅</strong> Suppression exo = corbeille plateforme J30 (règle globale, voir Drive/Settings).</p>",
+        "images": []
+      },
+      "features": [
+        {
+          "id": "f-ex-trainly",
+          "label": "Onglet Librairie Trainly",
+          "route": "/exercises?tab=trainly",
+          "bodyHtml": "<p><strong>Biblio Drive Trainly</strong> (Admin publié) : section « Trainly » du Drive coach · hors quota.</p>\n<p>Actions selon flags : ouvrir · dupliquer (récupérer) · télécharger. Dépublier = plus de récup depuis partage ; copies déjà récupérées restent.</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ 2026-03-13</strong> aligné Drive/catalogue.</p>",
+          "images": [],
+          "children": [
+            {
+              "id": "f-ex-trainly-detail",
+              "label": "Fiche exercice Trainly",
+              "route": "/exercises/[id]",
+              "bodyHtml": "<p>Démo, muscles, consignes, médias — lecture seule. CTA « Rajouter à ma bibliothèque ».</p>",
+              "critiqueHtml": "<p><strong>✅</strong></p>",
+              "images": [],
+              "children": []
+            },
+            {
+              "id": "f-ex-trainly-transfer",
+              "label": "Rajouter à ma bibliothèque (Transférer)",
+              "route": "/exercises/[id]/transfer",
+              "bodyHtml": "<p>Pop-up : champs éditables. <strong>Transférer</strong> → nouvel exo indépendant dans <code>/mine</code> (détaché de Trainly). Annuler / fermer → rien persisté.</p>",
+              "critiqueHtml": "<p><strong>✅</strong> Copie 100 % détachée.</p>",
+              "images": [],
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "f-ex-mine",
+          "label": "Onglet Ma bibliothèque",
+          "route": "/exercises/mine",
+          "bodyHtml": "<p>Exercices créés par le coach (ou transférés depuis Trainly). Ce sont les exos <strong>publiés</strong> utilisables dans le program builder.</p>\n<p>Les 2 CTA globaux restent visibles.</p>",
+          "critiqueHtml": "<p><strong>✅</strong> Seuls les exos /mine (et pose Trainly selon builder) — pas les brouillons.</p>",
+          "images": [],
+          "children": [
+            {
+              "id": "f-1784876585926-n81vj",
+              "label": "Éditer un exercice (mine)",
+              "route": "/exercises/mine/[id]",
+              "bodyHtml": "<p>Édition complète. <strong>Autosave</strong> des modifications + bouton <strong>Sauvegarder</strong> (rassure le coach / flush explicite) — l’exo reste dans <code>/mine</code>.</p>\n<p>Section <strong>Exercices de remplacement</strong> : un ou plusieurs liens vers d’autres exercices (Trainly <em>ou</em> perso).</p>",
+              "critiqueHtml": "<p><strong>✅</strong> Autosave + bouton rassurant · remplacements multi.</p>",
+              "images": [],
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "f-ex-brouillon",
+          "label": "Onglet Brouillon",
+          "route": "/exercises/brouillon",
+          "bodyHtml": "<p>Exercices non publiés : création quittée <strong>sans</strong> clic Sauvegarder, ou brouillons en cours.</p>\n<p><strong>Non utilisables</strong> dans un programme tant qu’ils ne sont pas sauvegardés vers <code>/mine</code>.</p>",
+          "critiqueHtml": "<p><strong>✅</strong> Brouillon ≠ program builder.</p>",
+          "images": [],
+          "children": [
+            {
+              "id": "f-1784876712006-d9viv",
+              "label": "Éditer un exercice (brouillon)",
+              "route": "/exercises/brouillon/[id]",
+              "bodyHtml": "<p>Édition <strong>sans autosave</strong>. Bouton <strong>Sauvegarder</strong> = valide et <strong>passe l’exo dans</strong> <code>/exercises/mine</code>.</p>\n<p>Fermer sans Sauvegarder = le brouillon reste tel quel (dernière version déjà en brouillon).</p>",
+              "critiqueHtml": "<p><strong>✅</strong></p>",
+              "images": [],
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "f-ex-add",
+          "label": "Ajouter un exercice (CTA global)",
+          "route": "/exercises/new",
+          "bodyHtml": "<p>CTA global (tous les onglets) → pop-up / page création <code>/exercises/new</code>.</p>\n<p><strong>Minimum</strong> : nom + type. Aussi : notes, médias, YouTube, difficulté, muscle, remplacements multi.</p>\n<p><strong>Autosave local uniquement</strong> (pas encore en base / pas dans Brouillon tant que…) pendant la saisie — filet UX dans la session.</p>\n<p>Sortie :</p>\n<ul>\n<li><strong>Sauvegarder</strong> → persisté dans <code>/exercises/mine</code></li>\n<li>Fermer / quitter <strong>sans</strong> Sauvegarder → persisté dans <code>/exercises/brouillon</code></li>\n</ul>\n<p>Noms d’exo non uniques ; types sans doublon de libellé (réutilisation Trainly/perso).</p>",
+          "critiqueHtml": "<p><strong>✅</strong> Autosave = local jusqu’à Sauvegarder (→ /mine) ou fermeture (→ /brouillon).</p>",
+          "images": [],
+          "children": [
+            {
+              "id": "f-ex-replacements",
+              "label": "Exercices de remplacement",
+              "route": "/exercises/new",
+              "bodyHtml": "<p>Section remplacements : un ou plusieurs liens vers d’autres exercices (Trainly ou Ma bibliothèque). <strong>Interdit</strong> de se lister soi-même — uniquement un <em>autre</em> exo.</p>",
+              "critiqueHtml": "<p><strong>✅</strong> Multi · Trainly ou perso · pas soi-même.</p>",
+              "images": [],
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "f-ex-type",
+          "label": "Ajouter un type (CTA global)",
+          "route": "/exercises?popup=type",
+          "bodyHtml": "<p>CTA global → pop-up : nom du type (maison, rééducation, fonctionnel, haltères, salle, outdoor, isolation…).</p>\n<p><strong>Collision de libellé</strong> (avec un type Trainly global <em>ou</em> un type perso déjà créé) → message d’erreur, <strong>pas de doublon</strong>. Le coach réutilise alors le type existant (y compris les types Trainly) sur ses exercices perso.</p>\n<p>Créer un <em>exercice</em> avec le même <strong>nom</strong> qu’un autre exo = autorisé. Créer un <em>type</em> avec le même nom qu’un type existant = interdit.</p>",
+          "critiqueHtml": "<p><strong>✅</strong> Types uniques (global + perso) · réutilisation OK · noms d’exercices non uniques.</p>",
+          "images": [],
+          "children": []
+        }
+      ]
+    },
+    "drive": {
+      "route": "/drive",
+      "arrival": {
+        "bodyHtml": "",
+        "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Drive V1 · quotas · section Trainly (biblio admin) · flags duplicable/téléchargeable (2026-03-13).</p>",
+        "images": []
+      },
+      "features": [
+        {
+          "id": "f-drive-root",
+          "label": "Racine Drive",
+          "route": "/drive",
+          "bodyHtml": "<p><code>/drive</code> — liste / galerie, badges compteurs dossiers, état vide.</p>",
+          "critiqueHtml": "<p><strong>✅</strong></p>",
+          "images": [],
+          "children": [
+            {
+              "id": "f-drive-search",
+              "label": "Recherche & filtres",
+              "route": "/drive",
+              "bodyHtml": "<p>Recherche <strong>dans tout le Drive</strong> (nom fichier/dossier). Filtres par type (dossier, image, PDF, vidéo…).</p>",
+              "critiqueHtml": "<p><strong>✅</strong> Recherche globale.</p>",
+              "images": [],
+              "children": []
+            },
+            {
+              "id": "f-drive-views",
+              "label": "Vue liste / galerie",
+              "route": "/drive",
+              "bodyHtml": "<p>Bascule liste ↔ galerie.</p>",
+              "critiqueHtml": "<p><strong>✅</strong></p>",
+              "images": [],
+              "children": []
+            },
+            {
+              "id": "f-drive-preview",
+              "label": "Preview inline",
+              "route": "/drive",
+              "bodyHtml": "<p>Clic fichier → preview dans l’app : images, PDF, vidéos (lecteur intégré). Téléchargement toujours dispo.</p>",
+              "critiqueHtml": "<p><strong>✅</strong></p>",
+              "images": [],
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "f-drive-templates",
+          "label": "Section Trainly (biblio Admin)",
+          "route": "/drive",
+          "bodyHtml": "<p><strong>Biblio Drive Trainly</strong> (Admin, PDF V1) : section « Trainly » dans <code>/drive</code> (même pattern que Trainly exos / nutrition / programmes).</p>\n<p><strong>Hors quota</strong> tant que consulté depuis la biblio partagée.</p>\n<p>Actions selon flags admin : <strong>ouvrir</strong> in-app · <strong>Dupliquer</strong> (récupérer dans Drive perso / envoyer clients) si <code>allow_duplicate</code> · <strong>Télécharger</strong> si <code>allow_download</code>.</p>\n<p><strong>Dépublier</strong> Admin → plus visible dans le partage ; copies déjà récupérées restent. Ré-upload perso = quota.</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ 2026-03-13</strong> · plus de « download only only » · aligné catalogue.</p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-drive-folder-new",
+          "label": "Nouveau dossier",
+          "route": "/drive?popup=nouveau-dossier",
+          "bodyHtml": "<p>Pop-up nom → crée dans le dossier courant. Imbrication OK.</p>",
+          "critiqueHtml": "<p><strong>✅</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-drive-folder",
+          "label": "Ouvrir un dossier",
+          "route": "/drive/[folderId]",
+          "bodyHtml": "<p><code>/drive/[folderId]</code> + fil d’Ariane. Même CTA / recherche.</p>",
+          "critiqueHtml": "<p><strong>✅</strong></p>",
+          "images": [],
+          "children": [
+            {
+              "id": "f-drive-folder-rename",
+              "label": "Renommer",
+              "route": "/drive/[folderId]",
+              "bodyHtml": "<p>Renommer fichier ou dossier (unicité dans le parent).</p>",
+              "critiqueHtml": "<p><strong>✅</strong></p>",
+              "images": [],
+              "children": []
+            },
+            {
+              "id": "f-drive-folder-delete",
+              "label": "Supprimer → corbeille J30",
+              "route": "/drive/[folderId]",
+              "bodyHtml": "<p>Suppression = <strong>corbeille 30 jours</strong> (restauration possible), puis purge. Règle <strong>plateforme</strong> : même corbeille J30 pour exercices, programmes, nutrition, docs Drive, etc.</p>\n<p>UI corbeille / restauration : accessible depuis <code>/settings</code> (ou hub « Corbeille » global) — pas seulement Drive.</p>",
+              "critiqueHtml": "<p><strong>✅</strong> Soft-delete J30 transversal plateforme.</p>",
+              "images": [],
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "f-drive-upload",
+          "label": "Ajouter des fichiers (+)",
+          "route": "/drive?popup=upload",
+          "bodyHtml": "<p>Pop-up DnD multi + file d’attente. Types : png/jpeg/webp/gif · PDF · mp4/webm.</p>\n<p><strong>Limites fichier V1</strong> : 25 Mo (image/PDF) · 200 Mo (vidéo). Compte dans le <strong>quota global</strong> coach.</p>",
+          "critiqueHtml": "<p><strong>✅</strong> 25 Mo / 200 Mo + quota global settings.</p>",
+          "images": [],
+          "children": [
+            {
+              "id": "f-drive-download",
+              "label": "Télécharger",
+              "route": "/drive",
+              "bodyHtml": "<p>Téléchargement unitaire d’un fichier (pas de zip multi V1).</p>",
+              "critiqueHtml": "<p><strong>✅</strong> Pas de zip.</p>",
+              "images": [],
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "f-drive-share",
+          "label": "Partager (fichier ou dossier)",
+          "route": "/drive?popup=partager",
+          "bodyHtml": "<p>Partage d’<strong>un</strong> fichier <em>ou</em> d’<strong>un</strong> dossier (pas de sélection multiple à partager). Pour N fichiers → dossier puis partage dossier.</p>\n<p>Destinataires : clients + groupes. Dossier = accès lecture seule aux contenus actuels et futurs. Fichier = lui seul.</p>\n<p>Portail <code>/c/[slug]/drive</code> : lecture seule (preview + télécharger). Pas d’upload client. Pas de lien public temporaire.</p>",
+          "critiqueHtml": "<p><strong>✅</strong> Share unitaire · client lecture seule · pas de lien public.</p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-drive-portal",
+          "label": "Vue portail client",
+          "route": "/c/[slug]/drive",
+          "bodyHtml": "<p>Arborescence filtrée aux partages · preview · téléchargement · pas d’écriture.</p>",
+          "critiqueHtml": "<p><strong>✅</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-drive-quota",
+          "label": "Quota global (Settings)",
+          "route": "/settings/storage",
+          "bodyHtml": "<p>Quota <strong>global</strong> coach (Drive + chat + médias exos + covers…).</p>\n<p><strong>Plafonds validés V1</strong> :</p>\n<ul>\n<li>Starter : <strong>5 Go</strong></li>\n<li>Business : <strong>25 Go</strong></li>\n<li>Scale : <strong>100 Go</strong></li>\n<li>Studio : <strong>sur devis / 500 Go+</strong></li>\n</ul>\n<p><code>/settings/storage</code> : barre d’usage, détail par catégorie, alerte 80 %, blocage write à 100 %. Accès corbeille J30.</p>",
+          "critiqueHtml": "<p><strong>✅</strong> Quotas 5 / 25 / 100 Go validés · ajustables plus tard si la réalité terrain le demande.</p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-drive-vs-chat",
+          "label": "Drive vs Chat",
+          "route": "/drive",
+          "bodyHtml": "<p>Pièces jointes chat = bucket chat. Pas d’auto-import Drive. (Phase 2 possible : « Enregistrer dans le Drive ».)</p>",
+          "critiqueHtml": "<p><strong>✅</strong></p>",
+          "images": [],
+          "children": []
+        }
+      ]
+    },
+    "payments": {
+      "route": "/payments",
+      "arrival": {
+        "bodyHtml": "",
+        "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Catalogue=Profil · Compta=ledger/grants/renewals/factures · toute ligne a une presta (y compris libres) · grant=Payé (Stripe ou manuel) · remboursement coupe accès · immuable · renouvellements J-7/J-1 in-app sauf déjà payé avant J-5 · Générer facture manuel · Stripe SaaS coach ≠ Connect clients.</p>",
+        "images": []
+      },
+      "features": [
+        {
+          "id": "f-pay-tab-paiements",
+          "label": "Onglet Paiements",
+          "route": "/payments",
+          "bodyHtml": "<p>Ledger immuable des événements de paiement. Recherche · filtres · CTA <strong>Ajouter un paiement</strong>.</p>\n<p>Colonnes : DATE · CLIENT (→ fiche) · PRESTATION · MONTANT · STATUT (En attente / Payé / Échoué / Expiré / Remboursé) · SOURCE (Manuel · Lien · Stripe · Showroom).</p>\n<p>On ne <strong>supprime</strong> pas une ligne : on change de statut (ex. Remboursé). Le client peut racheter / reprendre la même prestation plus tard = <em>nouvelle</em> ligne.</p>",
+          "critiqueHtml": "<p><strong>✅</strong> Ledger immuable (statuts, pas delete).</p>",
+          "images": [],
+          "children": [
+            {
+              "id": "f-pay-table",
+              "label": "Tableau des paiements",
+              "route": "/payments",
+              "bodyHtml": "<p>Pagination. Passage <strong>En attente → Payé</strong> : action coach (manuel) <em>et/ou</em> webhook Stripe / paiement lien — les deux. Badge source visible.</p>",
+              "critiqueHtml": "<p><strong>✅</strong> Statut Payé = manuel et/ou Stripe/lien.</p>",
+              "images": [],
+              "children": []
+            },
+            {
+              "id": "f-pay-search",
+              "label": "Recherche / filtres",
+              "route": "/payments",
+              "bodyHtml": "<p>Recherche client / prestation / montant. Filtres statut + source.</p>",
+              "critiqueHtml": "<p><strong>✅</strong></p>",
+              "images": [],
+              "children": []
+            },
+            {
+              "id": "f-pay-add",
+              "label": "Ajouter un paiement",
+              "route": "/payments?popup=nouveau",
+              "bodyHtml": "<p>Modal : type <strong>Paiement manuel</strong> ou <strong>Lien de paiement</strong>.</p>",
+              "critiqueHtml": "<p><strong>✅</strong></p>",
+              "images": [],
+              "children": [
+                {
+                  "id": "f-pay-add-manuel",
+                  "label": "Paiement manuel (cash / chèque / CB chez le coach)",
+                  "route": "/payments?popup=nouveau&type=manuel",
+                  "bodyHtml": "<p>Encaissement hors Stripe app (espèces, chèque, TPE, virement…).</p>\n<p>Champs : Client (compte Trainly) · <strong>Prestation obligatoire</strong> (y compris presta « libres » du catalogue : cours particulier, séance one-shot, etc.) · Montant · Statut · Date.</p>\n<p>Statut <strong>Payé</strong> → grant d’accès = même effet qu’un paiement Stripe/showroom.</p>\n<p>Pas d’encaissement sans presta : pour une vente libre, créer d’abord une presta adaptée dans <code>/profile/prestations</code> (ex. « Cours particulier »).</p>",
+                  "critiqueHtml": "<p><strong>✅</strong> Tout paiement a une presta · presta libres OK (cours particulier…) · grant = Stripe.</p>",
+                  "images": [],
+                  "children": []
+                },
+                {
+                  "id": "f-pay-add-lien",
+                  "label": "Lien de paiement (24h)",
+                  "route": "/payments?popup=nouveau&type=lien",
+                  "bodyHtml": "<p>Lien 24h. Client · <strong>Prestation obligatoire</strong> · Titre · Montant · Description.</p>\n<p>Payeur = compte Trainly. Lien expiré = Expiré (pas de paiement tardif sur ce lien).</p>\n<p>Aussi créable en shortcut depuis <code>/profile/prestations</code> (renouvellement / client connu). ≠ partage evergreen fiche showroom.</p>",
+                  "critiqueHtml": "<p><strong>✅</strong> Presta obligatoire · compte Trainly · 24h · aussi depuis Prestations · ≠ fiche evergreen.</p>",
+                  "images": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "f-pay-refund",
+              "label": "Remboursement",
+              "route": "/payments",
+              "bodyHtml": "<p>Action sur une ligne Payé → statut <strong>Remboursé</strong> (ligne conservée). Confirmation : <strong>retirer immédiatement l’accès</strong> à la prestation liée.</p>\n<p>Le client pourra reprendre la même presta plus tard via un nouveau paiement.</p>",
+              "critiqueHtml": "<p><strong>✅</strong> Remboursement = accès coupé + ledger immuable.</p>",
+              "images": [],
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "f-pay-tab-suivi",
+          "label": "Onglet Suivi clients",
+          "route": "/payments/suivi-clients",
+          "bodyHtml": "<p>Vue agrégée par client : revenu total (= somme ledger <strong>Payé</strong>) · prestations actives · prochaine échéance · <strong>demandes de facture</strong> en attente (badge / filtre).</p>\n<p>Clic demande → traiter (Générer facture) puis la demande n’est plus « en cours » côté client.</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Point d’arrivée des demandes facture client. Revenu = somme Payé.</p>",
+          "images": [],
+          "children": [
+            {
+              "id": "f-pay-suivi-table",
+              "label": "Tableau suivi",
+              "route": "/payments/suivi-clients",
+              "bodyHtml": "<p>Client · email · revenu total · presta actives · prochain renouvellement · <strong>demande facture</strong> (oui/en cours + commentaire).</p>",
+              "critiqueHtml": "<p><strong>✅</strong></p>",
+              "images": [],
+              "children": []
+            },
+            {
+              "id": "f-pay-renewals",
+              "label": "Renouvellements (prestations renouvelables)",
+              "route": "/payments/suivi-clients",
+              "bodyHtml": "<p>Uniquement prestations <strong>renouvelables</strong> (pas les one-shot / paiement unique).</p>\n<p><strong>Rappels in-app</strong> coach + client à <strong>J-7</strong> et <strong>J-1</strong> avant la fin de période.</p>\n<p><strong>Exception — pas de notif</strong> si, <em>avant les 5 derniers jours</em> de la prestation (donc avant J-5), un renouvellement / paiement de prolongation a déjà été enregistré :</p>\n<ul>\n<li>soit ajouté / marqué Payé par le coach (manuel),</li>\n<li>soit payé par le client via Stripe / lien / showroom.</li>\n</ul>\n<p>Sinon (rien de valide avant la fenêtre J-5) → les notifs J-7 et J-1 partent normalement.</p>\n<p>Canal V1 : <strong>in-app seulement</strong> (pas d’email obligatoire).</p>",
+              "critiqueHtml": "<p><strong>✅</strong> J-7 + J-1 in-app · skip si déjà renouvelé/payé avant J-5.</p>",
+              "images": [],
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "f-pay-invoices",
+          "label": "Facturation",
+          "route": "/payments/factures",
+          "bodyHtml": "<p>Factures Trainly pour tout paiement Payé (manuel, lien, Stripe, showroom).</p>\n<p>V1 : bouton <strong>« Générer facture »</strong> sur une ligne (pas d’auto à chaque Payé). PDF + n° séquentiel + mentions coach.</p>\n<p>Aussi déclenchable depuis une <strong>demande client</strong> (Suivi clients) — générer clôture la demande.</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Manuel + clôture demande client.</p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-pay-prestations",
+          "label": "Raccourci catalogue Prestations",
+          "route": "/profile/prestations",
+          "bodyHtml": "<p>Compta ne crée pas les offres. Lien / deep-link vers <code>/profile/prestations</code> (+ éventuellement <code>/profile/prestations/new</code>) pour gérer le catalogue.</p>\n<p>Dans les modals paiement : dropdown des prestations existantes.</p>",
+          "critiqueHtml": "<p><strong>✅</strong> Source unique catalogue = Profil · Compta = deep-link.</p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-pay-kpi-home",
+          "label": "Widgets dashboard",
+          "route": "/home",
+          "bodyHtml": "<p>KPI / graphique revenus = <strong>mêmes queries</strong> que le ledger Compta (somme Payé période).</p>",
+          "critiqueHtml": "<p><strong>✅</strong> Une seule définition de revenu.</p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-pay-stripe-phase",
+          "label": "Stripe — phases (hors UI mock)",
+          "route": "/payments",
+          "bodyHtml": "<p><strong>Deux Stripe différents</strong> :</p>\n<ol>\n<li><strong>Abo SaaS Trainly</strong> (le coach paie Trainly) — <code>/settings/billing</code> : Stripe Billing / Checkout classique. Peut / doit être branché tôt pour encaisser les abos Starter→Studio. Ce n’est <em>pas</em> Connect marketplace.</li>\n<li><strong>Paiements clients → coach</strong> (Compta / showroom / liens) — Stripe <strong>Connect</strong> : KYC coach, split, abos client, litiges. Plus lourd ; UI Compta + manuel d’abord, Connect ensuite.</li>\n</ol>\n<p>Donc oui : en V1 plateforme, Stripe pour <strong>l’abonnement Trainly du coach</strong> a du sens. Non obligatoire le jour 1 pour toute la Compta clients (manuel + grants marchent sans Connect).</p>",
+          "critiqueHtml": "<p><strong>✅</strong> Clarifié : Stripe Billing SaaS ≠ Stripe Connect clients.</p>",
+          "images": [],
+          "children": []
+        }
+      ]
+    },
+    "profile": {
+      "arrival": {
+        "bodyHtml": "<p>Sidebar <strong>Profil public</strong> → land sur l’onglet <strong>Profil public</strong> (même pattern que Clients → liste).</p>\n<p><strong>3 sous-onglets</strong> : Profil public · Prestations · Mon app. <strong>Pas</strong> d’onglet Codes promo.</p>\n<p>Chrome toujours visible sur les 3 onglets : <strong>Voir le rendu</strong> · <strong>Codes promo</strong> (pop-up).</p>\n<p><strong>Vitrine canonique</strong> = <code>/c/[slug]/showroom</code> (= même URL qu’Inviter un client). Portail connecté = <code>/c/[slug]</code> ≠ showroom.</p>",
+        "images": [],
+        "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Page complète · 0 ❓ ouvertes. 3 onglets · Codes pop-up · rendu prospect · showroom URL · 4 natures de liens · 1 install · branding + questionnaire Mon app · formulaire presta figé.</p>"
+      },
+      "features": [
+        {
+          "id": "f-prof-chrome",
+          "label": "Chrome page (tous onglets)",
+          "route": "/profile",
+          "bodyHtml": "<p>Actions globales toujours visibles :</p>\n<ul>\n<li><strong>Voir le rendu</strong> — même expérience quel que soit l’onglet actif.</li>\n<li><strong>Codes promo</strong> — ouvre une pop-up (pas une route onglet).</li>\n</ul>\n<p>Pas de Stripe Connect / Déconnecter dans ce chrome V1 (encaissement clients = Compta / Connect plus tard ; abo SaaS = Settings).</p>",
+          "critiqueHtml": "<p><strong>✅</strong> Codes = bouton global · Stripe Connect hors de cette page.</p>",
+          "images": [],
+          "children": [
+            {
+              "id": "f-prof-voir-rendu",
+              "label": "Voir le rendu (preview prospect)",
+              "route": "/profile?preview=1",
+              "bodyHtml": "<p><strong>Données live.</strong> Mockup : écran d’accueil téléphone → icône app au centre → ouverture de l’app.</p>\n<p>Parcours simulé = <strong>prospect uniquement</strong> (pas le portail client connecté) :</p>\n<ol>\n<li>Questionnaire d’onboarding (configuré dans Mon app) — le coach peut remplir ; <em>rien n’est sauvegardé</em>.</li>\n<li>Bouton <strong>Passer le questionnaire</strong> → showroom.</li>\n<li>Showroom navigable : profil public + liste / fiches prestations. Stop : pas d’accès programmes, nutrition, etc.</li>\n</ol>\n<p>Codes promo : prix barré / badge visibles sur le showroom du rendu si un code s’applique.</p>\n<p><strong>Aligné client</strong> : bouton Passer = <em>preview coach only</em> · le vrai client ne peut pas passer le questionnaire.</p>",
+              "critiqueHtml": "<p><strong>✅</strong> 1 preview · prospect · questionnaire non persisté · skip → showroom · presta ouvertes jusqu’au checkout simulé / stop avant portail.</p>",
+              "images": [],
+              "children": []
+            },
+            {
+              "id": "f-prof-codes-popup",
+              "label": "Codes (hub — déplacé vers Clients)",
+              "route": "/clients/codes",
+              "bodyHtml": "<p><strong>Cible</strong> : hub unique <strong>Codes</strong> sous <strong>Clients</strong> (pas pop-up Profil public). Types : <code>promo</code> · <code>access</code> (cash).</p><p>Profil public ne fait que <strong>liens trackés + analytics</strong> (usage des codes en lecture).</p>",
+              "critiqueHtml": "<p><strong>⏳</strong> Remplacer pop-up profile par route Clients → Codes.</p>",
+              "images": [],
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "f-prof-tab-profil",
+          "label": "Onglet Profil public",
+          "route": "/profile",
+          "bodyHtml": "<p>Contenu éditorial de la <strong>showroom</strong> (pas le design system PWA — ça = Mon app).</p>\n<p>Objectif : présentation complète de l’activité du coach.</p>\n<p><strong>Partager</strong> : composer un message (texte libre choisi par le coach, ex. « mon programme ») + URL showroom derrière → bloc prêt à coller (WhatsApp / IG / mail). Même URL que Inviter client : <code>/c/[slug]/showroom</code>.</p>",
+          "critiqueHtml": "<p><strong>✅</strong> Contenu showroom ≠ branding PWA · partage = texte + URL · invite = même URL.</p>",
+          "images": [],
+          "children": [
+            {
+              "id": "f-prof-identite",
+              "label": "Identité & médias",
+              "route": "/profile",
+              "bodyHtml": "<p>Nom public · accroche courte · photo / cover (galerie, 1 principale).</p>\n<p><strong>≠</strong> logo PWA / couleurs (Mon app) · ≠ avatar compte Settings.</p>",
+              "critiqueHtml": "<p><strong>✅</strong> Photo showroom ≠ logo Mon app ≠ avatar Settings.</p>",
+              "images": [],
+              "children": []
+            },
+            {
+              "id": "f-prof-bio",
+              "label": "Bio & activité",
+              "route": "/profile",
+              "bodyHtml": "<p>Bio longue (éditeur riche) · spécialités / tags · pour qui / objectifs · parcours &amp; certifications (texte).</p>",
+              "critiqueHtml": "<p><strong>✅</strong></p>",
+              "images": [],
+              "children": []
+            },
+            {
+              "id": "f-prof-modalites",
+              "label": "Modalités",
+              "route": "/profile",
+              "bodyHtml": "<p>Présentiel / distanciel / les deux. Si présentiel : zone / villes (affichage vitrine — <strong>informatif</strong>, pas de booking public ni annuaire Trainly en V1).</p>",
+              "critiqueHtml": "<p><strong>✅</strong> Informatif showroom · pas de résa self-serve V1.</p>",
+              "images": [],
+              "children": []
+            },
+            {
+              "id": "f-prof-avis",
+              "label": "Avis clients",
+              "route": "/profile",
+              "bodyHtml": "<p>Avis affichés sur la showroom. V1 : <strong>saisie manuelle</strong> par le coach (nom, texte, note optionnelle). Demande auto post-presta = plus tard.</p>",
+              "critiqueHtml": "<p><strong>✅</strong> Manuel V1.</p>",
+              "images": [],
+              "children": []
+            },
+            {
+              "id": "f-prof-liens-ext",
+              "label": "Liens externes",
+              "route": "/profile",
+              "bodyHtml": "<p>Libellé + URL (Instagram, site, YouTube…). Affichés sur la showroom.</p>",
+              "critiqueHtml": "<p><strong>✅</strong></p>",
+              "images": [],
+              "children": []
+            },
+            {
+              "id": "f-prof-share-showroom",
+              "label": "Partager la showroom",
+              "route": "/profile",
+              "bodyHtml": "<p>CTA partage : message custom (texte) + lien <code>/c/[slug]/showroom</code>. Prospect → offres → paiement → grant → install app → questionnaire si nouveau compte / login si compte existant → portail.</p>",
+              "critiqueHtml": "<p><strong>✅</strong> Partage simple message + URL.</p>",
+              "images": [],
+              "children": [
+                {
+                  "id": "f-prof-share-showroom-tracked",
+                  "label": "Liens trackés (Profil public)",
+                  "route": "/profile/liens",
+                  "bodyHtml": "<p><strong>FIGÉ concept</strong> — URL campagne vers showroom ou fiche presta (<code>?ref=…</code>). Stats : clics · comptes créés · payés.</p><p><strong>Contrainte technique</strong> : un clic seul <em>ne révèle pas</em> le compte IG, le n° WhatsApp ni le nom Facebook. Pour recontacter : capture volontaire et/ou identité après inscription/paiement.</p><p>Chaque lien a un <strong>canal</strong> (IG / WA / FB / autre) → champs lead : IG → @handle · WA → téléphone · FB → prénom+nom.</p><p><strong>Capture leads</strong> : option <strong>par lien</strong> (coach active « capturer les leads ») — sinon clics anonymes seulement.</p><p>Showroom principale aussi trackable (campagne par défaut).</p>",
+                  "critiqueHtml": "<p><strong>✅ FIGÉ</strong> · canal → champs lead · capture leads = option par lien (C) · showroom principale aussi trackable. ⏳ après simu paiement / codes.</p>",
+                  "images": [],
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "f-prof-tab-prestations",
+          "label": "Onglet Prestations",
+          "route": "/profile/prestations",
+          "bodyHtml": "<p>Catalogue des <strong>prestations</strong> = source unique d’affectation client (programme, nutrition, drive, modules) <em>et</em> d’encaissement Compta.</p>\n<p>Inclut des offres « libres » (ex. cours particulier). Vente Stripe / showroom / manuel / lien 24h convergent ici pour les droits d’accès.</p>\n<p>Liste : visible showroom (toggle) · ordre / mise en avant · actions par ligne.</p>\n<p><strong>Pas de « template de prestation » séparé V1</strong> : personnalisation programme = template prog/nutri + Envoyer + fork client. La presta reste l’offre d’accès / tarif.</p>",
+          "critiqueHtml": "<p><strong>✅</strong> Catalogue unique · pas de template-presta parallèle · perso via templates prog/nutri.</p>",
+          "images": [],
+          "children": [
+            {
+              "id": "f-prof-presta-create",
+              "label": "Créer / éditer une prestation",
+              "route": "/profile/prestations/new",
+              "bodyHtml": "<p>Offre d’<strong>accès</strong> (pack modules + liaisons programme / nutrition optionnelles). Pas de booking Meet / produit fichier.</p>\n<p><strong>Champs V1 figés</strong> :</p>\n<ol>\n<li><strong>Infos</strong> — Nom * · Description · Photo optionnelle.</li>\n<li><strong>Tarification</strong> — Paiement unique ou Renouvelable · Prix € *.\n<ul>\n<li>Unique : durée d’accès (jours/mois) ou sans fin.</li>\n<li>Renouvelable : <strong>mensuel</strong> only. Pas d’essai V1.</li>\n</ul></li>\n<li><strong>Modules</strong> : Fitness · Nutrition · Drive · À la demande · Messagerie · Habitudes.</li>\n<li><strong>Liaisons</strong> : si Fitness ON → 0..1 programme · si Nutrition ON → 0..1 plan (template). Pas d’assign via groupe.</li>\n<li><strong>Showroom</strong> — Visible · Mise en avant.</li>\n<li><strong>Statut</strong> — Brouillon · Active · Archivée.</li>\n</ol>",
+              "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Formulaire presta complet · mensuel only · modules = fiche client · 0..1 prog/nut.</p>",
+              "images": [],
+              "children": []
+            },
+            {
+              "id": "f-prof-presta-share-fiche",
+              "label": "Partager la fiche (evergreen)",
+              "route": "/profile/prestations",
+              "bodyHtml": "<p>Pour <strong>attirer un nouveau client</strong> vers une offre.</p>\n<p>Message custom + URL fiche <code>/c/[slug]/showroom/[prestaId]</code> (détail + checkout). Pas d’expiration 24h.</p>\n<p>Post-paiement = même suite que showroom (grant → install → onboarding/login → portail).</p>",
+              "critiqueHtml": "<p><strong>✅</strong> Evergreen acquisition ≠ lien 24h.</p>",
+              "images": [],
+              "children": []
+            },
+            {
+              "id": "f-prof-presta-lien-paiement",
+              "label": "Créer un lien de paiement (24h)",
+              "route": "/profile/prestations",
+              "bodyHtml": "<p>Shortcut vers le flux Compta « Lien 24h » : Client · Prestation (préremplie) · Montant · Titre · Description · expire 24h.</p>\n<p>Usage typique : <strong>renouvellement</strong> / encaissement ciblé d’un client déjà connu. Source ledger = Lien. Aussi créable depuis <code>/payments</code>.</p>",
+              "critiqueHtml": "<p><strong>✅</strong> Même moteur que Compta · shortcut depuis catalogue.</p>",
+              "images": [],
+              "children": []
+            },
+            {
+              "id": "f-prof-presta-public",
+              "label": "Fiche publique / checkout",
+              "route": "/c/[slug]/showroom/[prestaId]",
+              "bodyHtml": "<p>Détail presta sous la showroom : contenu · prix (code promo si applicable) · paiement <em>ou</em> saisie <strong>code d’accès</strong> (cash).</p>\n<p>Après Payé / redeem code : grant + (plus tard) lien install PWA.</p>",
+              "critiqueHtml": "<p><strong>✅</strong> Checkout = CB/simulé <em>ou</em> code 24h.</p>",
+              "images": [],
+              "children": [
+                {
+                  "id": "f-presta-access-code",
+                  "label": "Code d’accès cash (1× / 24h)",
+                  "route": "/clients/codes",
+                  "bodyHtml": "<p><strong>FIGÉ</strong></p><ul><li>Type <code>access</code> · usage unique · expire 24 h · 1 presta.</li><li>Prospect pas encore lié → code. Déjà lié → Accorder (pop-up montant).</li><li>Saisie client au checkout fiche presta.</li><li>À la génération <strong>et</strong> à Accorder : pop-up montant <strong>libre</strong> (ce que le client a versé au coach) — pas de label « don » dans l’app. 0 € possible si accès offert.</li><li>Redeem / Accorder : ledger Payé (source cash/code/manuel) + grant + livraison.</li><li>Cumul possible avec code promo sur la même presta.</li></ul>",
+                  "critiqueHtml": "<p><strong>✅ FIGÉ</strong> · pas de tag don · montant libre · hub Clients/Codes.</p>",
+                  "images": [],
+                  "children": []
+                },
+                {
+                  "id": "f-codes-promo",
+                  "label": "Codes promo (réduction)",
+                  "route": "/clients/codes",
+                  "bodyHtml": "<p><strong>FIGÉ</strong></p><ul><li>Remise % de 5 à 100 (pas de 5).</li><li>Cible presta : coach choisit 1 ou plusieurs / catalogue.</li><li>Audience : public · 1 client · groupe manuel · ou tous clients d’une presta.</li><li>Validité : durée (24 h → 1 mois) <strong>et/ou</strong> max utilisateurs — AND (le 1er seuil atteint coupe).</li><li>Cumul avec code accès sur même presta : oui.</li><li>Analytics : nb utilisations (aussi visible Profil public stats).</li></ul>",
+                  "critiqueHtml": "<p><strong>✅ FIGÉ</strong> · hub Clients/Codes.</p>",
+                  "images": [],
+                  "children": []
+                },
+                {
+                  "id": "f-grant-paid-popup",
+                  "label": "Accorder / code accès → montant libre",
+                  "route": "/clients/[id]",
+                  "bodyHtml": "<p>Pop-up : montant libre (défaut = prix presta, éditable, y compris 0). Pas de case « don ». Écriture ledger Compta + grant.</p>",
+                  "critiqueHtml": "<p><strong>✅ FIGÉ</strong> · pas de tag don.</p>",
+                  "images": [],
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "f-prof-tab-mon-app",
+          "label": "Onglet Mon app",
+          "route": "/profile/mon-app",
+          "bodyHtml": "<p>Identité de la <strong>PWA / portail client</strong> + questionnaire d’onboarding + lien d’installation + upsell plan.</p>\n<p>Showroom <em>consomme</em> les couleurs pour le chrome ; le contenu éditorial reste onglet Profil public.</p>",
+          "critiqueHtml": "<p><strong>✅</strong> Branding centralisé ici · pas Settings Branding parallèle V1.</p>",
+          "images": [],
+          "children": [
+            {
+              "id": "f-prof-app-branding",
+              "label": "Branding (selon plan)",
+              "route": "/profile/mon-app",
+              "bodyHtml": "<p>Champs gated par offre coach :</p>\n<ul>\n<li><strong>Starter</strong> : couleurs UI coach (PWA nom/icône = Trainly).</li>\n<li><strong>Business+</strong> : + nom affiché PWA + logo / icône coach.</li>\n<li><strong>Scale+</strong> : polish + push (hors détail V1 branding).</li>\n</ul>\n<p>Si champs vides → <strong>fallback Trainly</strong> (couleurs / nom / icône plateforme).</p>",
+              "critiqueHtml": "<p><strong>✅</strong> Aligné gating.json · fallback Trainly.</p>",
+              "images": [],
+              "children": []
+            },
+            {
+              "id": "f-prof-app-upsell",
+              "label": "Upsell plan supérieur",
+              "route": "/profile/mon-app",
+              "bodyHtml": "<p>Bloc proposition de l’offre du dessus : ce que ça change <strong>notamment pour l’app</strong> (icône home screen, nom, logo, push…). CTA vers changement d’abo (<code>/settings/billing</code>).</p>",
+              "critiqueHtml": "<p><strong>✅</strong></p>",
+              "images": [],
+              "children": []
+            },
+            {
+              "id": "f-prof-app-questionnaire",
+              "label": "Questionnaire onboarding",
+              "route": "/profile/mon-app",
+              "bodyHtml": "<p>Questions onboarding <strong>nouveau compte</strong> (1ʳᵉ ouverture post-grant). Types V1 : texte · nombre · choix · oui/non.</p>\n<p><strong>Côté client</strong> : 1 q/écran · progression · <strong>pas de Passer</strong> · toutes les questions à répondre · abandon = Reprendre / Recommencer. Compte existant / réinstall / 2ᵉ presta = pas de questionnaire.</p>\n<p>Réponses → fiche client · réédit Profil Mes infos. Ajout de questions plus tard → visibles Mes infos anciens clients (≠ bilans).</p>\n<p><strong>Voir le rendu</strong> (coach) : peut Passer · rien n’est sauvegardé.</p>",
+              "critiqueHtml": "<p><strong>✅</strong> Aligné client Au démarrage FIGÉ · Passer = preview only.</p>",
+              "images": [],
+              "children": []
+            },
+            {
+              "id": "f-prof-app-install-link",
+              "label": "Lien d’installation (unique)",
+              "route": "/profile/mon-app",
+              "bodyHtml": "<p><strong>Un seul</strong> lien install coach. Règle :</p>\n<ul>\n<li>Connecté + presta active → prompt install PWA / portail.</li>\n<li>Sinon → login ; prospect sans grant peut être renvoyé vers showroom.</li>\n</ul>\n<p>Usages : post-paiement (nouveau) · réinstall (client qui a supprimé l’app) · partage Mon app.</p>\n<p>Wording V1 : « Lien d’installation » (PWA / Ajouter à l’écran d’accueil), pas store (Studio plus tard).</p>\n<p><strong>Client V1</strong> : install PWA <strong>obligatoire</strong> pour entrer dans le portail — pas de mode ordinateur / navigateur seul.</p>",
+              "critiqueHtml": "<p><strong>✅</strong> 1 lien intelligent · PWA pas store V1.</p>",
+              "images": [],
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "f-prof-liens-natures",
+          "label": "Rappel · 4 natures de liens",
+          "route": "/profile",
+          "bodyHtml": "<ol>\n<li><strong>Showroom</strong> (Profil public) — evergreen, acquisition.</li>\n<li><strong>Fiche presta</strong> (Prestations → Partager) — evergreen, 1 offre.</li>\n<li><strong>Paiement 24h</strong> (Compta ou Prestations → Créer un lien) — client + montant, expire 24h (renouvellement / ciblé).</li>\n<li><strong>Install app</strong> (Mon app / post-pay) — 1 URL, routage selon auth + presta.</li>\n</ol>\n<p>Partages 1–2 : message custom + URL derrière.</p>",
+          "critiqueHtml": "<p><strong>✅</strong></p>",
+          "images": [],
+          "children": []
+        }
+      ]
+    },
+    "f-topbar": {
+      "arrival": {
+        "bodyHtml": "",
+        "images": [],
+        "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Top-bar · 0 ❓. Stats A+B Business+ · C+D Scale · Starter teaser. Install PWA best-effort.</p>"
+      },
+      "features": [
+        {
+          "id": "f-top-notifs",
+          "label": "Notifications (cloche)",
+          "route": "/clients/notifications",
+          "bodyHtml": "<p>Cloche + badge. Popover récents · Voir tout selon type.</p>\n<p><strong>Demande de facture client</strong> → deep-link <code>/payments/suivi-clients</code> (pas la fiche client · pas <code>/clients/notifications</code> hors V1 pour ce flux).</p>\n<p>Autres deep-links métier inchangés (bilans, chat, etc.).</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Demande facture → cloche → Suivi clients. Rien d’obligatoire sur fiche client.</p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-top-search",
+          "label": "Recherche globale",
+          "route": "(overlay)",
+          "bodyHtml": "<p>V1 : clients · programmes · nutrition · drive. <code>Ctrl+K</code> / <code>⌘K</code>.</p>",
+          "critiqueHtml": "<p><strong>✅</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-top-settings",
+          "label": "Paramètres",
+          "route": "/settings",
+          "bodyHtml": "<p>Engrenage → <strong>espace compte plateforme</strong> (pas raccourcis métier).</p>\n<p><strong>Hub /settings</strong> = Compte (nom, email confirmé, MDP, thème Black/White) + nav : Abonnement · Stockage · Aide/SAV · Déconnexion.</p>\n<p><strong>Hors Settings</strong> : Stats → sous Comptabilités. Pas de liens Dashboard / Profil public.</p>\n<p><strong>Décisions 2026-03-13</strong> : Storage oui V1 · Billing UI d’abord (Stripe Checkout plus tard) · thème uniquement Settings.</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ 2026-03-13</strong> compte+abo+storage+SAV · stats sous compta · thème settings only.</p>",
+          "images": [],
+          "children": [
+            {
+              "id": "f-top-settings-profile",
+              "label": "Compte coach",
+              "route": "/settings",
+              "bodyHtml": "<p><code>/settings</code> — Compte coach : nom (<code>full_name</code>), email (changement = <strong>confirmation e-mail</strong>), mot de passe.</p>\n<p>Toggle thème Black/White <strong>uniquement ici</strong> (retiré du /home).</p>\n<p>Aperçu abo (statut / plan / jours essai). ≠ Profil public / Mon app.</p>",
+              "critiqueHtml": "<p><strong>✅ FIGÉ 2026-03-13</strong> confirm email · thème settings only.</p>",
+              "images": [],
+              "children": []
+            },
+            {
+              "id": "f-top-settings-billing",
+              "label": "Abonnement Trainly",
+              "route": "/settings/billing",
+              "bodyHtml": "<p><code>/settings/billing</code> — Abonnement SaaS Trainly (≠ paiements clients).</p>\n<p><strong>V1 build</strong> : état abo en lecture (trial/actif/past_due) · plan · jours restants · CTA upgrade / portail Stripe quand branché.</p>\n<p>Stripe Checkout / Customer Portal = phase suivante (compte Stripe gratuit ; frais au paiement).</p>\n<p>Essai : 15 j calendaires dès 1ʳᵉ connexion app · sandbox.</p>",
+              "critiqueHtml": "<p><strong>✅ FIGÉ 2026-03-13</strong> UI d’abord · Stripe live plus tard.</p>",
+              "images": [],
+              "children": []
+            },
+            {
+              "id": "f-top-settings-storage",
+              "label": "Stockage / quota",
+              "route": "/settings/storage",
+              "bodyHtml": "<p>Usage global · corbeille J30 · 5/25/100 Go.</p>",
+              "critiqueHtml": "<p><strong>✅ FIGÉ</strong> dans Settings V1 (barre usage + plafonds plan ; mesure fine progressive).</p>",
+              "images": [],
+              "children": []
+            },
+            {
+              "id": "f-top-settings-stats",
+              "label": "Statistiques (sous Comptabilités)",
+              "route": "/payments/stats",
+              "bodyHtml": "<p><strong>Déplacé hors Settings</strong> (décision 2026-03-13) → sous Comptabilités <code>/payments</code> (route cible <code>/payments/stats</code>).</p>\n<p>Contenu inchangé — Filtres 7/30/90 j / tout (défaut 30 j).</p>\n<p><strong>A Acquisition</strong> (Business+) : clics showroom · visiteurs uniques approx. · vues fiche presta · checkouts/payés · taux · codes promo.</p>\n<p><strong>B App</strong> (Business+) : ouvertures lien install · installs PWA · clients sans app · réinstalls.</p>\n<p><strong>C Conversion</strong> (Scale) : nouveaux clients · top prestas · liens 24h · renouvellements.</p>\n<p><strong>D Engagement</strong> (Scale) : ouvertures app · séances validées · retours en attente · bilans sans réponse · messages non lus.</p>\n<p>Starter : teaser clics + installs + upsell.</p>",
+              "critiqueHtml": "<p><strong>✅ FIGÉ 2026-03-13</strong> Stats sous Compta, pas Settings.</p>",
+              "images": [],
+              "children": []
+            },
+            {
+              "id": "f-top-settings-sav",
+              "label": "Aide / Feedback (SAV)",
+              "route": "/settings/support",
+              "bodyHtml": "<p>Entrée via Settings · tickets + PJ · réponses admin in-app.</p>",
+              "critiqueHtml": "<p><strong>✅</strong> live /settings/support.</p>",
+              "images": [],
+              "children": []
+            },
+            {
+              "id": "f-top-settings-logout",
+              "label": "Déconnexion",
+              "route": "/settings",
+              "bodyHtml": "<p>Menu paramètres.</p>",
+              "critiqueHtml": "<p><strong>✅</strong></p>",
+              "images": [],
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    "formation": {
+      "route": "/formation",
+      "arrival": {
+        "bodyHtml": "<p><code>/formation</code> — contenus Formation publiés par Admin (PDF · vidéo · image).</p>\n<p><strong>Lecture seule</strong> : ouvrir in-app. Pas de duplication métier dans le Drive coach.</p>\n<p>Séparé de la section Trainly du Drive (docs métier / packs).</p>",
+        "images": [],
+        "critiqueHtml": "<p><strong>✅ FIGÉ 2026-03-13</strong> · sidebar coach · RO · admin /admin/formation.</p>"
+      },
+      "features": [
+        {
+          "id": "f-formation-list",
+          "label": "Liste Formation",
+          "route": "/formation",
+          "bodyHtml": "<p>Liste des contenus publiés · preview PDF/vidéo/image.</p>",
+          "critiqueHtml": "<p><strong>⏳ à brancher</strong></p>",
+          "images": [],
+          "children": []
+        }
+      ]
+    },
+    "settings": {
+      "route": "/settings",
+      "arrival": {
+        "bodyHtml": "<p><code>/settings</code> — compte plateforme coach.</p>\n<p>Nav : Compte · Abonnement · Stockage · Aide · Déconnexion. Thème ici only. Stats → Comptabilités.</p>",
+        "images": [],
+        "critiqueHtml": "<p><strong>✅ FIGÉ 2026-03-13</strong></p>"
+      },
+      "features": [
+        {
+          "id": "f-settings-signup-journeys",
+          "label": "Parcours inscription coach (plus tard)",
+          "route": "/settings/billing",
+          "bodyHtml": "<p><strong>FIGÉ intention — impl plus tard</strong></p>\n<ol>\n<li><strong>Essai depuis le site</strong> : marketing → CTA « Essayer » → signup (email+MDP) → 1ʳᵉ connexion app démarre l’essai 15 j calendaires · sandbox (clients fictifs) · même e-mail que prod future.</li>\n<li><strong>Pendant l’essai</strong> : badge Essai · accès produit (limites sandbox) · Settings montre jours restants + CTA passer payant.</li>\n<li><strong>Essai expiré sans pay</strong> : login OK · dashboard réduit aux <strong>offres abo</strong> seulement · Settings/Billing = seul chemin pour payer.</li>\n<li><strong>Paiement Stripe</strong> : Checkout plan Starter/Business/Scale/Studio → webhook active abo · même URL app · données démo non migrées.</li>\n<li><strong>Upgrade / downgrade / résiliation</strong> : via Settings → Billing → Customer Portal Stripe (ou Checkout change plan).</li>\n<li><strong>Past due</strong> : statut past_due · relance · éventuel soft-lock métier (à préciser) · Settings Billing en alerte.</li>\n</ol>\n<p><strong>Stripe</strong> : compte gratuit à créer ; pas d’abo Stripe obligatoire pour démarrer. Frais au succès du paiement (ex. carte EU ~1,5 %+fixe). Mode test gratuit.</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ 2026-03-13</strong> parcours documentés · code plus tard.</p>",
+          "images": [],
+          "children": []
+        }
+      ]
+    }
+  }
+}

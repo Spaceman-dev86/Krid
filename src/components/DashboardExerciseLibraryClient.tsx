@@ -54,14 +54,14 @@ export default function DashboardExerciseLibraryClient({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="exercice"
-          className="h-11 min-w-0 flex-1 rounded-2xl bg-white px-4 text-sm font-semibold text-[#341c44] ring-1 ring-black/10 outline-none placeholder:text-black/40"
+          className="h-11 min-w-0 flex-1 rounded-2xl bg-white px-4 text-sm font-semibold text-[color:var(--brand)] ring-1 ring-black/10 outline-none placeholder:text-black/40"
         />
 
         <div className="relative w-[170px] shrink-0 sm:w-[220px]">
           <select
             value={muscle}
             onChange={(e) => setMuscle(e.target.value)}
-            className="h-11 w-full appearance-none rounded-2xl bg-white pl-4 pr-10 text-sm font-semibold text-[#341c44] ring-1 ring-black/10 outline-none"
+            className="h-11 w-full appearance-none rounded-2xl bg-white pl-4 pr-10 text-sm font-semibold text-[color:var(--brand)] ring-1 ring-black/10 outline-none"
           >
             <option value="">muscle</option>
             {muscles.map((m) => (
@@ -71,7 +71,7 @@ export default function DashboardExerciseLibraryClient({
             ))}
           </select>
 
-          <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-[#341c44]">
+          <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-[color:var(--brand)]">
             <svg
               viewBox="0 0 24 24"
               width={18}
@@ -105,7 +105,7 @@ export default function DashboardExerciseLibraryClient({
                     </div>
 
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-extrabold text-[#341c44]">{e.name}</div>
+                      <div className="truncate text-sm font-extrabold text-[color:var(--brand)]">{e.name}</div>
                       {(e.muscle_group || e.difficulty) ? (
                         <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs font-semibold text-black/50">
                           {e.muscle_group ? <span>{e.muscle_group}</span> : null}
@@ -114,7 +114,7 @@ export default function DashboardExerciseLibraryClient({
                       ) : null}
                     </div>
 
-                    <div className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#341c44] text-xs font-black text-white">
+                    <div className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[color:var(--brand)] text-xs font-black text-[color:var(--icon-solid-fg)]">
                       →
                     </div>
                   </div>

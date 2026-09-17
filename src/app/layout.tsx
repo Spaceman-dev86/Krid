@@ -24,8 +24,13 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const themeBoot = `(function(){try{var u=localStorage.getItem('trainly-theme-user');var t=u?localStorage.getItem('trainly-theme:'+u):null;if(t!=='light'&&t!=='dark')t=localStorage.getItem('trainly-theme');document.documentElement.dataset.theme=(t==='light'?'light':'dark');}catch(e){document.documentElement.dataset.theme='dark';}})();`
+
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="fr" data-theme="dark" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeBoot }} />
+      </head>
       <body
         suppressHydrationWarning
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}

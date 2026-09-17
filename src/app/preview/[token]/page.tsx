@@ -1,7 +1,7 @@
-import { redirect } from 'next/navigation'
-
 import PreviewProgramContent, { type PreviewProgramRow } from '../../dashboard/preview/[id]/PreviewProgramContent'
 import { createServiceRoleClient } from '../../../lib/supabase/serviceRole'
+import PwaInstallHintClient from './PwaInstallHintClient'
+import SharePreviewStatus from './SharePreviewStatus'
 
 type PageProps = {
   params: Promise<{ token: string }>
@@ -14,16 +14,21 @@ type ShareLinkRow = {
   expires_at: string | null
 }
 
+function isExpired(expiresAt: string | null): boolean {
+  if (!expiresAt) return false
+  return new Date(expiresAt).getTime() < Date.now()
+}
+
 export default async function PublicSharePreviewPage({ params }: PageProps) {
   const { token } = await params
   const shareToken = String(token ?? '').trim()
   if (!shareToken) {
-    redirect('/programs')
+    return <SharePreviewStatus kind="invalid" />
   }
 
   const supabase = createServiceRoleClient()
   if (!supabase) {
-    redirect('/programs')
+    return <SharePreviewStatus kind="invalid" />
   }
 
   const { data: shareLink } = await supabase
@@ -33,10 +38,15 @@ export default async function PublicSharePreviewPage({ params }: PageProps) {
     .maybeSingle()
 
   const typedShare = shareLink as ShareLinkRow | null
-  if (!typedShare || typedShare.revoked_at) {
-    redirect('/programs')
+  if (!typedShare) {
+    return <SharePreviewStatus kind="invalid" />
   }
-  // Expiration is optional; enforce in DB / scheduled cleanup if needed.
+  if (typedShare.revoked_at) {
+    return <SharePreviewStatus kind="revoked" />
+  }
+  if (isExpired(typedShare.expires_at)) {
+    return <SharePreviewStatus kind="expired" />
+  }
 
   const { data: program } = await supabase
     .from('programs')
@@ -46,9 +56,13 @@ export default async function PublicSharePreviewPage({ params }: PageProps) {
 
   const typedProgram = program as PreviewProgramRow | null
   if (!typedProgram) {
-    redirect('/programs')
+    return <SharePreviewStatus kind="invalid" />
   }
 
-  return <PreviewProgramContent program={typedProgram} backHref="/programs" />
+  return (
+    <>
+      <PreviewProgramContent program={typedProgram} backHref="/programs" useServiceRole />
+      <PwaInstallHintClient />
+    </>
+  )
 }
-

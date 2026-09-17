@@ -2607,7 +2607,7 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
             <div className="grid gap-4">
               <div className="rounded-2xl border border-[var(--border)] bg-[var(--accent)] p-3">
                 <div className="text-xs font-extrabold tracking-wide text-[var(--brand)]">Blocs</div>
-                <div className="mt-1 text-sm font-extrabold tracking-tight text-[var(--text)]">Palette</div>
+                <div className="mt-1 text-sm font-extrabold tracking-tight text-[color:var(--fg)]">Palette</div>
                 <div className="mt-3 grid gap-2">
                   <PaletteStatic label="Warm-up" meta="Bloc" />
                   <PaletteStatic label="CrossFit" meta="Bloc" />
@@ -2618,7 +2618,7 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
               <div className="rounded-2xl border border-[var(--border)] bg-[var(--accent)]">
                 <div className="sticky top-0 z-10 rounded-t-2xl bg-[var(--accent)] px-3 pb-3 pt-3">
                   <div className="text-xs font-extrabold text-[var(--brand)]">Exercices</div>
-                  <div className="mt-1 text-sm font-semibold text-[var(--text)]">Bibliothèque</div>
+                  <div className="mt-1 text-sm font-semibold text-[color:var(--fg)]">Bibliothèque</div>
 
                   <div className="mt-2 flex items-center gap-2">
                     <input
@@ -2647,7 +2647,7 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
                     {filteredExerciseLibrary.map((ex) => (
                       <div
                         key={ex.id}
-                        className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] px-2.5 py-2 text-sm font-semibold text-[var(--text)]"
+                        className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] px-2.5 py-2 text-sm font-semibold text-[color:var(--fg)]"
                       >
                         <div className="truncate">{String(ex.name ?? 'Exercice')}</div>
                       </div>
@@ -2661,7 +2661,7 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
           <div className="hidden min-[1000px]:block min-[1000px]:col-start-1 min-[1000px]:sticky min-[1000px]:top-[136px] min-[1000px]:z-20 min-[1000px]:self-start min-[1000px]:max-h-[calc(100vh-156px)] min-[1000px]:overflow-auto">
             <div className="rounded-2xl border border-[var(--border)] bg-[var(--accent)] p-3">
               <div className="text-xs font-extrabold tracking-wide text-[var(--brand)]">Blocs</div>
-              <div className="mt-1 text-sm font-extrabold tracking-tight text-[var(--text)]">Palette</div>
+              <div className="mt-1 text-sm font-extrabold tracking-tight text-[color:var(--fg)]">Palette</div>
               <div className="mt-3 grid gap-2">
                 <PaletteStatic label="Warm-up" meta="Bloc" />
                 <PaletteStatic label="CrossFit" meta="Bloc" />
@@ -2676,7 +2676,7 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
             <div className="flex min-h-0 flex-col overflow-auto rounded-2xl border border-[var(--border)] bg-[var(--accent)] min-[1000px]:max-h-[calc(100vh-156px)]">
               <div className="sticky top-0 z-10 bg-[var(--accent)] px-3 pb-3 pt-3">
                 <div className="text-xs font-extrabold text-[var(--brand)]">Exercices</div>
-                <div className="mt-1 text-sm font-semibold text-[var(--text)]">Bibliothèque</div>
+                <div className="mt-1 text-sm font-semibold text-[color:var(--fg)]">Bibliothèque</div>
 
                 <div className="mt-2 flex items-center gap-2">
                   <input
@@ -2705,7 +2705,7 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
                   {filteredExerciseLibrary.map((ex) => (
                     <div
                       key={ex.id}
-                      className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] px-2.5 py-2 text-sm font-semibold text-[var(--text)]"
+                      className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] px-2.5 py-2 text-sm font-semibold text-[color:var(--fg)]"
                     >
                       <div className="truncate">{String(ex.name ?? 'Exercice')}</div>
                     </div>
@@ -2730,7 +2730,7 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
                 <div className="relative rounded-2xl border border-[var(--border)] bg-[var(--accent)] p-3">
                   <PaletteNeutralDropZone active={!!activeDragId && String(activeDragId).startsWith('palette-block:')} />
                   <div className="text-xs font-extrabold tracking-wide text-[var(--brand)]">Blocs</div>
-                  <div className="mt-1 text-sm font-extrabold tracking-tight text-[var(--text)]">Palette</div>
+                  <div className="mt-1 text-sm font-extrabold tracking-tight text-[color:var(--fg)]">Palette</div>
 
                   {props.insertSessionItemBlockAtPositionAction ? (
                     <div className="mt-3 grid gap-2">
@@ -2798,7 +2798,7 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
               <div className="relative rounded-2xl border border-[var(--border)] bg-[var(--accent)] p-3">
                 <PaletteNeutralDropZone active={!!activeDragId && String(activeDragId).startsWith('palette-block:')} />
                 <div className="text-xs font-extrabold tracking-wide text-[var(--brand)]">Blocs</div>
-                <div className="mt-1 text-sm font-extrabold tracking-tight text-[var(--text)]">Palette</div>
+                <div className="mt-1 text-sm font-extrabold tracking-tight text-[color:var(--fg)]">Palette</div>
 
                 {props.insertSessionItemBlockAtPositionAction ? (
                   <div className="mt-3 grid gap-2">
@@ -2944,7 +2944,7 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
                                   <div className="ml-3 h-8 w-8 flex-none" />
                                 )}
                               </div>
-                              {w.notes ? <div className="mt-1 truncate text-sm text-[var(--muted)]">{w.notes}</div> : null}
+                              {w.notes ? <div className="mt-1 truncate text-sm text-[color:var(--muted)]">{w.notes}</div> : null}
                             </>
                           )}
                         </div>
@@ -3123,9 +3123,9 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
                                                 </div>
                                               </div>
 
-                                              {s.description ? <div className="mt-1 truncate text-sm text-[var(--muted)]">{s.description}</div> : null}
+                                              {s.description ? <div className="mt-1 truncate text-sm text-[color:var(--muted)]">{s.description}</div> : null}
                                               {!isSessionOpen ? (
-                                                <div className="mt-1 truncate text-sm text-[var(--muted)]">{summary || 'Cliquer pour construire la séance'}</div>
+                                                <div className="mt-1 truncate text-sm text-[color:var(--muted)]">{summary || 'Cliquer pour construire la séance'}</div>
                                               ) : null}
                                             </>
                                           )}
@@ -3338,7 +3338,7 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
                                                         {it.kind === 'exercise' && !(it.programExerciseId && editingProgramExerciseId === it.programExerciseId) ? (
                                                           it.sets != null || it.reps != null || it.rest_time || it.rpe != null || it.tempo || it.load || it.subtitle ? (
                                                             <div className="mt-1 grid gap-1">
-                                                              <div className="truncate text-xs text-[var(--muted)]">
+                                                              <div className="truncate text-xs text-[color:var(--muted)]">
                                                                 {[
                                                                   it.sets != null ? `${it.sets} séries` : null,
                                                                   it.reps != null ? `${it.reps} reps` : null,
@@ -3350,7 +3350,7 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
                                                                   .filter(Boolean)
                                                                   .join(' · ')}
                                                               </div>
-                                                              {it.subtitle ? <div className="truncate text-xs text-[var(--muted)]">{it.subtitle}</div> : null}
+                                                              {it.subtitle ? <div className="truncate text-xs text-[color:var(--muted)]">{it.subtitle}</div> : null}
                                                             </div>
                                                           ) : null
                                                         ) : null}
@@ -3875,7 +3875,7 @@ export default function ProgramStructureTimelineV2Client(props: Props) {
                             </button>
                           </div>
 
-                          {!sessions.length ? <div className="text-sm text-[var(--muted)]">Aucun training.</div> : null}
+                          {!sessions.length ? <div className="text-sm text-[color:var(--muted)]">Aucun training.</div> : null}
                         </div>
                       ) : null}
                     </div>

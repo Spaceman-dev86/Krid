@@ -126,10 +126,10 @@ function SessionCardInner({ sessionId, mobileDrag }: Props) {
               </div>
             )}
             {!isOpen && session.description ? (
-              <div className="mt-0.5 truncate text-xs text-[var(--muted)]">{session.description}</div>
+              <div className="mt-0.5 truncate text-xs text-[color:var(--muted)]">{session.description}</div>
             ) : null}
             {!isOpen ? (
-              <div className="mt-0.5 truncate text-xs text-[var(--muted)]">
+              <div className="mt-0.5 truncate text-xs text-[color:var(--muted)]">
                 {summary || 'Cliquer pour construire la séance'}
               </div>
             ) : null}

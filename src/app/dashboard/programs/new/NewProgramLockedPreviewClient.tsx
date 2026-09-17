@@ -71,7 +71,7 @@ export default function NewProgramLockedPreviewClient({
         >
           <div className={`relative rounded-2xl bg-white px-3 pb-3 pt-2 ${EDITOR_PANEL_SHADOW_CLASS}`}>
             <div className={EDITOR_SECTION_TITLE_CLASS}>Blocs</div>
-            <p className="mt-1 text-[10px] font-medium text-[var(--muted)]">Glisser dans une séance ouverte.</p>
+            <p className="mt-1 text-[10px] font-medium text-[color:var(--muted)]">Glisser dans une séance ouverte.</p>
             <div className="mt-2 grid gap-1.5">
               {paletteBlocks.map((label) => (
                 <PalettePreviewRow key={label} label={label} />
@@ -118,7 +118,7 @@ export default function NewProgramLockedPreviewClient({
           <div className="min-[768px]:max-[999px]:block min-[1000px]:hidden min-[768px]:max-[999px]:shrink-0 min-[768px]:max-[999px]:overflow-y-auto min-[768px]:max-[999px]:overscroll-contain">
             <div className={`relative rounded-2xl bg-white px-3 pb-3 pt-2 ${EDITOR_PANEL_SHADOW_CLASS}`}>
               <div className={EDITOR_SECTION_TITLE_CLASS}>Blocs</div>
-              <p className="mt-1 text-[10px] font-medium text-[var(--muted)]">Glisser dans une séance ouverte.</p>
+              <p className="mt-1 text-[10px] font-medium text-[color:var(--muted)]">Glisser dans une séance ouverte.</p>
               <div className="mt-2 grid gap-1.5">
                 {paletteBlocks.map((label) => (
                   <PalettePreviewRow key={`mid-${label}`} label={label} />
@@ -134,7 +134,7 @@ export default function NewProgramLockedPreviewClient({
               <div className={`${EDITOR_SECTION_TITLE_CLASS} truncate whitespace-nowrap`}>
                 Bibliothèque d&apos;exercice
               </div>
-              <p className="mt-1 text-[10px] font-medium text-[var(--muted)]">
+              <p className="mt-1 text-[10px] font-medium text-[color:var(--muted)]">
                 Glisser dans une séance ou un bloc ouvert.
               </p>
 
@@ -172,7 +172,7 @@ export default function NewProgramLockedPreviewClient({
                 </div>
               </div>
             ) : (
-              <div className="mt-3 px-3 pb-3 text-sm text-[var(--muted)]">Aucun exercice.</div>
+              <div className="mt-3 px-3 pb-3 text-sm text-[color:var(--muted)]">Aucun exercice.</div>
             )}
           </div>
         </aside>

@@ -20,7 +20,7 @@ export async function sendProgramShareEmail(params: SendProgramShareEmailParams)
   }
 
   const from = String(process.env.RESEND_FROM ?? 'Trainly <no-reply@trainly.app>').trim()
-  const subject = `Programme : ${params.programTitle || 'Aperçu'}`
+  const subject = `Programme : ${params.programTitle || 'Aperçu'} (aperçu)`
 
   const safeMessage = String(params.message ?? '').trim()
   const intro = safeMessage ? `<p style=\"margin:0 0 14px 0; font-size:14px; line-height:1.5; color:#111827;\">${escapeHtml(safeMessage).replace(/\n/g, '<br/>')}</p>` : ''

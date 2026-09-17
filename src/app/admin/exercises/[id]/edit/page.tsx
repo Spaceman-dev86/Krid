@@ -1,345 +1,305 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
-import BackButtonClient from '../../../../../components/BackButtonClient'
-import { createClient } from '../../../../../lib/supabase/server'
-import { isPngOrGifMedia, signExerciseMediaUrl } from '../../../../../lib/exerciseMedia'
+import { ExerciseNotesAndBridgesEditor } from '@/src/components/admin/ExerciseNotesAndBridgesEditor'
+import { Button, ConfirmSubmitButton, DaBanner, PageTitle, Muted, daFieldClass, daSelectClass } from '@/src/components/ui'
+import {
+  EXERCISE_DIFFICULTIES,
+  EXERCISE_MUSCLE_GROUPS,
+} from '@/src/lib/exercises/ficheConstants'
+import { requirePlatformAdmin } from '@/src/lib/auth/requirePlatformAdmin'
+import { signExerciseMediaUrl } from '@/src/lib/exerciseMedia'
+import {
+  deleteTrainlyExerciseAction,
+  publishTrainlyExerciseAction,
+  saveDraftTrainlyExerciseAction,
+  updateTrainlyExerciseAction,
+} from '../../exerciseFicheActions'
 
-type UntypedMaybeSingleResult = { data: unknown; error: { message?: string } | null }
-type UntypedMutationResult = { error: { message?: string } | null }
+export const dynamic = 'force-dynamic'
 
-type UntypedMutationChain = {
-  eq: (col: string, val: string) => Promise<UntypedMutationResult>
-}
-
-type UntypedQuery = {
-  select: (columns: string) => UntypedQuery
-  eq: (col: string, val: string) => UntypedQuery
-  maybeSingle: () => Promise<UntypedMaybeSingleResult>
-  update: (values: Record<string, unknown>) => UntypedMutationChain
-  delete: () => UntypedMutationChain
-}
-
-const inputClassName =
-  'w-full rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-[#341c44] ring-1 ring-black/10 outline-none'
-
-type PageProps = {
+type Props = {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ returnTo?: string }>
+  searchParams?: Promise<{ error?: string; returnTo?: string }> | { error?: string; returnTo?: string }
 }
 
-export default async function AdminExerciseEditPage({ params, searchParams }: PageProps) {
+type TypeRow = { id: string; label: string }
+type Candidate = {
+  id: string
+  name: string
+  exercise_type_id: string | null
+  sport_id: string | null
+}
+
+type ExerciseRow = {
+  id: string
+  name: string
+  description: string | null
+  muscle_group: string | null
+  difficulty: string | null
+  video_url: string | null
+  demo_media_path: string | null
+  exercise_type_id: string | null
+  sport_id: string | null
+  allow_duplicate: boolean | null
+  coach_id: string | null
+  status: string | null
+  named_notes?: { title: string; body: string }[] | null
+}
+
+export default async function AdminExerciseEditPage({ params, searchParams }: Props) {
   const { id } = await params
-  const { returnTo } = await searchParams
-  const backHref =
-    typeof returnTo === 'string' && returnTo.trim().length > 0
-      ? `/admin/exercises/${id}?returnTo=${encodeURIComponent(returnTo)}`
-      : `/admin/exercises/${id}`
+  const q = await Promise.resolve(searchParams ?? {})
+  const { supabase } = await requirePlatformAdmin()
 
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect('/loginadmin')
-  }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .maybeSingle()
-
-  const typedProfile = profile as unknown as { role: string | null } | null
-  if (typedProfile?.role !== 'admin') {
-    redirect('/dashboard')
-  }
-
-  const { data: exercise, error } = await (supabase as unknown as { from: (t: string) => UntypedQuery })
+  const { data: exercise, error } = await supabase
     .from('exercise_library')
     .select(
-      'id,name,description,muscle_group,difficulty,video_url,common_mistakes,demo_media_path,replacement_exercise_id',
+      'id,name,description,muscle_group,difficulty,video_url,demo_media_path,exercise_type_id,sport_id,allow_duplicate,coach_id,named_notes,status',
     )
     .eq('id', id)
+    .is('deleted_at', null)
     .maybeSingle()
 
-  if (error || !exercise) {
-    redirect('/admin/exercises')
+  if (error || !exercise) redirect('/admin/exercises')
+
+  const row = exercise as unknown as ExerciseRow
+  if (row.coach_id != null) {
+    redirect(`/admin/exercises/${id}`)
   }
 
-  const typedExercise = exercise as unknown as {
-    id: string
-    name: string
-    description: string | null
-    muscle_group: string | null
-    difficulty: string | null
-    video_url: string | null
-    common_mistakes: string | null
-    demo_media_path: string | null
-    replacement_exercise_id: string | null
-  }
+  const demoMediaUrl = await signExerciseMediaUrl(supabase, row.demo_media_path)
 
-  const demoMediaUrl = await signExerciseMediaUrl(supabase, typedExercise.demo_media_path ?? null)
+  const { data: typesRaw } = await supabase
+    .from('exercise_types' as never)
+    .select('id, label')
+    .is('coach_id' as never, null)
+    .is('deleted_at' as never, null)
+    .order('label' as never, { ascending: true })
 
-  let replacement: { id: string; name: string; demo_media_path: string | null } | null = null
-  let replacementMediaUrl: string | null = null
+  const types = (typesRaw ?? []) as TypeRow[]
 
-  if (typedExercise.replacement_exercise_id) {
-    const { data: rep } = await (supabase as unknown as { from: (t: string) => UntypedQuery })
+  const { data: sportsRaw } = await supabase
+    .from('sports' as never)
+    .select('id, label')
+    .is('coach_id' as never, null)
+    .is('deleted_at' as never, null)
+    .order('label' as never, { ascending: true })
+
+  const sports = (sportsRaw ?? []) as { id: string; label: string }[]
+
+  const { data: candidatesRaw } = await supabase
+    .from('exercise_library')
+    .select('id, name, exercise_type_id, sport_id')
+    .is('coach_id', null)
+    .is('deleted_at', null)
+    .eq('status', 'published')
+    .order('name', { ascending: true })
+    .limit(500)
+
+  const candidates = (candidatesRaw ?? []) as Candidate[]
+
+  const { data: linksRaw } = await supabase
+    .from('exercise_replacements' as never)
+    .select('replacement_id, title, note, position')
+    .eq('exercise_id' as never, id as never)
+    .order('position' as never, { ascending: true })
+
+  const initialBridges = (
+    (linksRaw ?? []) as { replacement_id: string; title: string | null; note: string | null }[]
+  ).map((l) => ({
+    title: l.title ?? '',
+    note: l.note ?? '',
+    exerciseId: l.replacement_id,
+  }))
+
+  const missingBridgeIds = initialBridges
+    .map((b) => b.exerciseId)
+    .filter((eid) => eid && !candidates.some((c) => c.id === eid))
+  if (missingBridgeIds.length) {
+    const { data: orphanRaw } = await supabase
       .from('exercise_library')
-      .select('id,name,demo_media_path')
-      .eq('id', typedExercise.replacement_exercise_id)
-      .maybeSingle()
-
-    const typedRep = rep as unknown as { id: string; name: string; demo_media_path: string | null } | null
-    if (typedRep) {
-      replacement = typedRep
-      if (typedRep.demo_media_path) {
-        replacementMediaUrl = await signExerciseMediaUrl(supabase, typedRep.demo_media_path)
-      }
-    }
-  }
-
-  async function updateExercise(formData: FormData) {
-    'use server'
-
-    const supabase = await createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      redirect('/loginadmin')
-    }
-
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .maybeSingle()
-
-    const typedProfile = profile as unknown as { role: string | null } | null
-    if (typedProfile?.role !== 'admin') {
-      redirect('/dashboard')
-    }
-
-    const name = String(formData.get('name') ?? '').trim()
-    const description = String(formData.get('description') ?? '').trim()
-    const muscleGroup = String(formData.get('muscle_group') ?? '').trim()
-    const difficulty = String(formData.get('difficulty') ?? '').trim()
-    const videoUrl = String(formData.get('video_url') ?? '').trim()
-    const commonMistakes = String(formData.get('common_mistakes') ?? '').trim()
-    const demoMediaPath = String(formData.get('demo_media_path') ?? '').trim()
-    const replacementExerciseIdRaw = String(formData.get('replacement_exercise_id') ?? '').trim()
-
-    const replacementExerciseId = replacementExerciseIdRaw || null
-
-    if (!name) {
-      redirect(`/admin/exercises/${id}/edit?error=missing_name`)
-    }
-
-    const { error } = await (supabase as unknown as { from: (t: string) => UntypedQuery })
-      .from('exercise_library')
-      .update({
-        name,
-        description: description || null,
-        muscle_group: muscleGroup || null,
-        difficulty: difficulty || null,
-        video_url: videoUrl || null,
-        common_mistakes: commonMistakes || null,
-        demo_media_path: demoMediaPath || null,
-        replacement_exercise_id: replacementExerciseId,
+      .select('id, name, exercise_type_id, sport_id')
+      .in('id', missingBridgeIds)
+    for (const e of (orphanRaw ?? []) as Candidate[]) {
+      candidates.push({
+        id: e.id,
+        name: `${e.name} (non publié)`,
+        exercise_type_id: e.exercise_type_id,
+        sport_id: e.sport_id,
       })
-      .eq('id', id)
-
-    if (error) {
-      redirect(`/admin/exercises/${id}/edit?error=${encodeURIComponent(error.message ?? 'unknown_error')}`)
     }
-
-    redirect('/admin/exercises')
   }
 
-  async function deleteExercise() {
-    'use server'
-
-    const supabase = await createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      redirect('/loginadmin')
-    }
-
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .maybeSingle()
-
-    const typedProfile = profile as unknown as { role: string | null } | null
-    if (typedProfile?.role !== 'admin') {
-      redirect('/dashboard')
-    }
-
-    const { error } = await (supabase as unknown as { from: (t: string) => UntypedQuery })
-      .from('exercise_library')
-      .delete()
-      .eq('id', id)
-
-    if (error) {
-      redirect(`/admin/exercises/${id}/edit?error=${encodeURIComponent(error.message ?? 'unknown_error')}`)
-    }
-
-    redirect('/admin/exercises')
-  }
+  const backHref = '/admin/exercises'
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-6">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="text-xs font-extrabold text-[var(--brand)]">Modifier l&apos;exercice</div>
-          <div className="mt-1 truncate text-lg font-extrabold text-[var(--brand)]">{typedExercise.name}</div>
-        </div>
-
-        <BackButtonClient
-          href={backHref}
-          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--brand)] text-white"
-          ariaLabel="Retour"
-        >
-          ←
-        </BackButtonClient>
+    <main className="mx-auto max-w-3xl px-4 py-8 md:px-6">
+      <div className="mb-6">
+        <p className="text-sm text-[color:var(--muted)]">
+          <Link href={backHref} className="font-semibold text-[var(--brand)] hover:underline">
+            ← Exercices
+          </Link>
+        </p>
+        <PageTitle className="mt-2">Modifier l’exercice</PageTitle>
+        <Muted className="mt-1 truncate">{row.name}</Muted>
       </div>
 
+      {q.error ? <DaBanner tone="danger" className="mb-4">{q.error}</DaBanner> : null}
+
       {demoMediaUrl ? (
-        <div className="mt-4 overflow-hidden rounded-2xl bg-white ring-1 ring-black/10">
-          <img src={demoMediaUrl} alt={typedExercise.name} className="h-48 w-full object-cover" loading="lazy" />
+        <div className="mb-4 overflow-hidden rounded-[var(--radius-lg)] bg-[var(--surface)] ring-1 ring-[var(--border)]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={demoMediaUrl} alt={row.name} className="mx-auto max-h-56 w-full object-contain p-4" />
         </div>
       ) : null}
 
-      <form action={updateExercise} className="mt-4 grid gap-4">
-        <label className="grid gap-2">
-          <span className="text-xs font-extrabold text-[var(--brand)]">Nom</span>
-          <input name="name" required defaultValue={typedExercise.name} className={inputClassName} />
+      <form className="grid gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-da-sm">
+        <input type="hidden" name="id" value={id} />
+
+        <label className="grid gap-1.5">
+          <span className="text-xs font-semibold text-[color:var(--muted)]">Nom *</span>
+          <input name="name" required defaultValue={row.name} className={daFieldClass} />
         </label>
 
-        <label className="grid gap-2">
-          <span className="text-xs font-extrabold text-[var(--brand)]">Description</span>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="grid gap-1.5">
+            <span className="text-xs font-semibold text-[color:var(--muted)]">Type *</span>
+            <select
+              name="exercise_type_id"
+              required
+              defaultValue={row.exercise_type_id ?? ''}
+              className={daSelectClass}
+            >
+              <option value="" disabled>
+                Sélectionner…
+              </option>
+              {types.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="grid gap-1.5">
+            <span className="text-xs font-semibold text-[color:var(--muted)]">Sport *</span>
+            <select
+              name="sport_id"
+              required
+              defaultValue={row.sport_id ?? ''}
+              className={daSelectClass}
+            >
+              <option value="" disabled>
+                Sélectionner…
+              </option>
+              {sports.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <label className="grid gap-1.5">
+          <span className="text-xs font-semibold text-[color:var(--muted)]">Consignes</span>
           <textarea
             name="description"
             rows={3}
-            defaultValue={typedExercise.description ?? ''}
-            className={inputClassName}
+            defaultValue={row.description ?? ''}
+            className={daFieldClass}
           />
         </label>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <label className="grid gap-2">
-            <span className="text-xs font-extrabold text-[var(--brand)]">Groupe musculaire</span>
-            <select name="muscle_group" defaultValue={typedExercise.muscle_group ?? ''} className={inputClassName}>
-              <option value="">Sélectionner…</option>
-              <option value="Pectoraux">Pectoraux</option>
-              <option value="Dos">Dos</option>
-              <option value="Épaules">Épaules</option>
-              <option value="Biceps">Biceps</option>
-              <option value="Triceps">Triceps</option>
-              <option value="Jambes">Jambes</option>
-              <option value="Fessiers">Fessiers</option>
-              <option value="Ischios">Ischios</option>
-              <option value="Quadriceps">Quadriceps</option>
-              <option value="Mollets">Mollets</option>
-              <option value="Abdos">Abdos</option>
-              <option value="Full body">Full body</option>
+          <label className="grid gap-1.5">
+            <span className="text-xs font-semibold text-[color:var(--muted)]">Groupe musculaire</span>
+            <select name="muscle_group" defaultValue={row.muscle_group ?? ''} className={daSelectClass}>
+              <option value="">—</option>
+              {EXERCISE_MUSCLE_GROUPS.map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
             </select>
           </label>
 
-          <label className="grid gap-2">
-            <span className="text-xs font-extrabold text-[var(--brand)]">Difficulté</span>
-            <select name="difficulty" defaultValue={typedExercise.difficulty ?? ''} className={inputClassName}>
-              <option value="">Sélectionner…</option>
-              <option value="Débutant">Débutant</option>
-              <option value="Intermédiaire">Intermédiaire</option>
-              <option value="Avancé">Avancé</option>
-              <option value="Maison">Maison (poids du corps / à domicile)</option>
+          <label className="grid gap-1.5">
+            <span className="text-xs font-semibold text-[color:var(--muted)]">Difficulté</span>
+            <select name="difficulty" defaultValue={row.difficulty ?? ''} className={daSelectClass}>
+              <option value="">—</option>
+              {EXERCISE_DIFFICULTIES.map((d) => (
+                <option key={d} value={d}>
+                  {d}
+                </option>
+              ))}
             </select>
           </label>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <label className="grid gap-2">
-            <span className="text-xs font-extrabold text-[var(--brand)]">URL vidéo</span>
-            <input name="video_url" defaultValue={typedExercise.video_url ?? ''} className={inputClassName} />
+          <label className="grid gap-1.5">
+            <span className="text-xs font-semibold text-[color:var(--muted)]">YouTube / URL vidéo</span>
+            <input name="video_url" defaultValue={row.video_url ?? ''} className={daFieldClass} />
           </label>
-
-          <label className="grid gap-2">
-            <span className="text-xs font-extrabold text-[var(--brand)]">Chemin média (Storage)</span>
-            <input name="demo_media_path" defaultValue={typedExercise.demo_media_path ?? ''} className={inputClassName} />
+          <label className="grid gap-1.5">
+            <span className="text-xs font-semibold text-[color:var(--muted)]">Média démo (Storage)</span>
+            <input name="demo_media_path" defaultValue={row.demo_media_path ?? ''} className={daFieldClass} />
           </label>
         </div>
 
-        <label className="grid gap-2">
-          <span className="text-xs font-extrabold text-[var(--brand)]">Erreurs fréquentes</span>
-          <textarea
-            name="common_mistakes"
-            rows={3}
-            defaultValue={typedExercise.common_mistakes ?? ''}
-            className={inputClassName}
-          />
-        </label>
+        <ExerciseNotesAndBridgesEditor
+          candidates={candidates}
+          types={types}
+          sports={sports}
+          initialNotes={Array.isArray(row.named_notes) ? row.named_notes : []}
+          initialBridges={initialBridges}
+          excludeId={id}
+        />
 
-        <label className="grid gap-2">
-          <span className="text-xs font-extrabold text-[var(--brand)]">ID exercice de remplacement (optionnel)</span>
+        <label className="inline-flex items-center gap-2 text-sm text-[color:var(--fg)]">
           <input
-            name="replacement_exercise_id"
-            defaultValue={typedExercise.replacement_exercise_id ?? ''}
-            className={inputClassName}
+            type="checkbox"
+            name="allow_duplicate"
+            defaultChecked={row.allow_duplicate !== false}
+            className="accent-[var(--brand)]"
           />
+          Duplicable (coach peut récupérer une copie)
         </label>
 
-        {replacement ? (
-          <div className="rounded-2xl bg-white px-4 py-3 ring-1 ring-black/10">
-            <div className="text-xs font-extrabold text-[var(--brand)]">Exercice de remplacement actuel</div>
-            <div className="mt-3 flex items-center gap-3">
-              <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-black/5 ring-1 ring-black/10">
-                {replacementMediaUrl ? (
-                  <img
-                    src={replacementMediaUrl}
-                    alt={replacement.name}
-                    className={
-                      isPngOrGifMedia(replacement.demo_media_path ?? replacementMediaUrl)
-                        ? 'h-full w-full object-contain p-2'
-                        : 'h-16 w-16 object-cover'
-                    }
-                    loading="lazy"
-                  />
-                ) : null}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-sm font-extrabold text-[var(--brand)]">{replacement.name}</div>
-                <Link href={`/admin/exercises/${replacement.id}`} className="mt-1 inline-block text-sm text-black/60">
-                  Voir la fiche
-                </Link>
-              </div>
-            </div>
-          </div>
-        ) : null}
-
-        <button
-          type="submit"
-          className="rounded-full bg-[var(--brand)] px-6 py-3 text-sm font-semibold text-white hover:opacity-90"
-        >
-          Enregistrer
-        </button>
+        <div className="flex flex-wrap gap-2 pt-2">
+          {row.status === 'published' ? (
+            <>
+              <Button type="submit" formAction={updateTrainlyExerciseAction}>
+                Enregistrer
+              </Button>
+              <Button type="submit" formAction={saveDraftTrainlyExerciseAction} variant="secondary">
+                Repasser en brouillon
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button type="submit" formAction={publishTrainlyExerciseAction}>
+                Publier
+              </Button>
+              <Button type="submit" formAction={saveDraftTrainlyExerciseAction} variant="secondary">
+                Sauvegarder brouillon
+              </Button>
+            </>
+          )}
+        </div>
       </form>
 
-      <form action={deleteExercise} className="mt-6">
-        <button
-          type="submit"
-          className="rounded-full bg-red-600 px-6 py-3 text-sm font-semibold text-white hover:opacity-90"
+      <form action={deleteTrainlyExerciseAction} className="mt-6">
+        <input type="hidden" name="id" value={id} />
+        <ConfirmSubmitButton
+          confirmMessage="Mettre cet exercice Trainly à la corbeille ?"
+          variant="secondary"
+          size="sm"
         >
           Supprimer
-        </button>
+        </ConfirmSubmitButton>
       </form>
     </main>
   )

@@ -15,10 +15,18 @@ export async function createClient() {
           return cookieStore.getAll()
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            cookieStore.set(name, value, options)
-          )
+          // Server Components cannot set cookies — middleware refreshes the session.
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            )
+          } catch {
+            // Ignored in RSC; session refresh happens in middleware / route handlers.
+          }
         },
+      },
+      auth: {
+        flowType: 'pkce',
       },
     }
   )

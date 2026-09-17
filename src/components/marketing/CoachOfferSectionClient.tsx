@@ -159,7 +159,7 @@ export default function CoachOfferSectionClient({ icons }: Props) {
           <h2 className="text-4xl font-extrabold tracking-tight text-[#9b6bb8] sm:text-5xl md:text-[3.25rem] md:leading-tight">
             Crée ta solution personnalisée pour ton sport et tes clients
           </h2>
-          <p className="mt-5 text-base leading-relaxed text-[var(--muted)] md:text-lg">
+          <p className="mt-5 text-base leading-relaxed text-[color:var(--muted)] md:text-lg">
             Que tu sois coach muscu, running, yoga ou autre, je t&apos;aide à lancer un site ou une app à ton nom — pour
             vendre tes programmes avec une présentation digne d&apos;un produit pro.
           </p>
@@ -174,7 +174,7 @@ export default function CoachOfferSectionClient({ icons }: Props) {
             >
               <OfferIcon icon={icons[offer.iconKey]} fallbackIcon={offer.fallbackIcon} />
               <h3 className="mt-6 text-lg font-extrabold text-[#341c44]">{offer.title}</h3>
-              <p className="mt-3 text-sm leading-relaxed text-[var(--muted)]">{offer.description}</p>
+              <p className="mt-3 text-sm leading-relaxed text-[color:var(--muted)]">{offer.description}</p>
               <OfferCta label={offer.cta} variant="mirror" />
             </Link>
           ))}

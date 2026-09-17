@@ -56,7 +56,7 @@ export default function ProgramsGridClient({
             onClick={() => setOpenId(p.id)}
             className="group block text-left"
           >
-            <div className="relative overflow-hidden rounded-3xl shadow-sm ring-1 ring-black/10 transition group-hover:-translate-y-0.5 group-hover:shadow-md">
+            <div className="relative overflow-hidden rounded-3xl shadow-da-sm ring-1 ring-black/10 transition group-hover:-translate-y-0.5 group-hover:shadow-md">
               {resolveImageUrl(p.image_url) ? (
                 <img
                   src={resolveImageUrl(p.image_url) ?? ''}
@@ -157,9 +157,9 @@ export default function ProgramsGridClient({
                     </div>
                   </div>
 
-                  <div className="grid gap-3 border-t border-black/10 bg-white p-5 sm:p-7">
-                    <div className="text-xs font-extrabold uppercase tracking-wide text-[#341c44]/70">À quoi t’attendre</div>
-                    <div className="text-sm font-semibold text-black/70">
+                  <div className="grid gap-3 border-t border-[var(--border)] bg-[var(--surface)] p-5 sm:p-7">
+                    <div className="text-xs font-extrabold uppercase tracking-wide text-[color-mix(in_srgb,var(--brand)_70%,transparent)]">À quoi t’attendre</div>
+                    <div className="text-sm font-semibold text-[color:var(--fg)]">
                       Tu accèdes à une application complète pour suivre tes programmes, consulter la bibliothèque d’exercices, et échanger avec ton coach. La clé te donne accès à la lecture du programme depuis ton espace.
                     </div>
                   </div>

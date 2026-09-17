@@ -103,7 +103,7 @@ function BlockTimelineItem({
     return (
       <div className="min-w-0">
         <div className="truncate text-sm font-extrabold text-[var(--brand)]">{block.title ?? 'Bloc'}</div>
-        {block.notes ? <div className="mt-0.5 truncate text-xs text-[var(--muted)]">{block.notes}</div> : null}
+        {block.notes ? <div className="mt-0.5 truncate text-xs text-[color:var(--muted)]">{block.notes}</div> : null}
       </div>
     )
   }
@@ -131,7 +131,7 @@ function BlockTimelineItem({
         >
           <div className="truncate text-sm font-extrabold text-[var(--brand)]">{block.title ?? 'Bloc'}</div>
           {!isExpanded && block.notes ? (
-            <div className="mt-0.5 line-clamp-1 text-xs text-[var(--muted)]">{block.notes}</div>
+            <div className="mt-0.5 line-clamp-1 text-xs text-[color:var(--muted)]">{block.notes}</div>
           ) : null}
         </div>
         <div className={`flex shrink-0 ${EDITOR_ICON_GAP}`} onClick={(e) => e.stopPropagation()}>
@@ -234,7 +234,7 @@ function ExerciseTimelineItem({
       <div className="min-w-0">
         <div className="truncate text-sm font-extrabold text-[var(--brand)]">{label}</div>
         {hasProgramExerciseDetails(pe) ? (
-          <div className="mt-0.5 truncate text-xs text-[var(--muted)]">{formatProgramExerciseDetails(pe)}</div>
+          <div className="mt-0.5 truncate text-xs text-[color:var(--muted)]">{formatProgramExerciseDetails(pe)}</div>
         ) : null}
       </div>
     )
@@ -250,9 +250,9 @@ function ExerciseTimelineItem({
           {!isEditing && hasProgramExerciseDetails(pe) ? (
             <div className="mt-1 grid gap-1">
               {detailsLine ? (
-                <div className="truncate text-xs text-[var(--muted)]">{detailsLine}</div>
+                <div className="truncate text-xs text-[color:var(--muted)]">{detailsLine}</div>
               ) : null}
-              {pe.notes ? <div className="truncate text-xs text-[var(--muted)]">{pe.notes}</div> : null}
+              {pe.notes ? <div className="truncate text-xs text-[color:var(--muted)]">{pe.notes}</div> : null}
             </div>
           ) : null}
         </div>

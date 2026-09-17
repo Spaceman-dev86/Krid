@@ -1,1 +1,1 @@
-export { default } from '../../src/app/admin/layout'
+export { default } from '@/src/app/admin/layout'

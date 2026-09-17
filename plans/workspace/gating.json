@@ -1,0 +1,72 @@
+{
+  "id": "gating",
+  "title": "Gating & offre",
+  "description": "Matrice Starter / Business / Scale / Studio. Alignée sur /simulation et appPricing.ts",
+  "tree": [
+    {
+      "id": "strategy",
+      "label": "Stratégie"
+    },
+    {
+      "id": "client-install",
+      "label": "Install client (PWA / stores)"
+    },
+    {
+      "id": "starter",
+      "label": "Starter (39€)"
+    },
+    {
+      "id": "business",
+      "label": "Business (89€)"
+    },
+    {
+      "id": "scale",
+      "label": "Scale (179€)"
+    },
+    {
+      "id": "studio",
+      "label": "Studio (299€+)"
+    },
+    {
+      "id": "matrix",
+      "label": "Matrice features"
+    }
+  ],
+  "blocks": {
+    "strategy": {
+      "bodyHtml": "<p>1. Build Business · 2. Gater Starter · 3. Scale · 4. Ops Studio. Une seule codebase, flag <code>plan_tier</code>.</p><p><strong>Essai</strong> : 14 jours <strong>sans CB</strong>, plan cible Business (features MVP), compte seedé avec <strong>clients fictifs</strong>. Puis checkout abo SaaS.</p><p><strong>Surfaces</strong> : marketing (convertir) ≠ app coach (produire) ≠ portail client (suivre). Voir Auth.</p>",
+      "images": [],
+      "critiqueHtml": "<p></p><p><strong>✅</strong> Essai 14j sans CB + fictifs — aligné Auth.</p><p></p>"
+    },
+    "client-install": {
+      "bodyHtml": "<p><strong>Expérience d’install côté sportif (selon l’abo du coach)</strong></p><table><thead><tr><th>Offre coach</th><th>Install client</th></tr></thead><tbody><tr><td><strong>Starter</strong></td><td>PWA <strong>Trainly</strong> (nom + icône) + UI aux <strong>couleurs du coach</strong></td></tr><tr><td><strong>Business</strong></td><td>PWA <strong>coach</strong> (nom + logo + couleurs) — vrai white-label. Footer « Propulsé par Trainly » OK. Pas de store.</td></tr><tr><td><strong>Scale</strong></td><td>Même coque coach que Business, plus soignée + <strong>push</strong></td></tr><tr><td><strong>Studio</strong></td><td>Option <strong>stores</strong> / domaine perso / quasi zéro Trainly</td></tr></tbody></table><p>En une phrase : Starter = coque Trainly teintée coach · Business+ = coque coach · Studio = store si besoin.</p><p>Sous-domaine recommandé dès Business pour une icône home-screen vraiment « par coach ».</p>",
+      "images": [],
+      "critiqueHtml": "<p></p><p><strong>✅</strong> Tableau install client figé (discussion produit).</p><p></p>"
+    },
+    "starter": {
+      "bodyHtml": "<p>Max 15 clients. Programmes, bibliothèque, espace client, calendrier basique.</p><p><strong>Portail client</strong> : PWA installable marque <strong>Trainly</strong> ; couleurs coach dans l’UI. Pas de chat / nutrition / paiements / white-label nom+icône.</p>",
+      "images": [],
+      "critiqueHtml": ""
+    },
+    "business": {
+      "bodyHtml": "<p>Max 75. <strong>Cible MVP / cœur de prix.</strong></p><ul><li>White-label portail : logo, couleurs, <strong>nom + icône PWA du coach</strong></li><li>Sous-domaine <code>tonnom.trainly.app</code> (ou équivalent)</li><li>Stripe, nutrition, exos perso, chat, rappels email</li><li>Pas d’apps stores</li></ul>",
+      "images": [],
+      "critiqueHtml": "<p></p><p><strong>✅</strong> Business = coque coach, pas Trainly à l’écran d’accueil.</p><p></p>"
+    },
+    "scale": {
+      "bodyHtml": "<p>Max 200. Tout Business + couche « mobile / rétention / data ».</p><ul><li>PWA coach plus soignée</li><li><strong>Notifications push</strong> web</li><li>Sync Strava</li><li>Stats clients avancées</li><li>Support prioritaire</li></ul><p><strong>Pourquoi ~2× le prix de Business (89€ → 179€) ?</strong></p><ul><li><strong>Quota</strong> : 75 → 200 clients (le coach scale son CA ; le plan suit le volume)</li><li><strong>Push</strong> : coût infra + valeur rétention (levier business réel, pas cosmétique)</li><li><strong>Intégrations</strong> (Strava) : maintenance OAuth / sync</li><li><strong>Analytics</strong> : différenciateur pro pour studios / gros volumes</li><li><strong>Support prioritaire</strong> : coût ops</li></ul><p>Ce n’est <em>pas</em> « juste une meilleure PWA » : Business a déjà la coque coach. Scale vend <strong>capacité + engagement + data</strong>.</p>",
+      "images": [],
+      "critiqueHtml": "<p></p><p><strong>❓</strong> Le delta 89→179 est-il assez vendable avec push+Strava+stats+125 clients en plus, ou faut-il un jalon feature plus tangible (ex. équipes / multi-coach) ?</p><p></p>"
+    },
+    "studio": {
+      "bodyHtml": "<p>500+. Zéro Trainly, domaine perso, stores, base isolée, clause rachat. Pas de custom code.</p>",
+      "images": [],
+      "critiqueHtml": ""
+    },
+    "matrix": {
+      "bodyHtml": "<table><thead><tr><th>Section</th><th>Starter</th><th>Business</th><th>Scale</th><th>Studio</th></tr></thead><tbody><tr><td>Clients</td><td>15</td><td>75</td><td>200</td><td>500+</td></tr><tr><td>Chat</td><td>non</td><td>oui</td><td>oui</td><td>oui</td></tr><tr><td>Nutrition</td><td>non</td><td>oui</td><td>oui</td><td>oui</td></tr><tr><td>Compta / Stripe</td><td>non</td><td>oui</td><td>oui</td><td>oui</td></tr><tr><td>PWA nom/icône</td><td>Trainly</td><td>Coach</td><td>Coach</td><td>Coach / store</td></tr><tr><td>Couleurs coach UI</td><td>oui</td><td>oui</td><td>oui</td><td>oui</td></tr><tr><td>Push</td><td>non</td><td>non</td><td>oui</td><td>oui</td></tr><tr><td>Strava / stats+</td><td>non</td><td>non</td><td>oui</td><td>oui</td></tr><tr><td>Apps stores</td><td>non</td><td>non</td><td>non</td><td>option</td></tr></tbody></table>",
+      "images": [],
+      "critiqueHtml": "<p></p><p><strong>✅</strong> Matrice alignée tableau install client.</p><p></p>"
+    }
+  }
+}

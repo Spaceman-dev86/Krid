@@ -1,0 +1,598 @@
+{
+  "id": "clients",
+  "title": "Clients (portail)",
+  "description": "Portail `/c/[slug]`. Bottom nav (haut→bas) : Profil · Historique · Accueil · Séance · Coach. Section « Au démarrage » = parcours pré-app (pas un onglet).",
+  "featureMenuLayout": true,
+  "pageShellLayout": false,
+  "tree": [
+    {
+      "id": "demarrage",
+      "label": "Au démarrage (hors nav)",
+      "route": "/c/[slug]/onboarding",
+      "kind": "menu"
+    },
+    {
+      "id": "profil",
+      "label": "Profil",
+      "route": "/c/[slug]/profil",
+      "kind": "menu"
+    },
+    {
+      "id": "historique",
+      "label": "Historique",
+      "route": "/c/[slug]/historique",
+      "kind": "menu"
+    },
+    {
+      "id": "home",
+      "label": "Accueil",
+      "route": "/c/[slug]/home",
+      "kind": "menu"
+    },
+    {
+      "id": "seance",
+      "label": "Séance",
+      "route": "/c/[slug]/seance",
+      "kind": "menu"
+    },
+    {
+      "id": "coach",
+      "label": "Coach",
+      "route": "/c/[slug]/coach",
+      "kind": "menu"
+    }
+  ],
+  "blocks": {},
+  "menus": {
+    "demarrage": {
+      "arrival": {
+        "bodyHtml": "<p><strong>Pas un onglet bottom nav</strong> — parcours pré-app → land <code>/home</code>.</p>\n<p><strong>Flow canonique (FIGÉ)</strong> :</p>\n<ol>\n<li><strong>Showroom</strong> — le client choisit une presta · pour <strong>acheter</strong> il doit créer un compte / se connecter (Auth avant paiement)</li>\n<li><strong>Paiement</strong> → grant</li>\n<li>Reçoit le <strong>lien d’installation</strong> (unique coach)</li>\n<li>Ouvre le lien → <strong>Install PWA obligatoire</strong> (pas de parcours « rester sur ordi / navigateur » V1)</li>\n<li><strong>Questionnaire</strong> — seulement si <strong>nouveau compte</strong> · 1ʳᵉ ouverture post-grant</li>\n<li><strong>Date de début</strong> — si Fitness + calendrier ON + pas de date coach · sinon skip</li>\n<li>→ <code>/home</code> (même si plans encore En attente)</li>\n</ol>\n<p><strong>Déjà un compte</strong> (login) : jamais de questionnaire — même soft app puis rachat, 2ᵉ presta, réinstall.</p>\n<p><strong>Lien paiement 24h / renouvellement</strong> : si déjà onboardé → login → <code>/home</code> direct · le nouveau programme apparaît En attente sur Accueil.</p>\n<p><strong>E-mails</strong> : confirmation d’e-mail à l’inscription · rappel si onboarding non terminé.</p>",
+        "images": [],
+        "critiqueHtml": "<p><strong>✅ FIGÉ Au démarrage</strong> · 0 ❓ ouvertes.</p>\n<ul>\n<li>Auth au checkout showroom · puis lien install · PWA obligatoire · pas desktop V1</li>\n<li>Questionnaire : nouveau compte only · 1 q/écran · progression · pas de Passer client · tout répondre</li>\n<li>Abandon : choix Reprendre / Recommencer · idem date début</li>\n<li>Date ≥ aujourd’hui · RO ensuite Profil · land /home</li>\n<li>Réponses → fiche coach · réédit Profil · nouvelles questions coach → Mes infos (≠ bilans)</li>\n</ul>"
+      },
+      "features": [
+        {
+          "id": "f-cli-boot-auth",
+          "label": "Auth (au checkout showroom)",
+          "route": "/c/[slug]/coach",
+          "bodyHtml": "<p>Création compte / login <strong>requis pour payer</strong> sur la showroom / fiche presta. Après payé : compte existe déjà.</p>\n<p>Lien install : si session déjà ouverte → pas de re-auth · enchaîne install / étapes restantes. Sinon login puis suite.</p>\n<p>Inscription → e-mail de <strong>confirmation d’e-mail</strong>.</p>\n<p><strong>Mot de passe oublié</strong> (client) : lien e-mail → page reset — même pattern que coach / Admin action reset.</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Auth avant achat · logique validée.</p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-cli-boot-install",
+          "label": "Install PWA (obligatoire)",
+          "route": "/c/[slug]/onboarding",
+          "bodyHtml": "<p>Via lien install unique post-paiement (ou Mon app). <strong>Obligatoire</strong> pour entrer dans le portail client V1 — pas de version ordinateur / « continuer dans le navigateur ».</p>\n<p>Réinstall : repasse par le prompt install · <strong>pas</strong> de questionnaire.</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-cli-boot-questionnaire",
+          "label": "Questionnaire onboarding",
+          "route": "/c/[slug]/onboarding",
+          "bodyHtml": "<p><strong>Qui</strong> : nouveau compte · 1ʳᵉ ouverture post-grant only. Compte existant / 2ᵉ presta / soft-app puis rachat / réinstall → <strong>jamais</strong>.</p>\n<p><strong>UI</strong> : 1 question / écran · barre de progression · <strong>pas</strong> de bouton Passer (réservé preview coach) · questionnaire entier obligatoire · il faut répondre à <strong>toutes</strong> les questions pour valider.</p>\n<p><strong>Abandon</strong> (ferme l’app) : à la reprise → choix <strong>Reprendre</strong> où il en était / <strong>Recommencer</strong> depuis le début.</p>\n<p><strong>Données</strong> : visibles coach sur <strong>fiche client</strong> · ré-éditables client dans Profil → Mes infos. Si le coach ajoute des questions plus tard → elles apparaissent dans Mes infos pour les anciens clients (bilans = catégorie à part).</p>\n<p>Rappel e-mail si onboarding non terminé.</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-cli-boot-start-date",
+          "label": "Date de début programme",
+          "route": "/c/[slug]/onboarding",
+          "bodyHtml": "<p>Étape présente seulement si plan fitness <strong>mode calendrier</strong> et coach <strong>sans</strong> date de début. Sinon absente → /home.</p>\n<p>Choix : à partir d’<strong>aujourd’hui</strong> seulement (pas de date passée). Puis lecture seule dans Profil (dates début). Abandon → Reprendre / Recommencer (même pattern).</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-cli-boot-renewal",
+          "label": "Renouvellement / lien 24h",
+          "route": "/c/[slug]/home",
+          "bodyHtml": "<p>Déjà onboardé → login → <code>/home</code> direct. Nouveau programme / grant → apparaît En attente sur Accueil (achat ≠ démarrage).</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ</strong></p>",
+          "images": [],
+          "children": []
+        }
+      ]
+    },
+    "profil": {
+      "arrival": {
+        "bodyHtml": "<p>Bottom nav 1 · <code>/c/[slug]/profil</code>.</p>\n<p><strong>Sections</strong> :</p>\n<ol>\n<li><strong>En-tête</strong> — photo · nom · e-mail · pastille nb bilans non ouverts</li>\n<li><strong>Mes infos</strong> — compte · dates début (par plan) · physique RO</li>\n<li><strong>Mes prestations</strong> — décompte · à venir · Facture (global)</li>\n<li><strong>Bilans</strong></li>\n</ol>\n<p><strong>Pas de déconnexion</strong> V1 (PWA mono-coach : fermer l’app suffit).</p>",
+        "images": [],
+        "critiqueHtml": "<p><strong>✅ FIGÉ Profil</strong> · 0 ❓ ouvertes.</p>\n<ul>\n<li>Physique = lecture seule + message prochain bilan</li>\n<li>Sexe éditable · téléphone visible coach</li>\n<li>Dates début = une par presta/plan · RO</li>\n<li>Facture = 1 bouton en tête · pop-up presta + commentaire · 1 demande en cours max</li>\n<li>Pastille bilans = <strong>nombre</strong> · clear par bilan ouvert</li>\n<li>Sync physique = <strong>seul bilan soumis</strong> (pas edit manuel coach nutrition → Mes infos)</li>\n<li>Pas de logout dédié V1</li>\n</ul>"
+      },
+      "features": [
+        {
+          "id": "f-cli-profil-header",
+          "label": "En-tête",
+          "route": "/c/[slug]/profil",
+          "bodyHtml": "<p>Photo (upload, remplace avatar) · prénom/nom · e-mail.</p>\n<p><strong>Pastille numérique</strong> = nb de bilans non encore ouverts. Clic → Bilans.</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Pastille = nombre.</p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-cli-profil-infos",
+          "label": "Mes infos",
+          "route": "/c/[slug]/profil/infos",
+          "bodyHtml": "<p><code>/c/[slug]/profil/infos</code></p>\n<p><strong>A · Compte (éditables)</strong></p>\n<ul>\n<li>E-mail · mot de passe</li>\n<li>Prénom · nom · <strong>téléphone</strong> (visible fiche coach)</li>\n<li><strong>Sexe</strong> — éditable librement</li>\n<li>Date de naissance → âge calculé (auto dans le temps)</li>\n<li><strong>Dates de début</strong> — une par presta/plan fitness ou nutrition concerné · <strong>lecture seule</strong></li>\n</ul>\n<p><strong>B · Physique (lecture seule)</strong></p>\n<ul>\n<li>Poids · taille · mensurations issues du <strong>dernier bilan soumis</strong> uniquement</li>\n<li>Tap / tentative d’édition → message : <em>« Ces infos seront à mettre à jour avec votre coach lors du prochain bilan. »</em></li>\n<li>Un edit manuel du coach dans Nutrition <strong>ne réécrit pas</strong> Mes infos client — seul un bilan soumis le fait</li>\n</ul>\n<p><strong>C · Questionnaire Au démarrage</strong> — réponses ré-éditables. Si le coach ajoute des questions Mon app plus tard → nouvelles questions apparaissent ici (≠ bilans).</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Physique RO+message · sexe éditable · tél. coach · dates début multi · sync = bilan soumis only.</p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-cli-profil-prestas",
+          "label": "Mes prestations",
+          "route": "/c/[slug]/profil/prestations",
+          "bodyHtml": "<p><code>/c/[slug]/profil/prestations</code></p>\n<p><strong>En tête de page</strong> : bouton unique <strong>Facture</strong>.</p>\n<p>Liste (actives puis passées) :</p>\n<ul>\n<li>Nom · modules · période / statut</li>\n<li><strong>Décompte des paiements</strong> — payé (montants · dates · mode) vs reste / échéances</li>\n<li><strong>Paiements à venir</strong> — prochaines échéances si renouvelable · CTA payer si lien 24h</li>\n</ul>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Bouton Facture global en tête.</p>",
+          "images": [],
+          "children": [
+            {
+              "id": "f-cli-profil-factures",
+              "label": "Factures (sous Prestations)",
+              "route": "/c/[slug]/profil/prestations/factures",
+              "bodyHtml": "<p>Via bouton Facture.</p>\n<ul>\n<li><strong>Historique</strong> — PDF générés coach · télécharger / preview</li>\n<li><strong>Demander une facture</strong> — pop-up : <strong>choix presta</strong> + <strong>commentaire</strong> optionnel → notif coach (cloche → <code>/payments/suivi-clients</code>). Pas de PDF auto.</li>\n<li>Si une demande est <strong>déjà en cours</strong> (non traitée) → bouton bloqué + message « Une demande est déjà en cours ».</li>\n</ul>",
+              "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Pop-up presta+commentaire · 1 demande en cours · notif → suivi-clients (pas fiche client).</p>",
+              "images": [],
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "f-cli-profil-bilans",
+          "label": "Bilans",
+          "route": "/c/[slug]/profil/bilans",
+          "bodyHtml": "<p><code>/c/[slug]/profil/bilans</code></p>\n<p>Liste : à remplir · soumis · verrouillés J+14.</p>\n<p><strong>Pastille</strong> = nombre de bilans non ouverts (Profil + entrée Bilans). Ouvrir le bilan A décrémente / clear A seulement.</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Pastille nombre · clear par ouverture.</p>",
+          "images": [],
+          "children": [
+            {
+              "id": "f-cli-bil-detail",
+              "label": "Remplir / voir un bilan",
+              "route": "/c/[slug]/profil/bilans/[bilanId]",
+              "bodyHtml": "<p>Photos libres · mensurations · questions. Soumission → notif coach + <strong>MAJ Mes infos physiques</strong>.</p>\n<p>À l’ouverture : bilan marqué lu (pastille −1).</p>",
+              "critiqueHtml": "<p><strong>✅</strong></p>",
+              "images": [],
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    "historique": {
+      "arrival": {
+        "bodyHtml": "<p>Bottom nav 2 · <code>/c/[slug]/historique</code>.</p>\n<p><strong>Land</strong> : <strong>1 ligne unique</strong> par exo ou par bloc (pas de doublon), triée par dernière activité — sources mélangées (plan coach · Libre · fork).</p>\n<p><strong>Chrome</strong> : icône calendrier (pop-up semaines · jours avec séance · clic jour → liste exos/blocs du jour, sans lien séance) · icône étoile (favoris exos <strong>et blocs</strong> V1). Étoile toggle sur chaque ligne.</p>\n<p><strong>Fiche</strong> <code>/historique/[itemId]</code> — Historique · Records · À propos.</p>\n<p><strong>Blocs</strong> : métriques / records pilotés par l’<strong>objectif du bloc</strong> (défini à la création coach ou client ; optionnel = pas d’objectif → métriques génériques tonnage / complétion). Exos du bloc cliquables.</p>\n<p><strong>1RM</strong> : estimation affichée si aucun 1RM réel n’a été fait, ou si le dernier 1RM réel date de <strong>&gt; 1 mois</strong>. Max reps record = à n’importe quelle charge. Pas de 1RM au niveau bloc.</p>",
+        "images": [],
+        "critiqueHtml": "<p><strong>✅ FIGÉ Historique</strong> · 0 ❓ bloquantes.</p>\n<ul>\n<li>1 ligne / exo|bloc · exos de bloc via fiche bloc (pas doublon land) · calendrier → items only · favoris blocs V1</li>\n<li>1RM estimé si pas de vrai / &gt;1 mois · max reps any charge · pas 1RM bloc</li>\n<li>Objectif bloc (coach + client) pilote graphes/records · objectif optionnel</li>\n</ul>"
+      },
+      "features": [
+        {
+          "id": "f-cli-hist-land",
+          "label": "Land — récents",
+          "route": "/c/[slug]/historique",
+          "bodyHtml": "<p><strong>1 ligne unique</strong> par exo id / par bloc id (pas de doublon).</p><ul><li>Exo fait <em>dans</em> un bloc : accessible via la fiche bloc (liste exos cliquables) — pas de 2ᵉ ligne land pour la même occurrence.</li><li>Exo fait en standalone : sa propre ligne.</li><li>Historique/records de l’exo agrègent standalone + apparitions dans des blocs.</li></ul><p>Aperçu métrique · étoile · tri dernière activité.</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Pas de doublon · exos de bloc via le bloc · agrégat perf exo OK.</p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-cli-hist-calendar",
+          "label": "Icône calendrier (pop-up)",
+          "route": "/c/[slug]/historique",
+          "bodyHtml": "<p>Pop-up semaines · pastilles jours avec séance · clic jour → liste <strong>blocs + exos standalone</strong> du jour (exos imbriqués = dans le bloc, pas en doublon à plat).</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-cli-hist-fav",
+          "label": "Favoris (icône étoile)",
+          "route": "/c/[slug]/historique/favoris",
+          "bodyHtml": "<p>Favoris exos + <strong>blocs V1</strong>. Toggle étoile land + fiche. Picker Séance réutilise cette liste.</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-cli-hist-item",
+          "label": "Fiche exo / bloc",
+          "route": "/c/[slug]/historique/[itemId]",
+          "bodyHtml": "<p>3 onglets : Historique · Records · À propos. Header : nom · étoile · retour.</p>",
+          "critiqueHtml": "<p><strong>⏳</strong> Voir enfants propositions.</p>",
+          "images": [],
+          "children": [
+            {
+              "id": "f-cli-hist-tab-history",
+              "label": "Onglet Historique (graphes)",
+              "route": "/c/[slug]/historique/[itemId]",
+              "bodyHtml": "<p>Max graphique.</p>\n<p><strong>Exo V1</strong> : courbe best set / estim. 1RM (règle &gt;1 mois) · tonnage/sem · nb séries/sem · tableau séances.</p>\n<p><strong>Bloc V1</strong> : graphe principal = <strong>métrique de l’objectif</strong> (temps, charge/poids, reps, tonnage…) si défini · sinon fallback tonnage agrégé + % complétion + liste exos/sparklines.</p>",
+              "critiqueHtml": "<p><strong>✅ FIGÉ</strong></p>",
+              "images": [],
+              "children": []
+            },
+            {
+              "id": "f-cli-hist-tab-records",
+              "label": "Onglet Records",
+              "route": "/c/[slug]/historique/[itemId]",
+              "bodyHtml": "<p><strong>Exo</strong> : estim./vrai 1RM · charge max · max reps/série (toute charge) · tonnage max séance · séries max/semaine.</p>\n<p><strong>Bloc</strong> : record aligné sur l’objectif (ex. meilleur temps, meilleure charge cible…) · tonnage max · max complétions/sem · <strong>pas de 1RM bloc</strong>. Sans objectif → records génériques seulement.</p>",
+              "critiqueHtml": "<p><strong>✅ FIGÉ</strong></p>",
+              "images": [],
+              "children": []
+            },
+            {
+              "id": "f-cli-hist-tab-about",
+              "label": "Onglet À propos",
+              "route": "/c/[slug]/historique/[itemId]",
+              "bodyHtml": "<p>Fiche biblio (aligné coach / Trainly) :</p>\n<ul>\n<li>Médias (photo / vidéo) · muscles / sport</li>\n<li>Instructions / tips (texte coach ou Trainly)</li>\n<li>Unités habituelles</li>\n</ul>\n<p>Bloc : description + composition (exos cliquables) · pas forcément anatomie 3D V1.</p>\n<p>Lecture seule — édition fiche = coach / admin, pas client.</p>",
+              "critiqueHtml": "<p><strong>✅ FIGÉ</strong></p>",
+              "images": [],
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    "home": {
+      "arrival": {
+        "bodyHtml": "<p>Bottom nav 3 · land · <code>/c/[slug]/home</code>.</p>\n<p><strong>Calendrier général</strong> — card semaine · jour actuel en avant · swipe + flèches · filtre <strong>dropdown</strong> (défaut <strong>Séances</strong>) · icône <strong>book</strong> top droite (plans).</p>\n<p><strong>Filtres</strong> : Séances · Repas · RDV · Tout. Sur Séances → <strong>pas</strong> d’items repas/RDV (il faut changer de filtre ou Tout). Idem isolation relative sur Repas / RDV.</p>\n<p><strong>Composition</strong> :</p>\n<ol>\n<li>Calendrier semaine (+ bandeau mode séances si besoin)</li>\n<li>Si un RDV est dans la semaine ouverte → <strong>card RDV</strong> dédiée (visibilité)</li>\n<li>Cards <strong>Prochaine séance</strong> + <strong>Prochain repas</strong> (riches, scroll OK)</li>\n<li>Card Docs (Drive mergé)</li>\n</ol>\n<p>Ex-<code>/programme</code> &amp; ex-<code>/nutrition</code> calendrier = cette card (selon filtre). Player / détail repas = écrans plein écran depuis le calendrier (fonctionnalités conservées).</p>\n<p>Miroir coach RO : même calendrier séances → <code>/clients/list/[id]/program</code> · nutrition → <code>/clients/list/[id]/nutrition</code>.</p>",
+        "images": [],
+        "critiqueHtml": "<p><strong>✅ FIGÉ Accueil v2</strong></p>\n<ul>\n<li>Card calendrier = hub · Fitness &amp; Nutrition en <strong>sous-fonctions</strong> (filtres)</li>\n<li>Styles : Fait · <strong>Fait-édité</strong> (add/commentaire/exo Non fait) · <strong>Pas fait</strong> · Libre · En cours</li>\n<li>Book · cards prochaines · card RDV · Docs · miroir coach</li>\n</ul>"
+      },
+      "features": [
+        {
+          "id": "f-cli-home-plan-states",
+          "label": "États plan (Fitness & Nutrition)",
+          "route": "/c/[slug]/home",
+          "bodyHtml": "<p>États inchangés (En attente · Démarré · Pause · Passé) · UI de gestion = <strong>icône book</strong>, plus la liste sous le calendrier.</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Pastilles · ordre · pause par plan/track · pop-up.</p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-cli-home-book-plans",
+          "label": "Top bar · icône Book (plans)",
+          "route": "/c/[slug]/home",
+          "bodyHtml": "<p>Icône book <strong>haut droite</strong> Accueil → liste plans Fitness/Nutrition · détail · Pause / Démarrer / Reprendre. Filtre = dropdown compact.</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-cli-home-week-calendar",
+          "label": "Card calendrier semaine (unifié)",
+          "route": "/c/[slug]/home",
+          "bodyHtml": "<p>Cœur Accueil · semaine · highlight aujourd’hui · swipe + flèches · dropdown filtre (défaut <strong>Séances</strong> = cache repas &amp; RDV).</p>\n<p><strong>Sous-couches</strong> (enfants) : Fitness (filtre Séances) · Nutrition (filtre Repas) · + RDV via filtre / card RDV.</p>\n<p>Mode calendrier programme : séances sur jours. Mode séances : non faites en bandeau · faites → grille au jour du start. Libre faite → grille jour start.</p>\n<p><strong>Retard</strong> : au start → case jour prévu <strong>vide</strong> · résultat sur jour réel. <strong>Dimanche 23:59</strong> → style <strong>Pas fait</strong>. <strong>Passer</strong> depuis détail.</p>\n<p>Multi pastilles / jour OK. Miroir coach RO program / nutrition.</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ</strong> · Fitness &amp; Nutrition = sous-fonctions de cette card.</p>",
+          "images": [],
+          "children": [
+            {
+              "id": "f-cli-home-cal-filter",
+              "label": "Dropdown filtre",
+              "route": "/c/[slug]/home",
+              "bodyHtml": "<p>Séances (défaut) · Repas · RDV · Tout. Isolation stricte : sur Séances on ne voit pas repas/RDV dans la grille.</p>",
+              "critiqueHtml": "<p><strong>✅ FIGÉ</strong></p>",
+              "images": [],
+              "children": []
+            },
+            {
+              "id": "f-cli-home-fitness",
+              "label": "Couche Fitness (filtre Séances)",
+              "route": "/c/[slug]/home",
+              "bodyHtml": "<p>Activée par le filtre <strong>Séances</strong> (ou Tout) sur la card calendrier — remplace l’ancienne page calendrier <code>/programme</code>.</p>\n<p>Deep-link player : <code>/programme/seance/[sessionId]</code> (plein écran). Gestion plans → icône book.</p>",
+              "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Sous-fonction calendrier Accueil.</p>",
+              "images": [],
+              "children": [
+                {
+                  "id": "f-cli-prog-calendar",
+                  "label": "Affichage séances (dans la card Accueil)",
+                  "route": "/c/[slug]/home",
+                  "bodyHtml": "<p>Dans la card calendrier Accueil (filtre Séances / Tout) :</p>\n<ul>\n<li>Swipe + flèches semaines</li>\n<li><strong>Mode calendrier</strong> coach : séances sur les jours · message « prévue pour [jour] » si start anticipé</li>\n<li><strong>Mode séances</strong> : bandeau haut des non faites · au Démarrer → ancre jour civil · multi OK</li>\n</ul>\n<p>Plus de vue calendrier séparée <code>/programme</code>.</p>",
+                  "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Swipe + flèches · placement jour au start (mode séances) · early-start OK avec message (mode calendrier).</p>",
+                  "images": [],
+                  "children": [
+                    {
+                      "id": "f-cli-prog-week-slots",
+                      "label": "Bandeau séances (mode hors calendrier)",
+                      "route": "/c/[slug]/home",
+                      "bodyHtml": "<p>Mode <strong>séances</strong> only. Bandeau séances de la semaine ouverte.</p>\n<p>Au Démarrer → la séance s’ancre sur le <strong>jour civil du start</strong> (ex. mardi 4 → apparaît sur mardi). <strong>Plusieurs séances le même jour</strong> sont autorisées (ex. séance 1 et séance 2 démarrées mardi = deux cards sur mardi).</p>",
+                      "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Placement = jour du démarrage · multi OK.</p>",
+                      "images": [],
+                      "children": []
+                    },
+                    {
+                      "id": "f-cli-prog-day-grid",
+                      "label": "Grille jours (mode calendrier)",
+                      "route": "/c/[slug]/home",
+                      "bodyHtml": "<p>Mode <strong>calendrier</strong> : grille Lun→Dim datée. Séances sur leur jour prévu (le coach peut déjà en avoir mis plusieurs le même jour).</p>\n<p>Démarrage anticipé / retard : autorisé + message « prévue pour [jour] ». Swipe + flèches.</p>",
+                      "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Message + start libre dans la semaine.</p>",
+                      "images": [],
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "id": "f-cli-prog-session",
+                  "label": "Player séance (détail + exécution)",
+                  "route": "/c/[slug]/programme/seance/[sessionId]",
+                  "bodyHtml": "<p><code>/programme/seance/[sessionId]</code></p>\n<p><strong>A · Détail</strong> — aperçu · CTA <strong>Démarrer la séance</strong> = ouvre le <em>mode run</em> seulement (n’enchaîne pas auto le 1er exo). Mode calendrier + jour ≠ aujourd’hui → message « prévue pour [jour] ».</p>\n<p><strong>B · Mode run</strong> — liste blocs / exos · <strong>ordre libre</strong>. Chaque exo et chaque bloc a un CTA Démarrer. Snapshot du contenu figé <strong>à l’ouverture du run</strong> (édit coach en parallèle n’altère pas la run en cours).</p>\n<p>Reprise si app fermée : <strong>« Reprendre la séance »</strong> / <strong>« Arrêter la séance »</strong>. Si arrêt au milieu : on <strong>garde le réalisé</strong> · les items non faits portent une <strong>étiquette « Non fait »</strong> (visibles coach + client RO).</p>\n<p><strong>C · Séries + repos (exo)</strong> :</p>\n<ol>\n<li>Client fait la série puis ouvre la <strong>pop-up saisie</strong> / valide la fin de série.</li>\n<li>Repos coach → timer auto à la validation · sinon icône timer · saisie possible pendant le repos · skip OK · <strong>Finir l’exercice</strong> / bloc OK.</li>\n</ol>\n<p><strong>D · Bloc</strong> — plus libre : repos à la demande · Finir le bloc · ordre libre des exos.</p>\n<p><strong>E · Champs / vidéo</strong> — UI masquée si coach n’a rien renseigné (0 séries / 0 reps…).</p>\n<p><strong>F · Fin</strong> — Terminer → réalisé mémorisé. Pas de re-run de la même instance. One-shot programme terminé = nouvelle instance possible.</p>\n<p><strong>G · Ajouts client</strong> — pendant la séance (rendu final), le client peut <strong>ajouter des blocs ou des exercices</strong> à la run (détachés du template coach) · visibles dans le réalisé.</p>",
+                  "critiqueHtml": "<p><strong>✅ FIGÉ Player</strong> · Accueil Programme prêt à clôturer.</p>\n<ul>\n<li>Arrêt = garde partiel + étiquette Non fait</li>\n<li>Multi-séances même jour OK (mode séances)</li>\n<li>Snapshot à l’ouverture du run</li>\n<li>Nutri add repas/ingrédients visible coach</li>\n<li>Add bloc/exo client en run · pop-up saisie · fiche exo · tag Fait</li>\n</ul>",
+                  "images": [],
+                  "children": [
+                    {
+                      "id": "f-cli-prog-session-rest",
+                      "label": "Timers repos",
+                      "route": "/c/[slug]/programme/seance/[sessionId]",
+                      "bodyHtml": "<p>Auto-start timer si repos coach à la <strong>validation de série</strong>. Sinon icône « Lancer un timer ». Skip / Couper OK. Pendant timer : saisie série. Jamais obligatoire (Finir exo / bloc).</p>\n<p>Dans un <strong>bloc</strong> : timer repos déclenchable librement par le client même si repos coach présent.</p>",
+                      "critiqueHtml": "<p><strong>✅ FIGÉ</strong></p>",
+                      "images": [],
+                      "children": []
+                    },
+                    {
+                      "id": "f-cli-prog-session-log",
+                      "label": "Pop-up saisie série / réalisé",
+                      "route": "/c/[slug]/programme/seance/[sessionId]",
+                      "bodyHtml": "<p><strong>Pop-up par série (ou validation exo)</strong> :</p>\n<ul>\n<li>Colonne / zone <strong>Demandé</strong> (consignes coach) — lecture.</li>\n<li>Zone <strong>Réalisé</strong> — <strong>préremplie</strong> avec les valeurs coach · le client modifie puis valide.</li>\n<li><strong>Note</strong> (commentaire) sur l’exo / la série selon UI.</li>\n<li>Peut <strong>ajouter une unité</strong> (mémorisée, visible coach).</li>\n</ul>\n<p>Après validation complète de l’exo → card exo <strong>taguée « Fait »</strong> (couleur distinctive). Si séance arrêtée : non traités = étiquette <strong>« Non fait »</strong>.</p>",
+                      "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Pop-up demandé/réalisé prérempli · note · +unité · tag Fait / Non fait.</p>",
+                      "images": [],
+                      "children": []
+                    },
+                    {
+                      "id": "f-cli-prog-session-video",
+                      "label": "Exo vidéo / à suivre",
+                      "route": "/c/[slug]/programme/seance/[sessionId]",
+                      "bodyHtml": "<p>Pas de type dédié obligatoire : le coach met l’exo (souvent vidéo) avec 0 séries / 0 reps → UI série masquée. Même shell run · média · Fait · commentaire · timer optionnel.</p>",
+                      "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Champs vides = masqués.</p>",
+                      "images": [],
+                      "children": []
+                    },
+                    {
+                      "id": "f-cli-prog-session-exo-fiche",
+                      "label": "Fiche exercice (pop-up)",
+                      "route": "/c/[slug]/programme/seance/[sessionId]",
+                      "bodyHtml": "<p>Icône <strong>i</strong> (ou équivalent) sur chaque exo de la séance → <strong>pop-up fiche exercice</strong> (médias, consignes biblio, notes coach) — lecture seule pendant la run.</p>",
+                      "critiqueHtml": "<p><strong>✅ FIGÉ</strong></p>",
+                      "images": [],
+                      "children": []
+                    },
+                    {
+                      "id": "f-cli-prog-session-add",
+                      "label": "Ajouter bloc / exo (client)",
+                      "route": "/c/[slug]/programme/seance/[sessionId]",
+                      "bodyHtml": "<p>En mode run (rendu final) : CTA pour <strong>ajouter un exercice</strong> ou un <strong>bloc</strong> à la séance en cours (depuis biblio coach / recherche selon dispo V1).</p>\n<p>Ajouts = partie du réalisé client (coach les voit comme le reste). Ne modifient pas le template programme source.</p>",
+                      "critiqueHtml": "<p><strong>✅ FIGÉ intention</strong> · détail UI picker = build.</p>",
+                      "images": [],
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "id": "f-cli-prog-oneshot-rerun",
+                  "label": "Refaire un programme one-shot",
+                  "route": "/c/[slug]/home",
+                  "bodyHtml": "<p>Depuis icône <strong>book</strong> (plan terminé one-shot) : refaire = <strong>nouvelle instance</strong> de plan. Séances closes de l’ancienne = RO.</p>",
+                  "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Re-run = nouveau cycle programme · pas re-run séance.</p>",
+                  "images": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "f-cli-home-nutrition",
+              "label": "Couche Nutrition (filtre Repas)",
+              "bodyHtml": "<p>Activée par le filtre <strong>Repas</strong> (ou Tout) sur la card calendrier — remplace <code>/nutrition</code> calendrier.</p>\n<p>Jours / repas positionnés · valider · détail · add repas/ingrédients · commentaire jour. Styles repas validé / non.</p>",
+              "route": "/c/[slug]/home",
+              "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Sous-fonction calendrier Accueil.</p>",
+              "images": [],
+              "children": [
+                {
+                  "id": "f-cli-nutri-week",
+                  "label": "Semaine repas (dans la card Accueil)",
+                  "route": "/c/[slug]/home",
+                  "bodyHtml": "<p>Même card calendrier · filtre Repas · swipe/flèches. Pas de player chronométré.</p>",
+                  "critiqueHtml": "<p><strong>✅ FIGÉ</strong></p>",
+                  "images": [],
+                  "children": []
+                },
+                {
+                  "id": "f-cli-nutri-day",
+                  "label": "Journée / repas",
+                  "route": "/c/[slug]/home",
+                  "bodyHtml": "<p>Journée (plus légère qu’une séance) :</p>\n<ul>\n<li>Clic repas → détail (recette, quantités).</li>\n<li>Valider <strong>par repas</strong> <em>ou</em> <strong>Valider la journée</strong>.</li>\n<li>Le client peut <strong>ajouter un repas</strong> ou des <strong>ingrédients</strong> — <strong>visibles coach</strong> dans le réalisé nutrition (comme le fitness).</li>\n<li><strong>Commentaire au niveau jour uniquement</strong>.</li>\n</ul>",
+                  "critiqueHtml": "<p><strong>✅ FIGÉ</strong> · adds client visibles coach.</p>",
+                  "images": [],
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "f-cli-home-session-styles",
+          "label": "Styles items calendrier",
+          "route": "/c/[slug]/home",
+          "bodyHtml": "<p><strong>Séances — styles distincts obligatoires</strong> :</p>\n<ul>\n<li><strong>Fait</strong> — séance terminée « conforme » : saisie des champs prévus (charge, RPE client…) OK sans basculer. Pas d’add, pas de commentaire séance, aucun exo laissé Non fait.</li>\n<li><strong>Fait-édité</strong> — séance terminée avec au moins : <strong>exo/bloc ajouté</strong> · <em>ou</em> <strong>commentaire séance</strong> · <em>ou</em> au moins un exo tagué <strong>Non fait</strong> (étiquette exo).</li>\n<li><strong>Pas fait</strong> (non fait au niveau séance) — <strong>Passer</strong> depuis détail · ou auto <strong>Dimanche 23:59</strong>. Reste sur le jour prévu.</li>\n<li><strong>Libre</strong> — issue de <code>/seance</code> (création ou fork adapté).</li>\n<li><strong>En cours</strong> — run ouverte.</li>\n</ul>\n<p><strong>À ne pas confondre</strong> : étiquette exo <em>Non fait</em> (dans le player) ≠ style séance <em>Pas fait</em> (semaine / Passer). Un exo Non fait dans une séance terminée → style séance <strong>Fait-édité</strong>.</p>\n<p><strong>RDV</strong> : à répondre / confirmé. <strong>Repas</strong> : validé / non.</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Pas fait + Fait-édité (add / commentaire séance / exo Non fait) explicites.</p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-cli-home-cal-click",
+          "label": "Clic item calendrier",
+          "route": "/c/[slug]/home",
+          "bodyHtml": "<p>Clic item selon état :</p>\n<ul>\n<li>Non jouée / bandeau → détail · Démarrer · Passer</li>\n<li>En cours → Reprendre / Arrêter</li>\n<li>Fait / Fait-édité / Pas fait / Libre faite → RO réalisé</li>\n<li>Repas → détail / valider</li>\n<li>RDV → détail accept/refuse si besoin</li>\n</ul>\n<p>Pas de « refaire » depuis Accueil (→ <code>/seance</code>).</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-cli-home-rdv-week-card",
+          "label": "Card RDV (si RDV dans la semaine)",
+          "route": "/c/[slug]/home",
+          "bodyHtml": "<p>Si la semaine ouverte contient au moins un RDV (confirmé ou à répondre selon règles affichage) → card dédiée sous le calendrier pour le rendre visible hors filtre Séances (ou toujours visible — défaut : visible dès qu’il y a un RDV dans la semaine, même filtre Séances, car card hors grille).</p>",
+          "critiqueHtml": "<p><strong>✅</strong> Card RDV semaine · détail : visible même filtre Séances (hors grille) pour ne pas rater le RDV.</p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-cli-home-next-session",
+          "label": "Card Prochaine séance",
+          "route": "/c/[slug]/home",
+          "bodyHtml": "<p>Sous le calendrier (avec Prochain repas) — raccourci one-tap vers la prochaine séance à faire (plan démarré prioritaire, sinon DIY en cours ?).</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Card riche · scroll OK.</p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-cli-home-nutri-today",
+          "label": "Card Prochain repas",
+          "route": "/c/[slug]/home",
+          "bodyHtml": "<p>À côté / sous Prochaine séance — prochain repas à valider du plan nutrition démarré.</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Card riche.</p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-cli-home-docs",
+          "label": "Zone Docs → /drive",
+          "route": "/c/[slug]/drive",
+          "bodyHtml": "<p>Une seule card <strong>Docs</strong> → <code>/drive</code> lecture seule.</p>\n<p><strong>Merge</strong> de tous les Drive des <strong>prestas en cours</strong> qui incluent le module Drive (+ partages groupes Drive ON si applicable). Pas une entrée par presta.</p>\n<p>Presta terminée → ses docs sortent du merge (sauf autre presta active qui les couvre encore).</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ</strong></p>",
+          "images": [],
+          "children": []
+        }
+      ]
+    },
+    "seance": {
+      "arrival": {
+        "bodyHtml": "<p>Bottom nav 4 — <strong>Séance</strong> · hub DIY / refaire.</p>\n<p><strong>≠ Accueil</strong> : Accueil = agenda + run officielle du plan · pas de « refaire » depuis le calendrier. Ici = créer, forker une séance programme déjà faite, gérer Mes séances.</p>\n<p><strong>Layout hub <code>/seance</code></strong> (haut → bas) :</p>\n<ol>\n<li><strong>Bandeau En cours</strong> (si run libre ouverte) — Reprendre / Arrêter (même règles player)</li>\n<li><strong>CTA Créer une séance</strong> → <code>/seance/new</code></li>\n<li><strong>Séances du programme</strong> — liste des séances <em>déjà faites</em> du plan fitness actif → Éditer (fork) / Démarrer</li>\n<li><strong>Mes séances</strong> — brouillons · créations 100 % client · forks adaptés effectués</li>\n</ol>\n<p>Toute séance jouée depuis ici → pastille <strong>Libre</strong> sur le calendrier Accueil au <strong>jour du start</strong> · <strong>ne compte pas</strong> dans la progression % du plan coach.</p>",
+        "images": [],
+        "critiqueHtml": "<p><strong>✅ FIGÉ Séance</strong> · UI hub claire · aligné Accueil v2 · 0 ❓.</p>"
+      },
+      "features": [
+        {
+          "id": "f-cli-seance-hub",
+          "label": "Hub /seance",
+          "route": "/c/[slug]/seance",
+          "bodyHtml": "<p>Une page, 3 blocs + bandeau En cours. Empty states : pas de plan actif → bloc « programme » masqué ou message ; Mes séances peut rester (RO si soft sans plan).</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-cli-seance-create",
+          "label": "Créer une séance",
+          "route": "/c/[slug]/seance/new",
+          "bodyHtml": "<p><strong>Éditeur séance</strong> (même logique que le coach au niveau séance) :</p>\n<ul>\n<li>Biblio <strong>coach + Trainly</strong> · add exos / blocs</li>\n<li>Séries, reps, repos, commentaires</li>\n<li>Choisir / renseigner unités <strong>existantes</strong> · <strong>ne peut pas créer</strong> une unité</li>\n<li><strong>Pas de bouton Dupliquer</strong> (éditeur coach)</li>\n<li><strong>Enregistrer brouillon</strong> → Mes séances · <strong>Démarrer</strong> → player tout de suite</li>\n</ul>\n<p>Après run : style <strong>Libre</strong> sur Accueil · entrée dans Mes séances.</p>\n<p><strong>Bloc créé côté client</strong> : même champ <strong>objectif</strong> optionnel (temps · poids/charge · reps · autre) qu’au coach — pilote Historique/Records.</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-cli-seance-from-program",
+          "label": "Séances programme déjà faites",
+          "route": "/c/[slug]/seance",
+          "bodyHtml": "<p>Liste (plan fitness <strong>actif</strong> = pas Passé) des séances déjà réalisées du plan.</p>\n<p>Actions ligne :</p>\n<ul>\n<li><strong>Démarrer</strong> — nouvelle instance (copie) sans edit · Libre sur Accueil au jour du start</li>\n<li><strong>Éditer</strong> — fork dans l’éditeur séance → puis Démarrer · Libre (adaptée)</li>\n</ul>\n<p>L’historique de la 1ʳᵉ run officielle reste intact (RO Accueil / coach). Fin de plan → cette liste + forks dérivés <strong>retirés côté client</strong> · coach conserve l’historique.</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-cli-seance-mine",
+          "label": "Mes séances",
+          "route": "/c/[slug]/seance",
+          "bodyHtml": "<p>Contenu :</p>\n<ul>\n<li>Brouillons (créations non jouées)</li>\n<li>Créations 100 % client (faites ou non)</li>\n<li>Forks adaptés effectués (tant que plan source actif)</li>\n</ul>\n<p><strong>Cycle créations 100 % client</strong> :</p>\n<ul>\n<li>Plan/abo actif ou à venir (même coach) → Démarrer / Éditer OK</li>\n<li>Sinon → <strong>RO sans Démarrer</strong></li>\n<li>Reprise abo/plan → actions de nouveau</li>\n</ul>\n<p>Depuis une séance faite RO : possible <strong>Dupliquer</strong> vers nouvelle instance (contenu, pas le réalisé) — distinct du bouton Dupliquer coach dans l’éditeur.</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-cli-seance-player",
+          "label": "Player /seance/[id]",
+          "route": "/c/[slug]/seance/[sessionId]",
+          "bodyHtml": "<p>Même moteur que <code>/programme/seance/[id]</code> (FIGÉ Accueil) : run, repos, pop-up saisie, tags exo Fait/Non fait, add exo/bloc, fiche, Reprendre/Arrêter.</p>\n<p>Badge <strong>Libre</strong>. Terminer → calendrier Accueil jour du start. Si add / commentaire séance / exo Non fait → style calendrier <strong>Fait-édité</strong> (sous Libre ou en plus du marquage Libre — affichage : pastille Libre + nuance Fait-édité si terminée avec écarts).</p>\n<p><strong>Règle d’affichage Accueil</strong> : origin Libre prioritaire pour la pastille « Libre » ; si terminée avec écarts → variante visuelle Libre + Fait-édité (ou Libre-édité) pour que le coach voie l’écart.</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ</strong> · Libre terminée avec add/commentaire/Non fait = nuance Fait-édité visible.</p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-cli-seance-coach-bridge",
+          "label": "Pont coach",
+          "route": "/clients/list/[id]/program",
+          "bodyHtml": "<p>DIY / forks visibles sur le miroir calendrier RO (styles Libre / Fait-édité…) · n’impactent pas le % progression du plan.</p>\n<p>Historique conservé coach après fin de plan même si retiré de /seance client.</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ</strong></p>",
+          "images": [],
+          "children": []
+        }
+      ]
+    },
+    "coach": {
+      "arrival": {
+        "bodyHtml": "<p>Bottom nav 5 · <code>/c/[slug]/coach</code> — relation au coach (ex-showroom).</p>\n<p><strong>Parcours sans presta (prospect)</strong> : pas d’app / pas de portail modules — uniquement la <strong>page web vitrine</strong> <code>/coach</code> (lien invite / Partager / fiche presta). Après paiement → lien install → onboarding → <code>/home</code>.</p>\n<p><strong>Client connecté</strong> (presta active <em>ou</em> passée) : vitrine + top bar Messages / Calendrier. Peut racheter d’autres prestas même si une est encore en cours.</p>\n<p><strong>Règle plans (FIGÉ)</strong> :</p>\n<ul>\n<li><strong>Achat ≠ démarrage</strong> — payer une presta n’auto-démarre aucun plan. Le nouveau programme / plan nutri apparaît sur Accueil en <strong>« En attente »</strong> jusqu’au choix client.</li>\n<li><strong>1 fitness démarré</strong> + <strong>1 nutrition démarré</strong> max — tracks <em>indépendants</em> (ex. fitness presta 2 + nutrition presta 1 OK).</li>\n<li>Pour démarrer un autre plan du même track : <strong>mettre en pause</strong> celui démarré. Sinon → pop-up d’explication.</li>\n<li><strong>Drive</strong> : accessible tant que la presta qui inclut Drive est <em>en cours</em> (active).</li>\n<li><strong>Post-presta</strong> : app soft gardée (Coach · Messages · Historique · CTA racheter) ; Accueil fitness/nutri/docs gated / vides.</li>\n</ul>\n<p>Alias <code>/showroom</code> → <code>/coach</code>.</p>",
+        "images": [],
+        "critiqueHtml": "<p><strong>✅ FIGÉ Coach</strong> · calendrier client = demande/file RDV (agenda = Accueil).</p>"
+      },
+      "features": [
+        {
+          "id": "f-cli-coach-chrome",
+          "label": "Top bar (connecté)",
+          "route": "/c/[slug]/coach",
+          "bodyHtml": "<p>Sticky Coach :</p>\n<ul>\n<li>Messages → <code>/messages</code></li>\n<li>RDV → <code>/calendrier</code> (file + Demander un RDV) · badge si à répondre</li>\n</ul>",
+          "critiqueHtml": "<p><strong>⏳</strong> Aligné demande RDV · Accueil = agenda.</p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-cli-coach-vitrine",
+          "label": "Vitrine (contenu showroom)",
+          "route": "/c/[slug]/coach",
+          "bodyHtml": "<p>Miroir Profil public coach : hero · bio · modalités · avis · liens · <strong>catalogue prestas visibles</strong>.</p>\n<p>Le client connecté voit le catalogue en permanence (upsell / autre offre) — y compris s’il a déjà une presta active.</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Catalogue toujours achetable.</p>",
+          "images": [],
+          "children": [
+            {
+              "id": "f-cli-coach-presta",
+              "label": "Fiche presta + checkout",
+              "route": "/c/[slug]/coach/[prestaId]",
+              "bodyHtml": "<p>Détail · modules · prix · CTA <strong>Acheter</strong> (même si une autre presta est déjà active).</p>\n<p>Si cette presta est <strong>déjà active</strong> pour le client : badge <strong>« En cours »</strong> · CTA devient renouveler / gérer via Profil (pas un 2ᵉ grant identique concurrent — ou prolongation selon offre).</p>\n<p>Post-pay → grant modules · plans Fitness/Nutrition liés arrivent en <strong>En attente</strong> (pas démarrés). Le client démarre depuis Accueil (règle pause si un plan du même track est déjà démarré).</p>\n<p>Drive de cette presta : accessible tant que la presta est en cours.</p>",
+              "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Badge En cours · multi-achat · plans post-pay = En attente.</p>",
+              "images": [],
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "f-cli-coach-messages",
+          "label": "Messages",
+          "route": "/c/[slug]/messages",
+          "bodyHtml": "<p><code>/messages</code> inbox · <code>/messages/[threadId]</code> fil (= coach <code>/chat/[threadId]</code>).</p>\n<ul>\n<li><strong>1:1 coach</strong> — toujours disponible pour un client/ex-client de ce coach. CTA <strong>« Écrire au coach »</strong> crée le thread s’il n’existe pas.</li>\n<li><strong>Groupes</strong> — visibles si le client est membre (presta avec Messagerie / groupe manuel chat ON), y compris si la presta source est terminée tant que le membership groupe reste.</li>\n</ul>\n<p><strong>Redéfinition module Messagerie (presta)</strong> : ne coupe plus le 1:1 client↔coach ; il conditionne surtout l’accès / création des <strong>chats de groupe</strong> liés à l’offre. (À réaligner côté spec coach.)</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ</strong> 1:1 toujours · groupes via membership · Messagerie presta ≈ groupes (aligné coach Chat).</p>",
+          "images": [],
+          "children": [
+            {
+              "id": "f-cli-msg-thread",
+              "label": "Fil de discussion",
+              "route": "/c/[slug]/messages/[threadId]",
+              "bodyHtml": "<p>1:1 ou groupe · médias · quote · composer (1:1 toujours si relation coach).</p>",
+              "critiqueHtml": "<p></p>",
+              "images": [],
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "f-cli-coach-calendrier",
+          "label": "RDV — demandes & file",
+          "route": "/c/[slug]/calendrier",
+          "bodyHtml": "<p><code>/calendrier</code> client = <strong>file RDV</strong> + demande, pas l’agenda visuel (→ Accueil).</p>\n<ol>\n<li>CTA <strong>Demander un RDV</strong> → pop-up (motif / dispo libre texte) → message 1:1 tag <strong>« prise de rdv »</strong>.</li>\n<li>Côté coach : message filtrable / pastille → il crée le créneau calendrier coach.</li>\n<li>Client reçoit à répondre ici (et notif) · Accept / Refuse (refuse = cloche + contour rouge FIGÉ).</li>\n<li>Accepté → apparaît sur calendrier Accueil (filtre RDV / Tout).</li>\n</ol>\n<p>Pas de self-book V1. Icône top bar Coach reste utile pour la file « À répondre ».</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Demande RDV message tagué · file accept/refuse · agenda visuel = Accueil (+ card RDV semaine).</p>",
+          "images": [],
+          "children": []
+        }
+      ]
+    }
+  }
+}

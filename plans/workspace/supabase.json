@@ -1,0 +1,568 @@
+{
+  "id": "supabase",
+  "title": "Supabase",
+  "description": "Schéma cible SaaS Trainly — visualiseur tables / colonnes / FK (style Schema Visualizer). Spec textuelle des domaines reste dans le JSON menus pour référence.",
+  "featureMenuLayout": false,
+  "pageShellLayout": false,
+  "tree": [
+    {
+      "id": "principles",
+      "label": "1. Principes",
+      "route": "/admin/spec/supabase",
+      "kind": "menu"
+    },
+    {
+      "id": "tenancy",
+      "label": "2. Identité & tenancy",
+      "route": "/admin/spec/supabase",
+      "kind": "menu"
+    },
+    {
+      "id": "clients-access",
+      "label": "3. Clients & accès",
+      "route": "/admin/spec/supabase",
+      "kind": "menu"
+    },
+    {
+      "id": "payments",
+      "label": "4. Prestations & paiements",
+      "route": "/admin/spec/supabase",
+      "kind": "menu"
+    },
+    {
+      "id": "programs",
+      "label": "5. Programmes / séances / exos",
+      "route": "/admin/spec/supabase",
+      "kind": "menu"
+    },
+    {
+      "id": "nutrition",
+      "label": "6. Nutrition",
+      "route": "/admin/spec/supabase",
+      "kind": "menu"
+    },
+    {
+      "id": "calendar",
+      "label": "7. Calendrier & RDV",
+      "route": "/admin/spec/supabase",
+      "kind": "menu"
+    },
+    {
+      "id": "chat",
+      "label": "8. Chat",
+      "route": "/admin/spec/supabase",
+      "kind": "menu"
+    },
+    {
+      "id": "drive",
+      "label": "9. Drive",
+      "route": "/admin/spec/supabase",
+      "kind": "menu"
+    },
+    {
+      "id": "bilans-sav",
+      "label": "10. Bilans / SAV / notifs",
+      "route": "/admin/spec/supabase",
+      "kind": "menu"
+    },
+    {
+      "id": "history",
+      "label": "11. Historique perfs",
+      "route": "/admin/spec/supabase",
+      "kind": "menu"
+    },
+    {
+      "id": "storage-realtime",
+      "label": "12. Storage & Realtime",
+      "route": "/admin/spec/supabase",
+      "kind": "menu"
+    },
+    {
+      "id": "migration",
+      "label": "13. Migration",
+      "route": "/admin/spec/supabase",
+      "kind": "menu"
+    }
+  ],
+  "blocks": {},
+  "menus": {
+    "principles": {
+      "arrival": {
+        "bodyHtml": "<p>Règles transverses avant toute table.</p>\n<p><strong>Rôles</strong> (via <code>profiles.role</code> + <code>auth.uid()</code>) : <code>anon</code> · <code>client</code> · <code>coach</code> · <code>platform_admin</code> · <code>service_role</code> (bypass RLS, webhooks Stripe / jobs).</p>\n<p><strong>Règle d’or</strong> : toute donnée métier porte un <code>coach_id</code> (ou join clair). Interdit <code>USING (true)</code> en prod.</p>\n<p><strong>Helpers SQL</strong> (à créer) : <code>current_profile_role()</code> · <code>current_coach_id()</code> · <code>current_client_id()</code> · <code>is_platform_admin()</code>.</p>\n<p><strong>Essai + prod</strong> = <strong>même projet</strong> Supabase ; isolation par statut compte coach (<code>trial</code> / <code>active</code> / <code>expired_trial</code>…) + rows démo taguées. Gating « essai expiré → dashboard offres » = app + éventuellement RLS métier refusée si expired.</p>\n<p><strong>Soft-delete</strong> : <code>deleted_at</code> + corbeille J30 (programmes, exos, nutrition, drive…).</p>\n<p>Chaque feature table documente : colonnes · FK · qui écrit · RLS CRUD par rôle · sync produit.</p>",
+        "images": [],
+        "critiqueHtml": "<p><strong>✅ FIGÉ intention Principes</strong> · même projet essai/prod · helpers RLS · pas de using(true).</p>"
+      },
+      "features": [
+        {
+          "id": "f-sb-roles",
+          "label": "Rôles & JWT",
+          "route": "/admin/spec/supabase",
+          "bodyHtml": "<p><code>auth.users</code> = identité. <code>profiles.id</code> = FK auth.users. Claims custom optionnels plus tard ; V1 = jointure profiles.</p>\n<p>Client PWA = mono-coach : le client ne voit que les rows de <strong>son</strong> lien coach.</p>",
+          "critiqueHtml": "<p><strong>✅</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-sb-soft-delete",
+          "label": "Soft-delete J30",
+          "route": "/admin/spec/supabase",
+          "bodyHtml": "<p>Colonne <code>deleted_at timestamptz</code> sur entités catalogue/contenu. Job purge &gt; 30 j. Restauration Settings coach.</p>",
+          "critiqueHtml": "<p><strong>✅</strong> Aligné coach Drive/Settings.</p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-sb-indexes",
+          "label": "Indexes de base",
+          "route": "/admin/spec/supabase",
+          "bodyHtml": "<p>Index systématique : <code>coach_id</code>, <code>client_id</code>, dates (<code>created_at</code>, <code>scheduled_on</code>), <code>status</code>, <code>deleted_at</code> WHERE NULL.</p>",
+          "critiqueHtml": "<p><strong>✅</strong></p>",
+          "images": [],
+          "children": []
+        }
+      ]
+    },
+    "tenancy": {
+      "arrival": {
+        "bodyHtml": "<p>Cœur multi-tenant. Tout le reste FK vers coach / profile.</p>\n<p><strong>Flux essai (FIGÉ produit)</strong> : 1ʳᵉ connexion app → démarre chrono 15 j calendaires · data fictive · même e-mail · expire → login OK mais app métier gated (offres) · payer → compte réel, démo non migrée. Site marketing ≠ URL app.</p>",
+        "images": [],
+        "critiqueHtml": "<p><strong>✅ FIGÉ Identité &amp; tenancy (spec tables)</strong> · 0 ❓ bloquantes V1.</p>"
+      },
+      "features": [
+        {
+          "id": "f-sb-profiles",
+          "label": "profiles",
+          "route": "/admin/spec/supabase",
+          "bodyHtml": "<p><strong>Colonnes</strong> : <code>id</code> (PK=auth.users) · <code>role</code> enum <code>coach|client|platform_admin</code> · <code>email</code> · <code>full_name</code> · <code>phone</code> · <code>avatar_url</code> · <code>created_at</code> · <code>updated_at</code> · <code>deleted_at</code>.</p>\n<p><strong>Existant</strong> : id + role (coach|admin) → étendre role <code>client</code>, renommer admin → <code>platform_admin</code>.</p>\n<p><strong>Qui écrit</strong> : insert trigger à signup · user update self (champs non-role) · service_role / admin pour role.</p>\n<p><strong>RLS</strong> :</p>\n<ul>\n<li>SELECT : self · coach voit profiles de ses clients (via clients.user_id) · platform_admin all</li>\n<li>UPDATE : self (sauf role) · platform_admin all</li>\n<li>INSERT : trigger security definer / service_role</li>\n</ul>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-sb-coach-subscriptions",
+          "label": "coach_subscriptions",
+          "route": "/admin/spec/supabase",
+          "bodyHtml": "<p><strong>Colonnes</strong> : <code>id</code> · <code>coach_id</code> FK profiles · <code>plan_tier</code> starter|business|scale|studio · <code>status</code> trial|active|past_due|canceled|expired_trial · <code>trial_started_at</code> (1ʳᵉ connexion app) · <code>trial_ends_at</code> (+15 j) · <code>stripe_customer_id</code> · <code>stripe_subscription_id</code> · <code>current_period_end</code> · timestamps.</p>\n<p>1 row active par coach (historique optionnel plus tard).</p>\n<p><strong>Qui écrit</strong> : service_role (webhooks Stripe + job trial) · platform_admin (ops suspend / force).</p>\n<p><strong>RLS</strong> : coach SELECT own · platform_admin all · client none · UPDATE/INSERT = service_role / admin only.</p>\n<p><strong>Sync produit</strong> : Admin Ops KPIs essais · dashboard offres si expired_trial / past_due selon règles app.</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ</strong> trial 15 j dès 1ʳᵉ connexion.</p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-sb-coach-branding",
+          "label": "coach_branding",
+          "route": "/admin/spec/supabase",
+          "bodyHtml": "<p><strong>Colonnes</strong> : <code>coach_id</code> PK/FK · <code>slug</code> unique (showroom /c/[slug]) · <code>app_name</code> · <code>logo_url</code> · <code>primary_color</code> · <code>pwa_icon_url</code> · gated par plan_tier (Starter couleurs only, etc.).</p>\n<p><strong>RLS</strong> : coach CRUD own · anon/client SELECT public fields by slug (showroom) · platform_admin all.</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-sb-login-logs",
+          "label": "login_logs (extend)",
+          "route": "/admin/spec/supabase",
+          "bodyHtml": "<p>Existant. Étendre : <code>context</code> app|site · sert 1ʳᵉ connexion app pour démarrer trial.</p>\n<p><strong>RLS</strong> : insert self · SELECT own · platform_admin all · service_role.</p>",
+          "critiqueHtml": "<p><strong>✅</strong> Keep + extend.</p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-sb-demo-seed",
+          "label": "Données démo essai",
+          "route": "/admin/spec/supabase",
+          "bodyHtml": "<p>Clients / séances fictifs tag <code>is_demo=true</code> + <code>coach_id</code>. Non migrés vers compte payant. Seed à la 1ʳᵉ connexion trial ou template plateforme.</p>\n<p><strong>RLS</strong> : visibles seulement si coach status=trial (et own coach_id).</p>",
+          "critiqueHtml": "<p><strong>✅</strong> Aligné produit essai.</p>",
+          "images": [],
+          "children": []
+        }
+      ]
+    },
+    "clients-access": {
+      "arrival": {
+        "bodyHtml": "<p>Remplace <code>demo_clients</code>. Lien auth client ↔ coach + grants modules.</p>\n<p>PWA client = mono-coach : une row <code>clients</code> (ou membership) active par couple user×coach.</p>",
+        "images": [],
+        "critiqueHtml": "<p><strong>✅ FIGÉ Clients &amp; accès (spec tables)</strong></p>"
+      },
+      "features": [
+        {
+          "id": "f-sb-clients",
+          "label": "clients",
+          "route": "/admin/spec/supabase",
+          "bodyHtml": "<p><strong>Colonnes</strong> : <code>id</code> · <code>coach_id</code> · <code>user_id</code> FK profiles (nullable tant qu’invite non claim) · <code>email</code> · <code>first_name</code> · <code>last_name</code> · <code>phone</code> · <code>sex</code> · <code>birth_date</code> · physique (poids, taille, mensurations — sync bilan soumis) · <code>status</code> invited|active|archived · <code>is_demo</code> · timestamps · <code>deleted_at</code>.</p>\n<p><strong>Qui écrit</strong> : coach CRUD own · client UPDATE self limited fields (profil) · platform_admin SELECT (RO fiche Admin).</p>\n<p><strong>RLS</strong> :</p>\n<ul>\n<li>coach : all own coach_id</li>\n<li>client : SELECT/UPDATE WHERE user_id = auth.uid()</li>\n<li>platform_admin : SELECT all</li>\n<li>anon : none</li>\n</ul>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-sb-client-grants",
+          "label": "client_grants (presta / modules)",
+          "route": "/admin/spec/supabase",
+          "bodyHtml": "<p>Accès issu d’une presta payée / grant manuel.</p>\n<p><strong>Colonnes</strong> : <code>id</code> · <code>client_id</code> · <code>coach_id</code> · <code>prestation_id</code> · <code>modules</code> jsonb/flags (fitness, nutrition, drive, on_demand, messaging, habits) · <code>status</code> active|ended · <code>starts_at</code> · <code>ends_at</code> · <code>payment_ledger_id</code> nullable.</p>\n<p>Achat ≠ démarrage plan : grant active modules ; plans arrivent En attente côté program/nutrition.</p>\n<p><strong>RLS</strong> : coach own · client SELECT own · admin SELECT · writes coach/service_role (payé).</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Aligné multi-presta + modules.</p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-sb-client-groups",
+          "label": "client_groups + members",
+          "route": "/admin/spec/supabase",
+          "bodyHtml": "<p><code>client_groups</code> : coach_id · name · type auto|manual · prestation_id nullable · chat_enabled · drive_enabled.</p>\n<p><code>client_group_members</code> : group_id · client_id.</p>\n<p>Pas d’assign programme via groupe (FIGÉ coach).</p>\n<p><strong>RLS</strong> : coach CRUD own · client SELECT groups où membre.</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-sb-onboarding-answers",
+          "label": "onboarding_answers",
+          "route": "/admin/spec/supabase",
+          "bodyHtml": "<p>Réponses questionnaire Mon app (nouveau compte only).</p>\n<p><strong>Colonnes</strong> : client_id · coach_id · question_id/key · value jsonb · updated_at.</p>\n<p>Nouvelles questions coach → rows manquantes éditables Mes infos.</p>\n<p><strong>RLS</strong> : client CRUD own · coach SELECT own clients · admin SELECT.</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Aligné Au démarrage.</p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-sb-onboarding-questions",
+          "label": "coach_onboarding_questions",
+          "route": "/admin/spec/supabase",
+          "bodyHtml": "<p>Config Mon app : coach_id · type texte|nombre|choix|oui_non · required · order · label.</p>\n<p><strong>RLS</strong> : coach CRUD own · client SELECT of their coach (pendant onboarding).</p>",
+          "critiqueHtml": "<p><strong>✅</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-sb-password-reset",
+          "label": "Reset MDP",
+          "route": "/admin/spec/supabase",
+          "bodyHtml": "<p>Préférer <strong>Supabase Auth</strong> recovery natif (pas de table custom V1). Admin peut trigger resend pour un coach. Documenter flow only.</p>",
+          "critiqueHtml": "<p><strong>✅</strong> Auth natif.</p>",
+          "images": [],
+          "children": []
+        }
+      ]
+    },
+    "payments": {
+      "arrival": {
+        "bodyHtml": "<p>Deux mondes Stripe : <strong>SaaS</strong> (coach→Trainly) vs <strong>Connect</strong> (client→coach). Tables séparées.</p>",
+        "images": [],
+        "critiqueHtml": "<p><strong>⏳ Stub riche</strong> · figer colonnes au passage domaine Paiements.</p>"
+      },
+      "features": [
+        {
+          "id": "f-sb-prestations",
+          "label": "prestations",
+          "route": "/admin/spec/supabase",
+          "bodyHtml": "<p>Offre coach : nom · pricing unique/renouvelable · modules · liaisons programme/nutrition template · showroom visible · status.</p>\n<p>RLS : coach CRUD own · anon/client SELECT visible showroom by slug join.</p>",
+          "critiqueHtml": "<p><strong>⏳</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-sb-payment-ledger",
+          "label": "payment_ledger",
+          "route": "/admin/spec/supabase",
+          "bodyHtml": "<p>Ledger immuable (pas delete) : client · prestation · amount · status En attente|Payé|Échoué|Expiré|Remboursé · source Manuel|Lien|Stripe|Showroom.</p>\n<p>Payé → grant. RLS coach own · client SELECT own · service_role webhook.</p>",
+          "critiqueHtml": "<p><strong>⏳</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-sb-payment-links",
+          "label": "payment_links_24h",
+          "route": "/admin/spec/supabase",
+          "bodyHtml": "<p>Token · expire_at · client_id · amount · status. RLS coach create · anon redeem via token controlled.</p>",
+          "critiqueHtml": "<p><strong>⏳</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-sb-invoices",
+          "label": "invoices + invoice_requests",
+          "route": "/admin/spec/supabase",
+          "bodyHtml": "<p>Demandes client (1 en cours) · PDF générés coach. Aligné Profil Facture.</p>",
+          "critiqueHtml": "<p><strong>⏳</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-sb-saas-vs-connect",
+          "label": "SaaS vs Connect",
+          "route": "/admin/spec/supabase",
+          "bodyHtml": "<p>SaaS = coach_subscriptions + Stripe Billing. Connect = ledger clients (plus tard). Admin billing = SaaS only V1.</p>",
+          "critiqueHtml": "<p><strong>✅</strong> Aligné Admin.</p>",
+          "images": [],
+          "children": []
+        }
+      ]
+    },
+    "programs": {
+      "arrival": {
+        "bodyHtml": "<p>3 couches : <strong>Catalogue Trainly</strong> (Admin publié) · <strong>templates coach</strong> (copies + perso) · <strong>plan client snapshot</strong> + runs.</p>\n<p>Existant programs/weeks/sessions/program_exercises à étendre (status, calendar mode, blocks, client_plan_id).</p>",
+        "images": [],
+        "critiqueHtml": "<p><strong>⏳ Stub riche</strong> · domaine à figer ensuite.</p>"
+      },
+      "features": [
+        {
+          "id": "f-sb-catalog-programs",
+          "label": "catalog_* (Trainly)",
+          "route": "/admin/spec/supabase",
+          "bodyHtml": "<p>Items Admin : status draft|review|published · type program|session|block|exercise|recipe|food. Publish confirm · unpublish retire catalogue (copies coach/client intactes).</p>\n<p>RLS : platform_admin CRUD · coach SELECT published · client none.</p>",
+          "critiqueHtml": "<p><strong>⏳</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-sb-programs-extend",
+          "label": "programs (+ weeks/sessions/blocks)",
+          "route": "/admin/spec/supabase",
+          "bodyHtml": "<p>Extend : status · is_calendar · start_date · source catalog_id nullable · deleted_at. Blocks table + block objective. exercise_library : coach_id null=Trainly published, else coach.</p>",
+          "critiqueHtml": "<p><strong>⏳</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-sb-client-plans",
+          "label": "client_fitness_plans + session_runs",
+          "route": "/admin/spec/supabase",
+          "bodyHtml": "<p>Plan snapshot : client_id · status waiting|started|paused|done · started_at. Runs : scheduled_date · actual_date · style fait|fait_edite|libre|pas_fait|en_cours · realized jsonb. DIY /seance = libre.</p>\n<p>RLS coach own · client own.</p>",
+          "critiqueHtml": "<p><strong>⏳</strong> Aligné Accueil styles.</p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-sb-exercise-units-types",
+          "label": "exercise_types + coach_exercise_units",
+          "route": "/admin/spec/supabase",
+          "bodyHtml": "<p>Déjà prévu cible : types coach_id nullable · unités perso coach.</p>",
+          "critiqueHtml": "<p><strong>⏳</strong></p>",
+          "images": [],
+          "children": []
+        }
+      ]
+    },
+    "nutrition": {
+      "arrival": {
+        "bodyHtml": "<p>Miroir programmes : templates coach/Trainly · plan client · validation repas. Remplacer RLS <code>using(true)</code>.</p>",
+        "images": [],
+        "critiqueHtml": "<p><strong>⏳ Stub</strong></p>"
+      },
+      "features": [
+        {
+          "id": "f-sb-nutrition-templates",
+          "label": "nutrition templates",
+          "route": "/admin/spec/supabase",
+          "bodyHtml": "<p>Plans · recettes · aliments · coach_id / catalog. RLS coach + admin published.</p>",
+          "critiqueHtml": "<p><strong>⏳</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-sb-client-nutrition-plans",
+          "label": "client_nutrition_plans + day_logs",
+          "route": "/admin/spec/supabase",
+          "bodyHtml": "<p>Status waiting|started|paused · meal validations · commentaire jour · adds client visibles coach.</p>",
+          "critiqueHtml": "<p><strong>⏳</strong></p>",
+          "images": [],
+          "children": []
+        }
+      ]
+    },
+    "calendar": {
+      "arrival": {
+        "bodyHtml": "<p>Étendre <code>calendar_events</code> : pending/accepted/refused · lieu · physique/visio · attendees + réponses. Refus → notif coach.</p>",
+        "images": [],
+        "critiqueHtml": "<p><strong>⏳ Stub</strong></p>"
+      },
+      "features": [
+        {
+          "id": "f-sb-calendar-events",
+          "label": "calendar_events + responses",
+          "route": "/admin/spec/supabase",
+          "bodyHtml": "<p>owner_coach_id existant. Add response per client. RLS coach · client own invites.</p>",
+          "critiqueHtml": "<p><strong>⏳</strong></p>",
+          "images": [],
+          "children": []
+        }
+      ]
+    },
+    "chat": {
+      "arrival": {
+        "bodyHtml": "<p>Remplacer demo_conversations/messages. Threads 1:1 (toujours relation coach) · groupes (Messagerie/membership). Médias bucket chat ≠ Drive.</p>",
+        "images": [],
+        "critiqueHtml": "<p><strong>⏳ Stub</strong></p>"
+      },
+      "features": [
+        {
+          "id": "f-sb-chat-threads",
+          "label": "chat_threads + messages",
+          "route": "/admin/spec/supabase",
+          "bodyHtml": "<p>type dm|group · coach_id · members. Messages · quote · media refs. RLS participants.</p>",
+          "critiqueHtml": "<p><strong>⏳</strong></p>",
+          "images": [],
+          "children": []
+        }
+      ]
+    },
+    "drive": {
+      "arrival": {
+        "bodyHtml": "<p>Drive coach perso (quota) + biblio Trainly (hors quota, consult/download). Partage client/groupe.</p>",
+        "images": [],
+        "critiqueHtml": "<p><strong>⏳ Stub</strong></p>"
+      },
+      "features": [
+        {
+          "id": "f-sb-drive-files",
+          "label": "drive_folders / drive_files",
+          "route": "/admin/spec/supabase",
+          "bodyHtml": "<p>coach_id · parent_id · shares. deleted_at. RLS coach · client shared only.</p>",
+          "critiqueHtml": "<p><strong>⏳</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-sb-drive-trainly",
+          "label": "trainly_drive_library",
+          "route": "/admin/spec/supabase",
+          "bodyHtml": "<p>Admin published PDFs. Colonnes : title · description · file_path · published · <code>allow_duplicate</code> · <code>allow_download</code>.</p>\n<p>Coach SELECT published · open in-app · duplicate/download selon flags. Dépublier = plus de récup depuis partage ; copies locales inchangées.</p>\n<p>RLS admin CRUD · coach SELECT published. Storage bucket dédié.</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ 2026-03-13</strong> · flags · slice 34 base + migration flags à venir.</p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-sb-formation",
+          "label": "trainly_formation_items",
+          "route": "/admin/spec/supabase",
+          "bodyHtml": "<p>Contenus Formation (PDF · vidéo · image). published · media_type · file_path. Coach SELECT published RO. Admin CRUD.</p>\n<p>Surface coach <code>/formation</code> · admin <code>/admin/formation</code>. Séparé de trainly_drive_library.</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ 2026-03-13</strong> · table à créer (slice 35).</p>",
+          "images": [],
+          "children": []
+        }
+      ]
+    },
+    "bilans-sav": {
+      "arrival": {
+        "bodyHtml": "<p>Bilans client · tickets SAV coach↔Admin · notifications cloche.</p>",
+        "images": [],
+        "critiqueHtml": "<p><strong>⏳ Stub</strong></p>"
+      },
+      "features": [
+        {
+          "id": "f-sb-bilans",
+          "label": "bilan_templates / instances",
+          "route": "/admin/spec/supabase",
+          "bodyHtml": "<p>Templates · assign · responses · J+14 lock. RLS coach · client own instances.</p>",
+          "critiqueHtml": "<p><strong>⏳</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-sb-sav",
+          "label": "support_tickets",
+          "route": "/admin/spec/supabase",
+          "bodyHtml": "<p>coach_id · status · category · opened_by · coach_last_read_at · admin_last_read_at · messages in-app + <strong>pièces jointes</strong> (storage).</p>\n<p>RLS coach own · platform_admin all. Canal unique admin↔coach.</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ 2026-03-13</strong> · PJ · unread cursors · 33/34.</p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-sb-notifications",
+          "label": "notifications",
+          "route": "/admin/spec/supabase",
+          "bodyHtml": "<p>Cloche coach/client · type · payload · read_at. Habits hors V1 si besoin.</p>",
+          "critiqueHtml": "<p><strong>⏳</strong></p>",
+          "images": [],
+          "children": []
+        }
+      ]
+    },
+    "history": {
+      "arrival": {
+        "bodyHtml": "<p>Favoris + records. Perf graphs = agrégats / vues sur session_runs (pas forcément tables matérialisées V1).</p>",
+        "images": [],
+        "critiqueHtml": "<p><strong>⏳ Stub</strong></p>"
+      },
+      "features": [
+        {
+          "id": "f-sb-favorites",
+          "label": "client_favorites",
+          "route": "/admin/spec/supabase",
+          "bodyHtml": "<p>client_id · target_type exercise|block · target_id. RLS client own.</p>",
+          "critiqueHtml": "<p><strong>⏳</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-sb-records",
+          "label": "Records / aggregates",
+          "route": "/admin/spec/supabase",
+          "bodyHtml": "<p>V1 : vues SQL ou calcul app sur realized runs. Table records cache optional later (1RM, tonnage…).</p>",
+          "critiqueHtml": "<p><strong>⏳</strong></p>",
+          "images": [],
+          "children": []
+        }
+      ]
+    },
+    "storage-realtime": {
+      "arrival": {
+        "bodyHtml": "<p>Buckets + Realtime channels. Policies storage alignées RLS.</p>",
+        "images": [],
+        "critiqueHtml": "<p><strong>⏳ Stub</strong></p>"
+      },
+      "features": [
+        {
+          "id": "f-sb-buckets",
+          "label": "Buckets",
+          "route": "/admin/spec/supabase",
+          "bodyHtml": "<p>Proposés : <code>avatars</code> · <code>exercise-media</code> · <code>drive</code> · <code>chat-media</code> · <code>covers</code> · <code>invoices</code> · <code>trainly-library</code> (admin). Path prefix coach_id/client_id.</p>",
+          "critiqueHtml": "<p><strong>⏳</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-sb-realtime",
+          "label": "Realtime",
+          "route": "/admin/spec/supabase",
+          "bodyHtml": "<p>Channels messages · notifications. Auth required · filter membership.</p>",
+          "critiqueHtml": "<p><strong>⏳</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-sb-quota",
+          "label": "Storage quota",
+          "route": "/admin/spec/supabase",
+          "bodyHtml": "<p>Agrégat usage vs plafond plan (5/25/100 Go). trainly-library hors quota coach.</p>",
+          "critiqueHtml": "<p><strong>⏳</strong></p>",
+          "images": [],
+          "children": []
+        }
+      ]
+    },
+    "migration": {
+      "arrival": {
+        "bodyHtml": "<p>Inventaire réel → cible. Régénérer <code>database.types.ts</code> après chaque migration.</p>\n<p>Sources : types actuels incomplets · scripts <code>supabase/*.sql</code> · tables demo.</p>",
+        "images": [],
+        "critiqueHtml": "<p><strong>✅ Inventaire posé</strong> · ordre migrations à exécuter plus tard (pas dans cette phase spec).</p>"
+      },
+      "features": [
+        {
+          "id": "f-sb-mig-inventory",
+          "label": "Inventaire keep / extend / replace",
+          "route": "/admin/spec/supabase",
+          "bodyHtml": "<ul>\n<li><strong>keep+extend</strong> : profiles · programs hierarchy · exercise_library · calendar_events · login_logs · program_share_links</li>\n<li><strong>replace</strong> : demo_clients · demo_conversations · demo_messages</li>\n<li><strong>harden</strong> : nutrition_* (RLS using true → coach_id)</li>\n<li><strong>create</strong> : clients · grants · groups · coach_subscriptions · branding · ledger · catalog_* · client plans/runs · chat · drive · bilans · sav · favorites · helpers RLS</li>\n</ul>",
+          "critiqueHtml": "<p><strong>✅</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-sb-mig-order",
+          "label": "Ordre migrations suggéré",
+          "route": "/admin/spec/supabase",
+          "bodyHtml": "<ol>\n<li>Helpers RLS + profiles roles</li>\n<li>coach_subscriptions + branding</li>\n<li>clients + grants + groups</li>\n<li>prestations + ledger</li>\n<li>programs extend + catalog + client plans</li>\n<li>nutrition harden + client plans</li>\n<li>calendar extend · chat · drive · bilans · sav · notifs</li>\n<li>storage policies · drop demo_*</li>\n<li>regen database.types.ts</li>\n</ol>",
+          "critiqueHtml": "<p><strong>✅</strong> Plan d’exécution post-spec.</p>",
+          "images": [],
+          "children": []
+        }
+      ]
+    }
+  },
+  "schemaLayout": true
+}

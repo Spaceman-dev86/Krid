@@ -11,6 +11,7 @@ import EditableProgramTitleClient from '../../../../components/EditableProgramTi
 import PublicProgramStructureReadOnlyClient from '../../../../components/PublicProgramStructureReadOnlyClient'
 import DeleteProgramConfirmClient from '../../../../components/DeleteProgramConfirmClient'
 import { IconBack } from '../../../../components/ui/icons'
+import { ConfirmSubmitButton } from '../../../../components/ui'
 
 type UntypedSupabaseClient = {
   auth: {
@@ -66,7 +67,7 @@ type MinimalProgramsUpdate = {
 
 type MinimalProgramsPublishUpdate = {
   from: (table: 'programs') => {
-    update: (values: { is_published: boolean }) => {
+    update: (values: { is_published: boolean; catalog_status?: string }) => {
       eq: (column: 'id', value: string) => Promise<{ error: { message: string } | null }>
     }
   }
@@ -206,7 +207,7 @@ export default async function ProgramBuilderPage({
 
     const { error } = await (supabase as unknown as MinimalProgramsPublishUpdate)
       .from('programs')
-      .update({ is_published: true })
+      .update({ is_published: true, catalog_status: 'published' })
       .eq('id', id)
 
     if (error) {
@@ -3278,12 +3279,12 @@ export default async function ProgramBuilderPage({
 
             {isAdmin && !program.is_published ? (
               <form action={publishProgram}>
-                <button
-                  type="submit"
-                  className="inline-flex h-10 items-center justify-center rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-[var(--brand)] shadow-sm hover:bg-gray-50"
+                <ConfirmSubmitButton
+                  confirmMessage="Publier ce programme dans le catalogue Trainly des coaches ?"
+                  className="!h-10 !rounded-xl !px-4"
                 >
                   Publier
-                </button>
+                </ConfirmSubmitButton>
               </form>
             ) : null}
 

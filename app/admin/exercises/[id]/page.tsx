@@ -1,1 +1,1 @@
-export { default } from '../../../../src/app/admin/exercises/[id]/page'
+export { default } from '@/src/app/admin/exercises/[id]/page'

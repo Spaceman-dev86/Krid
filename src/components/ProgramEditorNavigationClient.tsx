@@ -39,12 +39,12 @@ function ProgramEditorLoadingOverlay() {
       role="status"
       aria-live="polite"
       aria-label="Ouverture de l’éditeur"
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-[#341c44]/40 px-4 backdrop-blur-[2px]"
+      className="fixed inset-0 z-[200] flex items-center justify-center bg-[color-mix(in_srgb,var(--brand)_40%,transparent)] px-4 backdrop-blur-[2px]"
     >
-      <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl ring-1 ring-black/10">
-        <div className="mx-auto h-10 w-10 animate-spin rounded-full border-[3px] border-[#341c44]/15 border-t-[#341c44]" />
-        <p className="mt-4 text-center text-base font-extrabold text-[#341c44]">Ouverture de l’éditeur…</p>
-        <p className="mt-1 text-center text-sm font-semibold text-black/50">Chargement du programme en cours</p>
+      <div className="w-full max-w-sm rounded-2xl bg-[var(--surface)] p-6 shadow-xl ring-1 ring-[var(--border)]">
+        <div className="mx-auto h-10 w-10 animate-spin rounded-full border-[3px] border-[color-mix(in_srgb,var(--brand)_15%,transparent)] border-t-[var(--brand)]" />
+        <p className="mt-4 text-center text-base font-extrabold text-[color:var(--brand)]">Ouverture de l’éditeur…</p>
+        <p className="mt-1 text-center text-sm font-semibold text-[color:var(--muted)]">Chargement du programme en cours</p>
       </div>
     </div>
   )

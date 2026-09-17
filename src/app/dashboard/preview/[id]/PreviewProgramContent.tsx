@@ -3,6 +3,7 @@ import Link from 'next/link'
 import PhoneMockupFrameClient from '../../../../components/PhoneMockupFrameClient'
 import PublicProgramStructureReadOnlyClient from '../../../../components/PublicProgramStructureReadOnlyClient'
 import { fetchProgramPreviewStructure } from '../../../../lib/fetchProgramPreviewStructure'
+import { createServiceRoleClient } from '../../../../lib/supabase/serviceRole'
 import { createClient } from '../../../../lib/supabase/server'
 
 export type PreviewProgramRow = {
@@ -17,10 +18,14 @@ export type PreviewProgramRow = {
 type Props = {
   program: PreviewProgramRow
   backHref: string
+  /** Bypass RLS for token-based public preview (drafts included). */
+  useServiceRole?: boolean
 }
 
-export default async function PreviewProgramContent({ program, backHref }: Props) {
-  const supabase = await createClient()
+export default async function PreviewProgramContent({ program, backHref, useServiceRole = false }: Props) {
+  const supabase = useServiceRole
+    ? createServiceRoleClient() ?? (await createClient())
+    : await createClient()
   const structure = await fetchProgramPreviewStructure(supabase, program.id)
 
   const structureProps = {

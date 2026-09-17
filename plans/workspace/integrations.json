@@ -1,0 +1,63 @@
+{
+  "id": "integrations",
+  "title": "Intégrations",
+  "description": "Services externes et config env.",
+  "tree": [
+    {
+      "id": "supabase-svc",
+      "label": "Supabase (Auth, DB, Storage)"
+    },
+    {
+      "id": "resend",
+      "label": "Resend (emails)"
+    },
+    {
+      "id": "stripe",
+      "label": "Stripe"
+    },
+    {
+      "id": "strava",
+      "label": "Strava (Scale+)"
+    },
+    {
+      "id": "pwa",
+      "label": "PWA / Push (Scale+)"
+    },
+    {
+      "id": "env",
+      "label": "Variables d’environnement"
+    }
+  ],
+  "blocks": {
+    "supabase-svc": {
+      "bodyHtml": "<p>Auth, Postgres, RLS, Storage (covers, médias, drive). Service role pour preview tokens / jobs.</p>",
+      "images": [],
+      "critiqueHtml": ""
+    },
+    "resend": {
+      "bodyHtml": "<p>Emails : share programme, invitation client, rappels. Env : <code>RESEND_API_KEY</code>, <code>RESEND_FROM</code>.</p>",
+      "images": [],
+      "critiqueHtml": "<p><strong>❓</strong> Tous les emails (invite, rappel paiement, share preview) passent par les mêmes templates/domaine ?</p>"
+    },
+    "stripe": {
+      "bodyHtml": "<p>Abonnement coach Trainly + paiements clients (Connect). Brancher après UI compta.</p>",
+      "images": [],
+      "critiqueHtml": "<p><p><strong>⚠️</strong> Stripe apparaît dans Profil (Connect), Compta, GymPay, billing SaaS coach.</p></p><p><p><strong>❓</strong> Quels produits Stripe distincts : Connect accounts vs abo Trainly platform ?</p></p>"
+    },
+    "strava": {
+      "bodyHtml": "<p>OAuth Strava — montres compatibles. Pas avant Scale + clients payants.</p>",
+      "images": [],
+      "critiqueHtml": "<p><strong>❓</strong> OAuth : compte Strava lié au client ou au coach ? Sync dans quel écran ?</p>"
+    },
+    "pwa": {
+      "bodyHtml": "<p>App installable + notifications push web (Scale).</p>",
+      "images": [],
+      "critiqueHtml": ""
+    },
+    "env": {
+      "bodyHtml": "<ul><li><code>NEXT_PUBLIC_SUPABASE_URL</code></li><li><code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code></li><li><code>SUPABASE_SERVICE_ROLE_KEY</code></li><li><code>NEXT_PUBLIC_SITE_URL</code></li><li><code>RESEND_API_KEY</code> / <code>RESEND_FROM</code></li><li>Stripe keys (plus tard)</li></ul>",
+      "images": [],
+      "critiqueHtml": ""
+    }
+  }
+}

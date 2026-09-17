@@ -127,6 +127,7 @@ export default async function DashboardIndexPage({
         duration: typedSourceProgram.duration,
         image_url: typedSourceProgram.image_url,
         is_published: false,
+        is_trainly_catalog: false,
       })
       .select('id')
       .maybeSingle()

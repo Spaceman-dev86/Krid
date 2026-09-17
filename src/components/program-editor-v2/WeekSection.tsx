@@ -146,7 +146,7 @@ function WeekSectionInner({ week, mobileDrag }: Props) {
               </div>
             )}
             {!isOpen && week.notes ? (
-              <div className="mt-1 line-clamp-2 text-sm text-[var(--muted)]">{week.notes}</div>
+              <div className="mt-1 line-clamp-2 text-sm text-[color:var(--muted)]">{week.notes}</div>
             ) : null}
             {!isOpen ? (
               <div className="mt-1 text-[10px] font-semibold text-black/40">

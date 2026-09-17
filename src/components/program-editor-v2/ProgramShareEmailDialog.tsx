@@ -4,6 +4,7 @@ import { memo, useEffect, useState, type FormEvent } from 'react'
 import { createPortal } from 'react-dom'
 
 import { shareProgramPreviewByEmail } from '../../app/admin/programs/[id]/share/actions'
+import { Button } from '@/src/components/ui'
 
 type Props = {
   open: boolean
@@ -24,6 +25,8 @@ function ProgramShareEmailDialogInner({ open, programId, programTitle, onClose }
   const [pending, setPending] = useState(false)
   const [localError, setLocalError] = useState<string | null>(null)
   const [sent, setSent] = useState(false)
+  const [shareUrl, setShareUrl] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     if (!open) return
@@ -32,6 +35,8 @@ function ProgramShareEmailDialogInner({ open, programId, programTitle, onClose }
     setPending(false)
     setLocalError(null)
     setSent(false)
+    setShareUrl(null)
+    setCopied(false)
   }, [open])
 
   if (!open || typeof document === 'undefined') return null
@@ -58,12 +63,24 @@ function ProgramShareEmailDialogInner({ open, programId, programTitle, onClose }
       }
       if (result && 'success' in result) {
         setSent(true)
+        setShareUrl(result.shareUrl)
       }
     } catch (err) {
       if (err instanceof Error && err.message.includes('NEXT_REDIRECT')) return
       setLocalError(err instanceof Error ? err.message : 'Échec de l’envoi.')
     } finally {
       setPending(false)
+    }
+  }
+
+  async function copyShareLink() {
+    if (!shareUrl) return
+    try {
+      await navigator.clipboard.writeText(shareUrl)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 1500)
+    } catch {
+      setCopied(false)
     }
   }
 
@@ -77,46 +94,62 @@ function ProgramShareEmailDialogInner({ open, programId, programTitle, onClose }
         aria-modal="true"
         aria-labelledby="program-share-title"
       >
-        <div className="overflow-hidden rounded-2xl bg-white shadow-lg ring-1 ring-black/10">
+        <div className="overflow-hidden rounded-2xl bg-[var(--surface)] shadow-lg ring-1 ring-[var(--border)]">
           <div
             id="program-share-title"
-            className="border-b border-black/10 px-5 py-3 text-sm font-extrabold text-[var(--brand)]"
+            className="border-b border-[var(--border)] px-5 py-3 text-sm font-extrabold text-[color:var(--brand)]"
           >
             Envoyer le programme
           </div>
 
           <form onSubmit={(e) => void handleSubmit(e)} className="p-5">
-            <p className="text-sm text-gray-700">
+            <p className="text-sm text-[color:var(--fg)]">
               Envoie un lien d’aperçu pour <span className="font-semibold">{programTitle}</span>.
             </p>
 
             <div className="mt-4 grid gap-3">
               <label className="grid gap-2">
-                <span className="text-sm font-semibold text-[#341c44]">Email</span>
+                <span className="text-sm font-semibold text-[color:var(--brand)]">Email</span>
                 <input
                   value={to}
                   onChange={(e) => setTo(e.target.value)}
                   type="email"
                   placeholder="client@email.com"
                   autoComplete="email"
-                  className="h-11 rounded-xl bg-white px-4 text-sm ring-1 ring-black/10 focus:outline-none focus:ring-2 focus:ring-[#341c44]"
+                  className="h-11 rounded-xl bg-[var(--surface)] px-4 text-sm text-[color:var(--fg)] ring-1 ring-[var(--border)] focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
                 />
               </label>
 
               <label className="grid gap-2">
-                <span className="text-sm font-semibold text-[#341c44]">Message</span>
+                <span className="text-sm font-semibold text-[color:var(--brand)]">Message</span>
                 <textarea
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder="Ajoute un message…"
-                  className="min-h-28 rounded-xl bg-white px-4 py-3 text-sm ring-1 ring-black/10 focus:outline-none focus:ring-2 focus:ring-[#341c44]"
+                  className="min-h-28 rounded-xl bg-[var(--surface)] px-4 py-3 text-sm text-[color:var(--fg)] ring-1 ring-[var(--border)] focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
                 />
               </label>
             </div>
 
             {sent ? (
-              <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
-                Email envoyé.
+              <div className="mt-4 grid gap-3">
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
+                  Email envoyé.
+                </div>
+                {shareUrl ? (
+                  <div className="rounded-2xl border border-[var(--border)] bg-[color-mix(in_srgb,var(--muted)_8%,var(--surface))] px-4 py-3">
+                    <p className="text-xs font-semibold text-[color:var(--brand)]">Lien d’aperçu</p>
+                    <p className="mt-1 break-all text-xs text-[color:var(--muted)]">{shareUrl}</p>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => void copyShareLink()}
+                      className="mt-3 !h-9 !rounded-xl !px-3 !py-0 text-xs"
+                    >
+                      {copied ? 'Copié !' : 'Copier le lien'}
+                    </Button>
+                  </div>
+                ) : null}
               </div>
             ) : null}
 
@@ -127,22 +160,23 @@ function ProgramShareEmailDialogInner({ open, programId, programTitle, onClose }
             ) : null}
 
             <div className="mt-5 flex justify-end gap-2">
-              <button
+              <Button
                 type="button"
-                className="inline-flex h-10 items-center justify-center rounded-xl bg-white px-4 text-sm font-extrabold ring-1 ring-[#d6c4e8] bg-clip-text text-transparent bg-gradient-to-r from-[#9b6bb8] to-[#341c44] transition hover:bg-[#faf7ff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#341c44] focus-visible:ring-offset-2"
+                variant="secondary"
                 onClick={onClose}
                 disabled={pending}
+                className="!h-10 !rounded-xl !px-4 !py-0 text-sm"
               >
                 {sent ? 'Fermer' : 'Annuler'}
-              </button>
+              </Button>
               {!sent ? (
-                <button
+                <Button
                   type="submit"
                   disabled={!canSend}
-                  className="inline-flex h-10 items-center justify-center rounded-xl bg-gradient-to-r from-[#d6c4e8] via-[#9b6bb8] to-[#341c44] px-4 text-sm font-extrabold text-white shadow-[0_8px_20px_rgba(52,28,68,0.2)] transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="!h-10 !rounded-xl !px-4 !py-0 text-sm"
                 >
                   {pending ? 'Envoi…' : 'Envoyer'}
-                </button>
+                </Button>
               ) : null}
             </div>
           </form>
@@ -154,4 +188,3 @@ function ProgramShareEmailDialogInner({ open, programId, programTitle, onClose }
 }
 
 export default memo(ProgramShareEmailDialogInner)
-

@@ -161,6 +161,8 @@ export default async function NewProgramPage({
         duration: duration || null,
         is_template: scope === 'template',
         is_published: scope === 'public',
+        is_trainly_catalog: isAdmin,
+        catalog_status: scope === 'public' ? 'published' : 'draft',
       })
       .select('id')
       .maybeSingle()

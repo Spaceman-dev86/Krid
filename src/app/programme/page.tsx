@@ -1,5 +1,7 @@
 import { redirect } from 'next/navigation'
 
-export default async function ProgrammePage() {
-  redirect('/programs')
+import { siteUrl } from '../../lib/urls'
+
+export default function MarketingRedirectPage() {
+  redirect(siteUrl('/programs'))
 }
