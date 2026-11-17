@@ -51,7 +51,7 @@ export default async function HomePage() {
                 </div>
 
                 <div className="flex flex-col gap-3 sm:flex-row">
-                  <Button href={appUrl("/login")} variant="gradient">
+                  <Button href={appUrl('/signup?plan=business&mode=signup')} variant="gradient">
                     tester la création de programme
                   </Button>
                   <Button href="/mon-app" variant="mirror">
@@ -108,7 +108,7 @@ export default async function HomePage() {
                 .
               </p>
               <div className="flex flex-col gap-3 sm:flex-row">
-                <Button href={appUrl("/login")} variant="gradient">
+                <Button href={appUrl('/signup?plan=business&mode=signup')} variant="gradient">
                   Demander une clé
                 </Button>
                 <Button href="/mon-app" variant="mirror">
@@ -131,7 +131,7 @@ export default async function HomePage() {
                 </p>
               </div>
               <div className="flex md:justify-end">
-                <Button href={appUrl("/login")} variant="gradient">
+                <Button href={appUrl('/signup?plan=business&mode=signup')} variant="gradient">
                   Demander une clé
                 </Button>
               </div>

@@ -60,16 +60,19 @@ export default function SiteHeader() {
         className="mx-auto flex h-16 w-full max-w-none items-center justify-between gap-3 px-6 py-3 sm:px-8 lg:px-12"
       >
         <Link href="/" className="text-base font-extrabold tracking-tight text-[#341c44]">
-          Trainly
+          Krid
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex">{navLinks}</nav>
 
         <div className="flex items-center gap-2">
-          <a href={appUrl('/login')} className="hidden rounded-full px-3 py-2 text-sm font-semibold text-black/80 hover:bg-[#f5f5f5] sm:inline-flex">
+          <a
+            href={appUrl('/signup?mode=login')}
+            className="hidden rounded-full px-3 py-2 text-sm font-semibold text-black/80 hover:bg-[#f5f5f5] sm:inline-flex"
+          >
             Connexion
           </a>
-          <a href={appUrl('/login?mode=signup')} className={tryFreeButtonClass}>
+          <a href={appUrl('/signup?plan=business&mode=signup')} className={tryFreeButtonClass}>
             Essai gratuit
           </a>
           <button
@@ -86,7 +89,10 @@ export default function SiteHeader() {
       {open ? (
         <div className="border-t border-black/5 bg-white px-6 py-3 md:hidden">
           <nav className="flex flex-col gap-1">{navLinks}</nav>
-          <a href={appUrl('/login')} className="mt-2 block rounded-full px-3 py-2 text-sm font-semibold text-black/80">
+          <a
+            href={appUrl('/signup?mode=login')}
+            className="mt-2 block rounded-full px-3 py-2 text-sm font-semibold text-black/80"
+          >
             Connexion
           </a>
         </div>

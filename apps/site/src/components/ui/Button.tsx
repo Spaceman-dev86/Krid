@@ -28,6 +28,8 @@ function resolveHref(href: string): { external: boolean; href: string } {
   if (
     href === '/login' ||
     href.startsWith('/login?') ||
+    href === '/signup' ||
+    href.startsWith('/signup?') ||
     href === '/home' ||
     href.startsWith('/home/') ||
     href === '/dashboard' ||

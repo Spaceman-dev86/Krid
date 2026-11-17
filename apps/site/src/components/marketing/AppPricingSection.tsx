@@ -84,25 +84,43 @@ function PricingCard({
         ))}
       </ul>
 
-      <Link
-        href={buildContactOfferHref(plan)}
-        className={[
-          'mt-6 inline-flex h-11 items-center justify-center rounded-2xl text-sm font-extrabold transition',
-          plan.highlighted
-            ? 'bg-gradient-to-r from-[#d6c4e8] to-[#341c44] text-white shadow-[0_8px_20px_rgba(52,28,68,0.2)] hover:opacity-95'
-            : 'bg-white ring-1 ring-[#d6c4e8] hover:bg-[#f8f6fa] hover:ring-[#9b6bb8]/40',
-        ].join(' ')}
-      >
-        {plan.highlighted ? (
-          <span className="text-white">
-            {plan.id === 'studio' ? 'Candidater au Studio' : `Choisir ${plan.name}`}
-          </span>
-        ) : (
-          <span className="bg-gradient-to-r from-[#9b6bb8] to-[#341c44] bg-clip-text text-transparent">
-            {plan.id === 'studio' ? 'Candidater au Studio' : `Choisir ${plan.name}`}
-          </span>
-        )}
-      </Link>
+      {plan.id === 'studio' ? (
+        <Link
+          href={buildContactOfferHref(plan)}
+          className={[
+            'mt-6 inline-flex h-11 items-center justify-center rounded-2xl text-sm font-extrabold transition',
+            plan.highlighted
+              ? 'bg-gradient-to-r from-[#d6c4e8] to-[#341c44] text-white shadow-[0_8px_20px_rgba(52,28,68,0.2)] hover:opacity-95'
+              : 'bg-white ring-1 ring-[#d6c4e8] hover:bg-[#f8f6fa] hover:ring-[#9b6bb8]/40',
+          ].join(' ')}
+        >
+          {plan.highlighted ? (
+            <span className="text-white">Candidater au Studio</span>
+          ) : (
+            <span className="bg-gradient-to-r from-[#9b6bb8] to-[#341c44] bg-clip-text text-transparent">
+              Candidater au Studio
+            </span>
+          )}
+        </Link>
+      ) : (
+        <a
+          href={appUrl('/signup?plan=business&mode=signup')}
+          className={[
+            'mt-6 inline-flex h-11 items-center justify-center rounded-2xl text-sm font-extrabold transition',
+            plan.highlighted
+              ? 'bg-gradient-to-r from-[#d6c4e8] to-[#341c44] text-white shadow-[0_8px_20px_rgba(52,28,68,0.2)] hover:opacity-95'
+              : 'bg-white ring-1 ring-[#d6c4e8] hover:bg-[#f8f6fa] hover:ring-[#9b6bb8]/40',
+          ].join(' ')}
+        >
+          {plan.highlighted ? (
+            <span className="text-white">Démarrer l&apos;essai gratuit</span>
+          ) : (
+            <span className="bg-gradient-to-r from-[#9b6bb8] to-[#341c44] bg-clip-text text-transparent">
+              Démarrer l&apos;essai gratuit
+            </span>
+          )}
+        </a>
+      )}
     </article>
   )
 }
@@ -143,12 +161,12 @@ export default function AppPricingSection() {
               Nous contacter
             </span>
           </Link>
-          <Link
-            href={appUrl("/login")}
+          <a
+            href={appUrl('/signup?mode=login')}
             className="inline-flex h-11 items-center justify-center rounded-full bg-gradient-to-r from-[#d6c4e8] to-[#341c44] px-6 text-sm font-extrabold text-white shadow-[0_8px_24px_rgba(52,28,68,0.22)] transition hover:opacity-95"
           >
             Se connecter
-          </Link>
+          </a>
         </div>
       </Container>
     </section>

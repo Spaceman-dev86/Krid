@@ -17,7 +17,7 @@ export default function MonSitePage() {
 
               <div className="flex flex-col gap-3 sm:flex-row">
                 <Button href="/programs">Voir les programmes</Button>
-                <Button href={appUrl("/login")} variant="secondary">
+                <Button href={appUrl('/signup?plan=business&mode=signup')} variant="secondary">
                   Demander une clé
                 </Button>
               </div>

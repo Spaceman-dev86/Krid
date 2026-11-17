@@ -150,7 +150,7 @@ export default function ProgramsGridClient({
                         </div>
 
                         <div className="pointer-events-auto mt-6 flex flex-wrap items-center gap-2">
-                          <Button href={appUrl("/login")} variant="gradient" className="h-11 rounded-2xl px-5 text-sm font-extrabold">
+                          <Button href={appUrl('/signup?plan=business&mode=signup')} variant="gradient" className="h-11 rounded-2xl px-5 text-sm font-extrabold">
                             Demander une clé
                           </Button>
                         </div>

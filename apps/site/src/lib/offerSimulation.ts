@@ -59,7 +59,7 @@ export function computeSimulationOffer(answers: SimulationAnswers): SimulationOf
     monthlyPrice = 89
     included.push(
       'White-label (logo, couleurs, nom)',
-      'Adresse perso (tonnom.trainly.app)',
+      'Adresse perso (tonnom.krid.app)',
       'Nutrition & recettes',
       'Ta base d’exercices perso',
       'Chat coach ↔ client',
@@ -80,7 +80,7 @@ export function computeSimulationOffer(answers: SimulationAnswers): SimulationOf
       monthlyPrice = 89
       included.push(
         'White-label (logo, couleurs, nom)',
-        'Adresse perso (tonnom.trainly.app)',
+        'Adresse perso (tonnom.krid.app)',
         'Nutrition & recettes',
         'Ta base d’exercices perso',
         'Chat coach ↔ client',

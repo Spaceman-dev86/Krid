@@ -447,7 +447,7 @@ export default function ReadyModulesSectionClient({ programmePhotoUrl, mockups, 
             ].join(' ')}
           >
             <Link
-              href={appUrl("/login")}
+              href={appUrl('/signup?plan=business&mode=signup')}
               className={`inline-flex items-center justify-center rounded-full px-7 py-3 text-sm font-extrabold text-white shadow-[0_8px_24px_rgba(52,28,68,0.22)] transition hover:opacity-95 hover:shadow-[0_10px_28px_rgba(52,28,68,0.28)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#341c44] focus-visible:ring-offset-2 sm:px-8 sm:py-3.5 sm:text-base ${MODULE_CTA_GRADIENT}`}
             >
               Tester les modules

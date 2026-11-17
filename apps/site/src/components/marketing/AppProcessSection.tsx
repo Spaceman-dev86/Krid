@@ -170,7 +170,7 @@ export default function AppProcessSection() {
             Nous contacter
           </Link>
           <Link
-            href={appUrl("/login")}
+            href={appUrl('/signup?plan=business&mode=signup')}
             className="inline-flex h-11 w-full items-center justify-center rounded-full bg-gradient-to-r from-[#d6c4e8] via-[#9b6bb8] to-[#341c44] px-6 text-sm font-extrabold text-white shadow-[0_8px_24px_rgba(52,28,68,0.28)] transition hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#341c44] focus-visible:ring-offset-2 sm:w-auto"
           >
             Se connecter

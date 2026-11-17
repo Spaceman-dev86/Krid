@@ -17,8 +17,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: 'Trainly',
-    template: '%s · Trainly',
+    default: 'Krid',
+    template: '%s · Krid',
   },
   description: 'L’app de coaching pour coachs sportifs indépendants.',
 }

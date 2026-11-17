@@ -80,7 +80,7 @@ export default function SimulationPage() {
                   <div className="mt-2 text-sm text-black/70">{a.desc}</div>
                   <div className="mt-4">
                     <a
-                      href={appUrl("/login")}
+                      href={appUrl('/signup?plan=business&mode=signup')}
                       className="inline-flex h-11 w-full items-center justify-center rounded-full bg-white px-6 text-sm font-extrabold ring-1 ring-[#d6c4e8] transition hover:bg-[#f8f6fa] hover:ring-[#9b6bb8]/40 focus:outline-none focus:ring-2 focus:ring-[#9b6bb8] focus:ring-offset-2"
                     >
                       <span className="bg-gradient-to-r from-[#9b6bb8] to-[#341c44] bg-clip-text text-transparent">
@@ -111,7 +111,7 @@ export default function SimulationPage() {
 
           <div className="mt-8">
             <Button
-              href={appUrl("/login")}
+              href={appUrl('/signup?plan=business&mode=signup')}
               className="bg-gradient-to-r from-[#d6c4e8] to-[#341c44] text-white shadow-[0_8px_24px_rgba(52,28,68,0.22)] transition hover:opacity-95 focus:ring-[#341c44]"
             >
               Demander une clé

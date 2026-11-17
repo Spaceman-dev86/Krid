@@ -1,11 +1,11 @@
-# Monorepo Trainly
+# Monorepo Krid
 
 ## Apps
 
-| Package | Role | Dev |
-|---|---|---|
-| **racine** (`fitness_app`) | Produit — coach, portail `/c/[slug]`, admin/spec | `npm run dev:app` → :3000 |
-| **`@trainly/site`** (`apps/site`) | Site marketing | `npm run dev:site` → :3001 |
+| Package | Role | Dev | Vercel |
+|---|---|---|---|
+| **racine** (`Krid`) | Produit — coach, portail `/c/[slug]`, admin | `npm run dev:app` → :3000 | projet **`krid`** |
+| **`@trainly/site`** (`apps/site`) | Site marketing | `npm run dev:site` → :3001 | projet **`krid-site`** (root `apps/site`) |
 
 ## Setup
 
@@ -15,7 +15,8 @@ cp .env.example .env.local   # fill Supabase + URLs
 cp apps/site/.env.example apps/site/.env.local
 ```
 
-Use the same `NEXT_PUBLIC_SUPABASE_*` in both `.env.local` files (site = public reads only).
+Même `NEXT_PUBLIC_SUPABASE_*` (projet Krid) dans les deux `.env.local`.  
+Assets marketing = bucket Storage **`home_page`** sur ce projet.
 
 ## Run
 
@@ -27,14 +28,21 @@ npm run dev:app
 npm run dev:site
 ```
 
-CTAs on the site (login / essai) point to `NEXT_PUBLIC_APP_URL`.
-Product root `/` redirects coaches to `/home`, others to `NEXT_PUBLIC_SITE_URL`.
+CTAs site (Connexion / Essai gratuit / Démarrer l’essai gratuit) → `NEXT_PUBLIC_APP_URL/signup…`.  
+Produit `/` : coach → `/home`, sinon → `NEXT_PUBLIC_SITE_URL`.
 
-## Later (.com / .app)
+## Auth coach (parcours type Ekklo)
 
-Set production env:
+1. Site tarifs / simulation → **Démarrer l’essai gratuit** → `APP/signup?plan=business&mode=signup`
+2. Header **Connexion** → `APP/signup?mode=login`
+3. Inscription → mail Supabase de confirmation → `/auth/callback/coach` → `/home`
+4. Paiement / abo → plus tard `/settings/billing`
 
-- `NEXT_PUBLIC_SITE_URL=https://yourdomain.com`
-- `NEXT_PUBLIC_APP_URL=https://yourdomain.app`
+Whitelister dans Supabase Auth : `APP_URL/auth/callback/coach` (+ previews).
 
-Add both origins to Supabase Auth redirect URLs.
+## Prod env
+
+- Site : `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- App : `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_APP_URL` (+ Supabase déjà présents)
+
+Plus tard : `.com` = site, `.app` = produit.

@@ -60,7 +60,7 @@ export const PRICING_PLANS: PricingPlan[] = [
     features: [
       'Tout Starter',
       'White-label (logo, couleurs, nom)',
-      'Adresse perso (tonnom.trainly.app)',
+      'Adresse perso (tonnom.krid.app)',
       'Paiements Stripe (in-app)',
       'Nutrition & recettes',
       'Ta base d’exercices perso',
@@ -95,7 +95,7 @@ export const PRICING_PLANS: PricingPlan[] = [
     clientsForPriceCalc: 500,
     features: [
       'Tout Scale',
-      'Zéro mention Trainly (100% ta marque)',
+      'Zéro mention Krid (100% ta marque)',
       'Domaine perso (app.tonnom.fr)',
       'App Store & Google Play à ton nom',
       'Données isolées (base dédiée)',

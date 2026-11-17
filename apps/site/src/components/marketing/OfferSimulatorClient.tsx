@@ -284,7 +284,7 @@ export default function OfferSimulatorClient() {
                 Nous contacter
               </Link>
               <Link
-                href={appUrl("/login")}
+                href={appUrl('/signup?plan=business&mode=signup')}
                 className="inline-flex h-12 items-center justify-center rounded-2xl bg-gradient-to-r from-[#d6c4e8] to-[#341c44] px-6 text-sm font-extrabold text-white shadow-[0_8px_24px_rgba(52,28,68,0.22)] transition hover:opacity-95"
               >
                 Se connecter

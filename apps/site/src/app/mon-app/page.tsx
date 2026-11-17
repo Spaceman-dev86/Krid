@@ -27,7 +27,7 @@ export default async function MonAppPage() {
                 title="Deviens propriétaire de ton app personnalisée"
                 subtitle="Choisis tes options et lance ton application au plus vite pour booster ton expérience client."
               />
-              <Button href={appUrl("/login")} variant="gradient" className="w-fit">
+              <Button href={appUrl('/signup?plan=business&mode=signup')} variant="gradient" className="w-fit">
                 Teste l&apos;app gratuitement
               </Button>
             </div>

@@ -18,6 +18,15 @@ type CoachMode = 'login' | 'signup'
 
 const MIN_LEN = 8
 
+function authErrorMessage(err: { message?: string } | null | undefined, fallback: string) {
+  const msg = String(err?.message ?? '').trim()
+  if (!msg) return fallback
+  if (/failed to fetch|fetch failed|network|timeout|connect/i.test(msg)) {
+    return 'Impossible de joindre Supabase (réseau / timeout). Vérifie ta connexion puis réessaie.'
+  }
+  return msg
+}
+
 export default function LoginClient({ variant }: Props) {
   const supabase = useMemo(() => createClient(), [])
   const searchParams = useSearchParams()
@@ -57,44 +66,67 @@ export default function LoginClient({ variant }: Props) {
 
   useEffect(() => {
     let mounted = true
+    let loadSeq = 0
 
-    async function load() {
-      const { data } = await supabase.auth.getUser()
+    async function loadFromUser(user: { id: string; email?: string | null } | null) {
+      const seq = ++loadSeq
       if (!mounted) return
-      setUserEmail(data.user?.email ?? null)
+      setUserEmail(user?.email ?? null)
 
-      if (!data.user) {
+      if (!user) {
         setUserRole(null)
         setClientPortalHref(null)
         return
       }
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', data.user.id)
-        .maybeSingle()
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .maybeSingle()
+        if (!mounted || seq !== loadSeq) return
 
-      const typedProfile = profile as unknown as { role: string | null } | null
-      const role = typedProfile?.role
-      const normalizedRole =
-        role === 'admin' || role === 'platform_admin' || role === 'coach' || role === 'client'
-          ? role
-          : null
-      setUserRole(normalizedRole as 'admin' | 'coach' | 'platform_admin' | 'client' | null)
+        const typedProfile = profile as unknown as { role: string | null } | null
+        const role = typedProfile?.role
+        const normalizedRole =
+          role === 'admin' || role === 'platform_admin' || role === 'coach' || role === 'client'
+            ? role
+            : null
+        setUserRole(normalizedRole as 'admin' | 'coach' | 'platform_admin' | 'client' | null)
 
-      if (normalizedRole === 'client') {
-        const home = await resolveClientHome(data.user.id)
-        if (mounted) setClientPortalHref(home)
-      } else {
-        setClientPortalHref(null)
+        if (normalizedRole === 'client') {
+          const home = await resolveClientHome(user.id)
+          if (mounted && seq === loadSeq) setClientPortalHref(home)
+        } else {
+          setClientPortalHref(null)
+        }
+      } catch {
+        // Réseau / lock auth — laisser le formulaire login utilisable
+        if (mounted && seq === loadSeq) {
+          setUserRole(null)
+          setClientPortalHref(null)
+        }
       }
     }
 
-    load()
+    // getSession = lecture locale (pas de round-trip Auth) — évite les races navigator.locks
+    void (async () => {
+      try {
+        const { data } = await supabase.auth.getSession()
+        if (!mounted) return
+        await loadFromUser(data.session?.user ?? null)
+      } catch {
+        if (mounted) {
+          setUserEmail(null)
+          setUserRole(null)
+          setClientPortalHref(null)
+        }
+      }
+    })()
 
-    const { data: subscription } = supabase.auth.onAuthStateChange(() => {
-      load()
+    const { data: subscription } = supabase.auth.onAuthStateChange((_event, session) => {
+      void loadFromUser(session?.user ?? null)
     })
 
     return () => {
@@ -161,7 +193,7 @@ export default function LoginClient({ variant }: Props) {
       })
 
       if (signInError || !data.user) {
-        setError(signInError?.message ?? 'Connexion impossible.')
+        setError(authErrorMessage(signInError, 'Connexion impossible.'))
         setLoading(false)
         return
       }
@@ -209,7 +241,7 @@ export default function LoginClient({ variant }: Props) {
       })
 
       if (signUpError) {
-        setError(signUpError.message)
+        setError(authErrorMessage(signUpError, 'Inscription impossible.'))
         setLoading(false)
         return
       }
@@ -236,7 +268,7 @@ export default function LoginClient({ variant }: Props) {
     })
 
     if (signInError || !data.user) {
-      setError(signInError?.message ?? 'Email ou mot de passe incorrect.')
+      setError(authErrorMessage(signInError, 'Email ou mot de passe incorrect.'))
       setLoading(false)
       return
     }
@@ -245,10 +277,16 @@ export default function LoginClient({ variant }: Props) {
     await redirectAfterCoachAuth(data.user.id)
   }
 
-  const title = isAdmin ? 'Connexion admin' : coachMode === 'signup' ? 'Créer un compte coach' : 'Connexion coach'
+  const title = isAdmin
+    ? 'Connexion admin'
+    : coachMode === 'signup'
+      ? 'Inscription'
+      : 'Connexion'
   const description = isAdmin
     ? 'Accès réservé à l’administration — email et mot de passe uniquement.'
-    : null
+    : coachMode === 'signup'
+      ? 'Crée ton compte coach Krid — vérifie ensuite ton email.'
+      : 'Espace coach Krid — email et mot de passe.'
 
   const forgotAudience = isAdmin ? 'admin' : 'coach'
 
@@ -263,7 +301,7 @@ export default function LoginClient({ variant }: Props) {
                 {description ? <p className="text-sm text-[color:var(--muted)]">{description}</p> : null}
                 {!isAdmin ? (
                   <p className="text-sm text-[color:var(--muted)]">
-                    Espace coach — email et mot de passe. Les clients :{' '}
+                    Les clients :{' '}
                     <Link href="/login/client" className="font-semibold underline">
                       connexion client
                     </Link>
