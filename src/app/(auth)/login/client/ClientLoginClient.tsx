@@ -7,6 +7,24 @@ import { useSearchParams } from 'next/navigation'
 import { createClient } from '../../../../lib/supabase/client'
 import { Button, Card, Container, Input } from '../../../../components/ui'
 
+const AUTH_TIMEOUT_MS = 12_000
+
+function withTimeout<T>(promise: PromiseLike<T>, ms: number, label: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`${label} — délai dépassé. Réessaie.`)), ms)
+    Promise.resolve(promise).then(
+      (value) => {
+        clearTimeout(timer)
+        resolve(value)
+      },
+      (err) => {
+        clearTimeout(timer)
+        reject(err)
+      }
+    )
+  })
+}
+
 export default function ClientLoginClient() {
   const supabase = useMemo(() => createClient(), [])
   const searchParams = useSearchParams()
@@ -17,23 +35,23 @@ export default function ClientLoginClient() {
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [userRole, setUserRole] = useState<string | null>(null)
   const [portalHref, setPortalHref] = useState<string | null>(null)
+  const [sessionReady, setSessionReady] = useState(false)
 
   const redirectTo = searchParams.get('redirectTo')
   const authError = searchParams.get('error')
 
   async function resolvePortalHome(userId: string) {
-    const { data: client } = await supabase
-      .from('clients')
-      .select('coach_id')
-      .eq('user_id', userId)
-      .is('deleted_at', null)
-      .maybeSingle()
+    const { data: client } = await withTimeout(
+      supabase.from('clients').select('coach_id').eq('user_id', userId).is('deleted_at', null).maybeSingle(),
+      AUTH_TIMEOUT_MS,
+      'Lecture fiche client'
+    )
     if (!client) return null
-    const { data: branding } = await supabase
-      .from('coach_branding')
-      .select('slug')
-      .eq('coach_id', client.coach_id)
-      .maybeSingle()
+    const { data: branding } = await withTimeout(
+      supabase.from('coach_branding').select('slug').eq('coach_id', client.coach_id).maybeSingle(),
+      AUTH_TIMEOUT_MS,
+      'Lecture portail coach'
+    )
     return branding?.slug ? `/c/${branding.slug}/home` : null
   }
 
@@ -41,36 +59,50 @@ export default function ClientLoginClient() {
     let mounted = true
 
     async function load() {
-      const { data } = await supabase.auth.getUser()
-      if (!mounted) return
-      setUserEmail(data.user?.email ?? null)
+      try {
+        const { data } = await withTimeout(supabase.auth.getUser(), AUTH_TIMEOUT_MS, 'Session')
+        if (!mounted) return
+        setUserEmail(data.user?.email ?? null)
 
-      if (!data.user) {
-        setUserRole(null)
-        setPortalHref(null)
-        return
-      }
+        if (!data.user) {
+          setUserRole(null)
+          setPortalHref(null)
+          return
+        }
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', data.user.id)
-        .maybeSingle()
+        const { data: profile } = await withTimeout(
+          supabase.from('profiles').select('role').eq('id', data.user.id).maybeSingle(),
+          AUTH_TIMEOUT_MS,
+          'Profil'
+        )
 
-      const role = (profile as { role?: string } | null)?.role ?? null
-      setUserRole(role)
+        const role = (profile as { role?: string } | null)?.role ?? null
+        setUserRole(role)
 
-      if (role === 'client') {
-        const home =
-          redirectTo && redirectTo.startsWith('/') ? redirectTo : await resolvePortalHome(data.user.id)
-        setPortalHref(home)
-      } else {
-        setPortalHref(null)
+        if (role === 'client') {
+          const home =
+            redirectTo && redirectTo.startsWith('/')
+              ? redirectTo
+              : await resolvePortalHome(data.user.id)
+          if (mounted) setPortalHref(home)
+        } else {
+          setPortalHref(null)
+        }
+      } catch {
+        if (mounted) {
+          setUserEmail(null)
+          setUserRole(null)
+          setPortalHref(null)
+        }
+      } finally {
+        if (mounted) setSessionReady(true)
       }
     }
 
-    load()
-    const { data: subscription } = supabase.auth.onAuthStateChange(() => load())
+    void load()
+    const { data: subscription } = supabase.auth.onAuthStateChange(() => {
+      void load()
+    })
     return () => {
       mounted = false
       subscription.subscription.unsubscribe()
@@ -90,38 +122,60 @@ export default function ClientLoginClient() {
     const fallbackPath =
       redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : null
 
-    const { data, error: signInError } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    })
+    try {
+      // Une session coach (même navigateur) bloque souvent le switch — on la vide d’abord.
+      await withTimeout(supabase.auth.signOut(), 8_000, 'Déconnexion session précédente').catch(() => {})
 
-    if (signInError || !data.user) {
-      setError(signInError?.message ?? 'Email ou mot de passe incorrect.')
-      setLoading(false)
+      const { data, error: signInError } = await withTimeout(
+        supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        }),
+        AUTH_TIMEOUT_MS,
+        'Connexion Supabase'
+      )
+
+      if (signInError || !data.user) {
+        setError(signInError?.message ?? 'Email ou mot de passe incorrect.')
+        return
+      }
+
+      const { data: profile, error: profileError } = await withTimeout(
+        supabase.from('profiles').select('role').eq('id', data.user.id).maybeSingle(),
+        AUTH_TIMEOUT_MS,
+        'Lecture du rôle'
+      )
+
+      if (profileError) {
+        setError(profileError.message || 'Impossible de lire le profil. Réessaie.')
+        return
+      }
+
+      const role = (profile as { role?: string } | null)?.role ?? null
+
+      if (role === 'coach' || role === 'admin' || role === 'platform_admin') {
+        await supabase.auth.signOut().catch(() => {})
+        setError('Ce compte n’est pas un compte client. Utilise /login pour les coaches.')
+        return
+      }
+
+      const home =
+        fallbackPath && fallbackPath.startsWith('/c/')
+          ? fallbackPath
+          : (await resolvePortalHome(data.user.id)) ?? '/login/client?error=no_portal'
+
+      // Navigation pleine page — ne pas remettre loading à false avant (évite un flash)
+      window.location.replace(home)
       return
-    }
-
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', data.user.id)
-      .maybeSingle()
-    const role = (profile as { role?: string } | null)?.role ?? null
-
-    if (role === 'coach' || role === 'admin' || role === 'platform_admin') {
-      await supabase.auth.signOut()
-      setError('Ce compte n’est pas un compte client. Utilise /login pour les coaches.')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Connexion interrompue. Réessaie.')
+    } finally {
       setLoading(false)
-      return
     }
-
-    const home =
-      fallbackPath && fallbackPath.startsWith('/c/')
-        ? fallbackPath
-        : (await resolvePortalHome(data.user.id)) ?? '/login/client?error=no_portal'
-    setLoading(false)
-    window.location.replace(home)
   }
+
+  const coachSessionBlocking = Boolean(userEmail && userRole === 'coach')
+  const showLoginForm = sessionReady && (!userEmail || coachSessionBlocking)
 
   return (
     <main className="min-h-[calc(100vh-4rem)] bg-[var(--bg)] text-[color:var(--fg)]">
@@ -186,7 +240,8 @@ export default function ClientLoginClient() {
 
                   {userRole === 'coach' ? (
                     <div className="mt-3 text-sm text-[color:var(--muted)]">
-                      Compte coach — déconnecte-toi pour utiliser un email client.
+                      Compte <strong>coach</strong> détecté sur ce navigateur. Déconnecte-toi d’abord, sinon la
+                      connexion client tourne dans le vide / échoue.
                     </div>
                   ) : null}
 
@@ -203,8 +258,13 @@ export default function ClientLoginClient() {
                 </div>
               ) : null}
 
-              {!userEmail ? (
+              {showLoginForm ? (
                 <form onSubmit={onSubmit} className="mt-6 grid gap-4">
+                  {coachSessionBlocking ? (
+                    <p className="text-sm text-[color:var(--muted)]">
+                      Déconnecte le coach ci-dessus, puis saisis l’email <strong>client</strong> ci-dessous.
+                    </p>
+                  ) : null}
                   <label className="grid gap-2">
                     <span className="text-sm font-semibold text-[var(--brand)]">Email client</span>
                     <Input

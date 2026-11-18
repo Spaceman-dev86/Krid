@@ -59,10 +59,8 @@ export default async function AdminOpsPage() {
     { count: savOpen },
     { count: savHot },
     { count: savNew7d },
-    { count: drivePublished },
-    { count: driveDraft },
-    { count: formationPublished },
-    { count: formationDraft },
+    { count: docsPublished },
+    { count: docsDraft },
     { count: programsPublished },
     { count: programsDraft },
   ] = await Promise.all([
@@ -107,10 +105,8 @@ export default async function AdminOpsPage() {
       .from('support_tickets')
       .select('id', { count: 'exact', head: true })
       .gte('created_at', ago7Iso),
-    supabase.from('trainly_drive_library').select('id', { count: 'exact', head: true }).eq('published', true),
-    supabase.from('trainly_drive_library').select('id', { count: 'exact', head: true }).eq('published', false),
-    supabase.from('trainly_formation_items').select('id', { count: 'exact', head: true }).eq('published', true),
-    supabase.from('trainly_formation_items').select('id', { count: 'exact', head: true }).eq('published', false),
+    supabase.from('documentation_items').select('id', { count: 'exact', head: true }).eq('published', true),
+    supabase.from('documentation_items').select('id', { count: 'exact', head: true }).eq('published', false),
     supabase
       .from('programs')
       .select('id', { count: 'exact', head: true })
@@ -246,16 +242,10 @@ export default async function AdminOpsPage() {
             hint={`${programsDraft ?? 0} brouillons · workflow live`}
           />
           <KpiCard
-            href="/admin/drive-packs?filter=published"
-            label="Drive PDF publiés"
-            value={drivePublished ?? 0}
-            hint={`${driveDraft ?? 0} brouillons`}
-          />
-          <KpiCard
-            href="/admin/formation?filter=published"
-            label="Formation publiés"
-            value={formationPublished ?? 0}
-            hint={`${formationDraft ?? 0} brouillons`}
+            href="/admin/documentation"
+            label="Docs publiés"
+            value={docsPublished ?? 0}
+            hint={`${docsDraft ?? 0} brouillons · dossiers Documentation`}
           />
         </div>
         <Muted className="mt-2 text-xs">
@@ -276,8 +266,7 @@ export default async function AdminOpsPage() {
             { href: '/admin/sav', title: 'SAV', desc: 'Inbox tickets' },
             { href: '/admin/coaches', title: 'Coaches', desc: 'Liste & fiches' },
             { href: '/admin/billing', title: 'Compta', desc: 'Abo SaaS' },
-            { href: '/admin/drive-packs', title: 'Drive', desc: 'Biblio PDF' },
-            { href: '/admin/formation', title: 'Formation', desc: 'Contenus RO' },
+            { href: '/admin/documentation', title: 'Documentation', desc: 'Dossiers · contenus' },
             { href: '/admin/catalog', title: 'Catalogue', desc: 'Builders' },
             { href: '/admin/access', title: 'Accès', desc: 'Essai · staff' },
             { href: '/admin/design', title: 'Design', desc: 'Verrou DA' },

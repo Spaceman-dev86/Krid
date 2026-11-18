@@ -11,7 +11,7 @@ import {
   listClientEvents,
   rdvDateIso,
 } from '../../../../lib/calendar/rdv'
-import { hasPortalModule, requireClientPortal } from '../../../../lib/client-portal/context'
+import { hasPortalModule, portalShellProps, requireClientPortal } from '../../../../lib/client-portal/context'
 import {
   isActivePlanStatus,
   pickActiveFitnessPlan,
@@ -311,7 +311,7 @@ export default async function ClientHomePage({ params, searchParams }: Props) {
     waitingNutPlans.length > 0
 
   return (
-    <ClientPortalShell slug={ctx.slug} appName={ctx.appName} primaryColor={ctx.primaryColor} logoUrl={ctx.logoUrl}>
+    <ClientPortalShell {...portalShellProps(ctx)}>
       <div className="grid gap-5">
         <div>
           <h1 className="text-2xl font-extrabold" style={{ color: ctx.primaryColor }}>

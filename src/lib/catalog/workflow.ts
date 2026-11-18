@@ -6,6 +6,9 @@ export const CATALOG_STATUS_LABEL: Record<CatalogStatus, string> = {
   published: 'Publié',
 }
 
+/** Label admin pour `session_library` published (invisible coaches). */
+export const SESSION_ADMIN_PUBLISHED_LABEL = 'Publié admin'
+
 export function parseCatalogStatus(value: unknown): CatalogStatus {
   if (value === 'review' || value === 'published' || value === 'draft') return value
   return 'draft'

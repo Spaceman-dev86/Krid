@@ -1,106 +1,222 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import Link from 'next/link'
+import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 
-import type {
-  LibraryPreviewExercise,
-  SessionLibraryPreviewPayload,
-} from '@/src/lib/sessions/fetchSessionLibraryPreview'
-import PreviewBlockCard from '@/src/components/PreviewBlockCard'
-import PreviewExerciseCard from '@/src/components/PreviewExerciseCard'
-import { Button, IconClose, IconPlus, IconRest } from '@/src/components/ui'
-import type { PreviewBlockExerciseRow, PreviewSessionBlockRow } from '@/src/lib/fetchProgramPreviewStructure'
+import { isPngOrGifMedia } from '@/src/lib/exerciseMedia'
+import type { SessionLibraryPreviewPayload } from '@/src/lib/sessions/fetchSessionLibraryPreview'
+import { Button, IconClose, IconOpen, IconPlus, IconRest } from '@/src/components/ui'
 
-function toBlockExercise(ex: LibraryPreviewExercise, index: number): PreviewBlockExerciseRow {
-  return {
-    id: ex.id,
-    session_block_id: 'preview',
-    position: index,
-    exercise_id: ex.id,
-    exercise_name: ex.name,
-    sets: ex.sets,
-    reps: ex.reps,
-    rest_seconds: ex.restSeconds,
-    load_text: ex.loadText,
-    notes: ex.notes,
-    demo_media_url: ex.demoMediaUrl,
-    exercise_library: {
-      name: ex.name,
-      demo_media_path: ex.demoMediaPath,
-    },
-  }
+export type CatalogPreviewKind = 'session' | 'block' | 'exercise'
+
+export type CatalogPreviewTarget = {
+  kind: CatalogPreviewKind
+  id: string
+  /** Nom déjà connu dans la liste — affiché tout de suite pendant le fetch. */
+  nameHint?: string | null
+} | null
+
+type BlockPreview = {
+  id: string
+  name: string
+  status: string
+  notes: string | null
+  timerSummary: string | null
+  expectedResultLabel: string | null
+  sportLabel: string | null
+  exercises: { id: string; name: string; rxLines: string[] }[]
 }
 
-function LibraryPreviewBody({ preview }: { preview: SessionLibraryPreviewPayload }) {
-  const [openKey, setOpenKey] = useState<string | null>(null)
+type ExercisePreview = {
+  id: string
+  name: string
+  status: string | null
+  description: string | null
+  muscleGroup: string | null
+  difficulty: string | null
+  namedNotes: { title: string; body: string }[]
+  sportLabel: string | null
+  typeLabel: string | null
+  demoMediaPath?: string | null
+  demoMediaUrl?: string | null
+  videoUrl?: string | null
+}
 
-  if (!preview.slots.length) {
-    return <p className="text-sm text-black/50">Aucun exercice dans cette séance.</p>
-  }
+type PreviewPayload = SessionLibraryPreviewPayload | BlockPreview | ExercisePreview
 
+const previewCache = new Map<string, PreviewPayload>()
+const previewInflight = new Map<string, Promise<PreviewPayload | null>>()
+
+function previewCacheKey(kind: CatalogPreviewKind, id: string) {
+  return `${kind}:${id}`
+}
+
+function previewUrl(kind: CatalogPreviewKind, id: string) {
+  if (kind === 'session') return `/api/admin/session-library/${id}/preview`
+  if (kind === 'block') return `/api/admin/blocks/${id}/preview`
+  return `/api/admin/exercises/${id}/preview`
+}
+
+/** Charge (ou rejoint) l’aperçu — partagé entre survol, pointerdown et ouverture modale. */
+export function loadCatalogPreview(
+  kind: CatalogPreviewKind,
+  id: string,
+): Promise<PreviewPayload | null> {
+  const key = previewCacheKey(kind, id)
+  const cached = previewCache.get(key)
+  if (cached) return Promise.resolve(cached)
+  const inflight = previewInflight.get(key)
+  if (inflight) return inflight
+
+  const promise = fetch(previewUrl(kind, id))
+    .then(async (res) => {
+      const json = (await res.json().catch(() => ({}))) as {
+        preview?: PreviewPayload
+        error?: string
+      }
+      if (!res.ok || !json.preview) {
+        throw new Error(json.error || 'Impossible de charger l’aperçu')
+      }
+      previewCache.set(key, json.preview)
+      return json.preview
+    })
+    .finally(() => {
+      previewInflight.delete(key)
+    })
+
+  previewInflight.set(key, promise)
+  return promise
+}
+
+/** Prefetch au survol / pointerdown du « i » pour ouvrir l’aperçu plus vite. */
+export function prefetchCatalogPreview(kind: CatalogPreviewKind, id: string) {
+  void loadCatalogPreview(kind, id).catch(() => {})
+}
+
+/** Prefetch des premiers items visibles (catalogue ouvert). */
+export function prefetchCatalogPreviewBatch(
+  kind: CatalogPreviewKind,
+  ids: string[],
+  limit = 8,
+) {
+  for (const id of ids.slice(0, limit)) prefetchCatalogPreview(kind, id)
+}
+
+function isDirectVideoUrl(url: string) {
+  const path = url.split('?')[0] ?? url
+  return /\.(mp4|webm|ogg)$/i.test(path)
+}
+
+function ficheHref(kind: 'session' | 'block' | 'exercise', id: string) {
+  if (kind === 'session') return `/admin/sessions/${id}/edit`
+  if (kind === 'block') return `/admin/blocks/${id}/edit`
+  return `/admin/exercises/${id}/edit`
+}
+
+function ficheLabel(kind: 'session' | 'block' | 'exercise') {
+  if (kind === 'session') return 'Ouvrir la fiche séance'
+  if (kind === 'block') return 'Ouvrir la fiche bloc'
+  return 'Ouvrir la fiche exercice'
+}
+
+function kindEyebrow(kind: 'session' | 'block' | 'exercise') {
+  if (kind === 'session') return 'Séance catalogue'
+  if (kind === 'block') return 'Bloc catalogue'
+  return 'Exercice catalogue'
+}
+
+function MetaLine({ bits }: { bits: (string | null | undefined)[] }) {
+  const clean = bits.map((b) => String(b ?? '').trim()).filter(Boolean)
+  if (!clean.length) return null
   return (
-    <ul className="grid gap-3">
+    <p className="mt-0.5 text-[11px] font-semibold text-[color:var(--muted)]">
+      {clean.join(' · ')}
+    </p>
+  )
+}
+
+function SessionBody({ preview }: { preview: SessionLibraryPreviewPayload }) {
+  if (!preview.slots.length) {
+    return (
+      <p className="py-8 text-center text-[13px] text-[color:var(--muted)]">
+        Aucun item dans cette séance.
+      </p>
+    )
+  }
+  return (
+    <ul className="grid gap-2">
       {preview.slots.map((slot) => {
         if (slot.kind === 'rest') {
           return (
-            <li key={slot.id}>
-              <div className="flex items-center justify-center gap-2 rounded-xl bg-white px-3 py-2.5 ring-1 ring-black/10">
-                <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#f5f5f5] text-[var(--brand)]">
-                  <IconRest size={14} />
-                </span>
-                <span className="text-xs font-extrabold text-black/70">Repos {slot.restSeconds}s</span>
-              </div>
+            <li
+              key={slot.id}
+              className="flex items-center gap-2 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--page-bg)] px-3 py-2"
+            >
+              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--accent)] text-[color:var(--brand)]">
+                <IconRest size={12} />
+              </span>
+              <span className="text-[12px] font-semibold text-[color:var(--fg)]">
+                Pause {slot.restSeconds}s
+              </span>
             </li>
           )
         }
-
         if (slot.kind === 'exercise') {
           const ex = slot.exercise
-          const open = openKey === `ex:${ex.id}`
+          const rx = [
+            ex.sets ? `${ex.sets} sér.` : null,
+            ex.reps ? `${ex.reps} reps` : null,
+            ex.loadText ? `Kg ${ex.loadText}` : null,
+            ex.rpe ? `RPE ${ex.rpe}` : null,
+            ex.restSeconds != null ? `repos ${ex.restSeconds}s` : null,
+          ]
+            .filter(Boolean)
+            .join(' · ')
           return (
-            <li key={slot.id}>
-              <PreviewExerciseCard
-                displayName={ex.name}
-                sets={ex.sets}
-                reps={ex.reps}
-                restSeconds={ex.restSeconds}
-                rpe={ex.rpe}
-                tempo={ex.tempo}
-                loadText={ex.loadText}
-                notes={ex.notes}
-                demoMediaUrl={ex.demoMediaUrl}
-                demoMediaPath={ex.demoMediaPath}
-                isOpen={open}
-                onToggle={() => setOpenKey(open ? null : `ex:${ex.id}`)}
-              />
+            <li
+              key={slot.id}
+              className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-3 py-2"
+            >
+              <p className="text-[13px] font-bold text-[color:var(--fg)]">{ex.name}</p>
+              {rx ? (
+                <p className="mt-0.5 text-[11px] text-[color:var(--muted)]">{rx}</p>
+              ) : null}
+              {ex.notes?.trim() ? (
+                <p className="mt-1 text-[11px] text-[color:var(--muted)]">{ex.notes}</p>
+              ) : null}
             </li>
           )
         }
-
-        const block: PreviewSessionBlockRow = {
-          id: slot.id,
-          program_session_id: preview.id,
-          position: 0,
-          type: 'block',
-          title: slot.title,
-          notes: slot.notes,
-        }
-        const exercises = slot.exercises.map(toBlockExercise)
-        const openBlockId = openKey?.startsWith(`blk:${slot.id}:`)
-          ? openKey.slice(`blk:${slot.id}:`.length)
-          : null
-
         return (
-          <li key={slot.id}>
-            <PreviewBlockCard
-              block={block}
-              exercises={exercises}
-              openBlockExerciseId={openBlockId}
-              onToggleBlockExercise={(id) => {
-                const key = `blk:${slot.id}:${id}`
-                setOpenKey((prev) => (prev === key ? null : key))
-              }}
-            />
+          <li
+            key={slot.id}
+            className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-3 py-2"
+          >
+            <p className="text-[13px] font-bold text-[color:var(--fg)]">{slot.title}</p>
+            {slot.notes?.trim() ? (
+              <p className="mt-0.5 text-[11px] text-[color:var(--muted)]">{slot.notes}</p>
+            ) : null}
+            <ul className="mt-2 space-y-1.5 border-t border-[var(--border)] pt-2">
+              {slot.exercises.map((ex) => {
+                const rx = [
+                  ex.sets ? `${ex.sets} sér.` : null,
+                  ex.reps ? `${ex.reps} reps` : null,
+                  ex.loadText ? `Kg ${ex.loadText}` : null,
+                  ex.rpe ? `RPE ${ex.rpe}` : null,
+                ]
+                  .filter(Boolean)
+                  .join(' · ')
+                return (
+                  <li key={ex.id} className="pl-1">
+                    <p className="text-[12px] font-semibold text-[color:var(--fg)]">{ex.name}</p>
+                    {rx ? (
+                      <p className="text-[11px] text-[color:var(--muted)]">{rx}</p>
+                    ) : null}
+                  </li>
+                )
+              })}
+            </ul>
           </li>
         )
       })}
@@ -108,115 +224,297 @@ function LibraryPreviewBody({ preview }: { preview: SessionLibraryPreviewPayload
   )
 }
 
-export function SessionLibraryPreviewModal({
-  sessionId,
+function BlockBody({ preview }: { preview: BlockPreview }) {
+  return (
+    <div className="grid gap-3">
+      <MetaLine
+        bits={[preview.sportLabel, preview.timerSummary, preview.expectedResultLabel]}
+      />
+      {preview.notes?.trim() ? (
+        <p className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--page-bg)] px-3 py-2 text-[12px] text-[color:var(--fg)]">
+          {preview.notes}
+        </p>
+      ) : null}
+      {preview.exercises.length ? (
+        <ul className="grid gap-1.5">
+          {preview.exercises.map((ex, i) => (
+            <li
+              key={`${ex.id}-${i}`}
+              className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-3 py-2"
+            >
+              <p className="text-[13px] font-bold text-[color:var(--fg)]">{ex.name}</p>
+              {ex.rxLines.length ? (
+                <ul className="mt-1 space-y-0.5">
+                  {ex.rxLines.map((line) => (
+                    <li key={line} className="text-[11px] text-[color:var(--muted)]">
+                      {line}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="py-6 text-center text-[13px] text-[color:var(--muted)]">Aucun exercice.</p>
+      )}
+    </div>
+  )
+}
+
+function ExerciseBody({ preview }: { preview: ExercisePreview }) {
+  const notes = Array.isArray(preview.namedNotes) ? preview.namedNotes : []
+  const description = String(preview.description ?? '').trim()
+  const demoUrl = String(preview.demoMediaUrl ?? '').trim()
+  const videoUrl = String(preview.videoUrl ?? '').trim()
+  const mediaRef = preview.demoMediaPath ?? demoUrl
+  const gifLike = isPngOrGifMedia(mediaRef)
+  const hasMedia = Boolean(demoUrl || videoUrl)
+
+  return (
+    <div className="grid gap-3">
+      {demoUrl ? (
+        <div className="overflow-hidden rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--page-bg)]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={demoUrl}
+            alt={preview.name}
+            className={
+              gifLike
+                ? 'mx-auto max-h-56 w-full object-contain'
+                : 'max-h-56 w-full object-cover'
+            }
+            loading="lazy"
+          />
+        </div>
+      ) : null}
+      {videoUrl ? (
+        isDirectVideoUrl(videoUrl) ? (
+          <video
+            src={videoUrl}
+            controls
+            playsInline
+            className="max-h-56 w-full rounded-[var(--radius-md)] border border-[var(--border)] bg-black object-contain"
+          />
+        ) : (
+          <a
+            href={videoUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--page-bg)] px-3 py-2.5 text-[12px] font-semibold text-[var(--brand)] hover:bg-[var(--accent)]"
+          >
+            Ouvrir la vidéo
+          </a>
+        )
+      ) : null}
+      <MetaLine bits={[preview.sportLabel, preview.typeLabel, preview.muscleGroup, preview.difficulty]} />
+      {description ? (
+        <p className="text-[13px] leading-relaxed text-[color:var(--fg)]">{description}</p>
+      ) : null}
+      {notes.length ? (
+        <ul className="grid gap-1.5">
+          {notes.map((n, i) => (
+            <li
+              key={`${n.title}-${i}`}
+              className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--page-bg)] px-3 py-2"
+            >
+              {n.title ? (
+                <p className="text-[10px] font-bold uppercase tracking-wide text-[color:var(--muted)]">
+                  {n.title}
+                </p>
+              ) : (
+                <p className="text-[10px] font-bold uppercase tracking-wide text-[color:var(--muted)]">
+                  Note
+                </p>
+              )}
+              {n.body ? (
+                <p className="mt-1 text-[12px] text-[color:var(--fg)]">{n.body}</p>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {!hasMedia && !description && !notes.length ? (
+        <p className="py-6 text-center text-[13px] text-[color:var(--muted)]">
+          Pas de détails supplémentaires.
+        </p>
+      ) : null}
+    </div>
+  )
+}
+
+export function CatalogLibraryPreviewModal({
+  target,
   onClose,
   onInsert,
   insertLabel,
   insertDisabled,
 }: {
-  sessionId: string | null
+  target: CatalogPreviewTarget
   onClose: () => void
   onInsert?: () => void
   insertLabel?: string | null
   insertDisabled?: boolean
 }) {
-  const [preview, setPreview] = useState<SessionLibraryPreviewPayload | null>(null)
+  const [sessionPreview, setSessionPreview] = useState<SessionLibraryPreviewPayload | null>(null)
+  const [blockPreview, setBlockPreview] = useState<BlockPreview | null>(null)
+  const [exercisePreview, setExercisePreview] = useState<ExercisePreview | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [mounted, setMounted] = useState(false)
+  const backdropMouseDownRef = useRef(false)
+
+  useEffect(() => setMounted(true), [])
 
   useEffect(() => {
-    if (!sessionId) {
-      setPreview(null)
+    if (!target) {
+      setSessionPreview(null)
+      setBlockPreview(null)
+      setExercisePreview(null)
       setError(null)
       setLoading(false)
       return
     }
     let cancelled = false
-    setLoading(true)
     setError(null)
-    setPreview(null)
-    void fetch(`/api/admin/session-library/${sessionId}/preview`)
-      .then(async (res) => {
-        const json = (await res.json().catch(() => ({}))) as {
-          preview?: SessionLibraryPreviewPayload
-          error?: string
+
+    const key = previewCacheKey(target.kind, target.id)
+    const cached = previewCache.get(key)
+    if (cached) {
+      if (target.kind === 'session') setSessionPreview(cached as SessionLibraryPreviewPayload)
+      else if (target.kind === 'block') setBlockPreview(cached as BlockPreview)
+      else setExercisePreview(cached as ExercisePreview)
+      setLoading(false)
+      return
+    }
+
+    setLoading(true)
+    setSessionPreview(null)
+    setBlockPreview(null)
+    setExercisePreview(null)
+
+    void loadCatalogPreview(target.kind, target.id)
+      .then((preview) => {
+        if (cancelled || !preview) return
+        if (target.kind === 'session') {
+          setSessionPreview(preview as SessionLibraryPreviewPayload)
+        } else if (target.kind === 'block') {
+          setBlockPreview(preview as BlockPreview)
+        } else {
+          setExercisePreview(preview as ExercisePreview)
         }
-        if (cancelled) return
-        if (!res.ok) {
-          setError(json.error || 'Impossible de charger la séance')
-          return
-        }
-        setPreview(json.preview ?? null)
       })
-      .catch(() => {
-        if (!cancelled) setError('Impossible de charger la séance')
+      .catch((err: unknown) => {
+        if (cancelled) return
+        setError(err instanceof Error ? err.message : 'Impossible de charger l’aperçu')
       })
       .finally(() => {
         if (!cancelled) setLoading(false)
       })
+
     return () => {
       cancelled = true
     }
-  }, [sessionId])
+  }, [target])
 
   useEffect(() => {
-    if (!sessionId) return
+    if (!target) return
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') onClose()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [sessionId, onClose])
+  }, [target, onClose])
 
-  if (!sessionId) return null
+  if (!target || !mounted) return null
 
-  return (
+  const title =
+    (target.kind === 'session' ? sessionPreview?.name : null) ||
+    (target.kind === 'block' ? blockPreview?.name : null) ||
+    (target.kind === 'exercise' ? exercisePreview?.name : null) ||
+    target.nameHint?.trim() ||
+    (loading ? 'Chargement…' : 'Aperçu')
+
+  const subtitleNotes = target.kind === 'session' ? sessionPreview?.notes : null
+
+  return createPortal(
     <div
-      className="fixed inset-0 z-[80] flex items-end justify-center bg-black/55 p-3 sm:items-center"
+      className="da-vv-overlay z-[9999] flex items-center justify-center bg-black/55 p-3"
       role="dialog"
       aria-modal="true"
-      aria-label="Aperçu séance"
-      onClick={onClose}
+      aria-label={`Aperçu ${kindEyebrow(target.kind)}`}
+      data-builder-chrome=""
+      onPointerDown={(e) => e.stopPropagation()}
+      onMouseDown={(e) => {
+        e.stopPropagation()
+        backdropMouseDownRef.current = e.target === e.currentTarget
+      }}
+      onClick={(e) => {
+        e.stopPropagation()
+        if (e.target === e.currentTarget && backdropMouseDownRef.current) onClose()
+        backdropMouseDownRef.current = false
+      }}
     >
       <div
-        className="flex max-h-[min(92vh,720px)] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-[#f4f4f5] shadow-2xl"
+        className="da-vv-dialog flex w-full max-w-md flex-col overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] shadow-da-md"
+        onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start gap-2 border-b border-black/10 bg-white px-4 py-3">
+        <div className="flex items-start gap-2 border-b border-[var(--border)] px-4 py-3">
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-black/45">Aperçu client</p>
-            <h2 className="truncate text-base font-extrabold text-[var(--brand)]">
-              {preview?.name?.trim() || (loading ? 'Chargement…' : 'Séance')}
-            </h2>
-            {preview?.notes?.trim() ? (
-              <p className="mt-0.5 line-clamp-2 text-xs font-semibold text-black/55">{preview.notes}</p>
+            <p className="text-[10px] font-bold uppercase tracking-wide text-[color:var(--muted)]">
+              {kindEyebrow(target.kind)} · lecture seule
+            </p>
+            <div className="mt-0.5 flex min-w-0 items-center gap-1.5">
+              <h2 className="min-w-0 truncate text-base font-bold text-[color:var(--fg)]">
+                {title}
+              </h2>
+              <Link
+                href={ficheHref(target.kind, target.id)}
+                target="_blank"
+                rel="noreferrer"
+                title={ficheLabel(target.kind)}
+                aria-label={ficheLabel(target.kind)}
+                className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--radius-sm)] text-[color:var(--muted)] transition hover:bg-[var(--accent)] hover:text-[color:var(--fg)]"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <IconOpen size={14} />
+              </Link>
+            </div>
+            {subtitleNotes?.trim() ? (
+              <p className="mt-0.5 line-clamp-2 text-[12px] text-[color:var(--muted)]">
+                {subtitleNotes}
+              </p>
             ) : null}
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black/5 text-black/60 hover:bg-black/10"
+            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--accent)] text-[color:var(--muted)] hover:text-[color:var(--fg)]"
             aria-label="Fermer"
           >
             <IconClose size={16} />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-3 py-3">
+        <div className="da-scrollbar flex-1 overflow-y-auto px-3 py-3">
           {loading ? (
-            <p className="py-10 text-center text-sm text-black/50">Chargement de la séance…</p>
+            <p className="py-10 text-center text-[13px] text-[color:var(--muted)]">Chargement…</p>
           ) : error ? (
-            <p className="py-10 text-center text-sm text-red-600">{error}</p>
-          ) : preview ? (
-            <LibraryPreviewBody preview={preview} />
+            <p className="py-10 text-center text-[13px] font-semibold text-[var(--danger)]">{error}</p>
+          ) : target.kind === 'session' && sessionPreview ? (
+            <SessionBody preview={sessionPreview} />
+          ) : target.kind === 'block' && blockPreview ? (
+            <BlockBody preview={blockPreview} />
+          ) : target.kind === 'exercise' && exercisePreview ? (
+            <ExerciseBody preview={exercisePreview} />
           ) : (
-            <p className="py-10 text-center text-sm text-black/50">Séance vide.</p>
+            <p className="py-10 text-center text-[13px] text-[color:var(--muted)]">Vide.</p>
           )}
         </div>
 
         {onInsert ? (
-          <div className="border-t border-black/10 bg-white px-3 py-2.5">
+          <div className="border-t border-[var(--border)] px-3 py-2.5">
             <Button
               type="button"
               className="!h-9 w-full !rounded-full !text-[13px]"
@@ -232,6 +530,34 @@ export function SessionLibraryPreviewModal({
           </div>
         ) : null}
       </div>
-    </div>
+    </div>,
+    document.body,
+  )
+}
+
+/** Compat palette séances (session-only). */
+export function SessionLibraryPreviewModal({
+  sessionId,
+  nameHint,
+  onClose,
+  onInsert,
+  insertLabel,
+  insertDisabled,
+}: {
+  sessionId: string | null
+  nameHint?: string | null
+  onClose: () => void
+  onInsert?: () => void
+  insertLabel?: string | null
+  insertDisabled?: boolean
+}) {
+  return (
+    <CatalogLibraryPreviewModal
+      target={sessionId ? { kind: 'session', id: sessionId, nameHint } : null}
+      onClose={onClose}
+      onInsert={onInsert}
+      insertLabel={insertLabel}
+      insertDisabled={insertDisabled}
+    />
   )
 }

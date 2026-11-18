@@ -140,6 +140,17 @@ export async function respondRdvAction(formData: FormData) {
 
   const ctx = await requirePortalClient(slug)
   const db = chatDb(ctx.supabase)
+
+  const { data: before } = await db
+    .from('calendar_events')
+    .select('id, title, starts_at')
+    .eq('id', eventId)
+    .eq('client_id', ctx.clientId)
+    .eq('status', 'pending')
+    .eq('created_by', 'coach')
+    .is('deleted_at', null)
+    .maybeSingle()
+
   const { error } = await db
     .from('calendar_events')
     .update({
@@ -157,9 +168,40 @@ export async function respondRdvAction(formData: FormData) {
     redirect(`${portalBase(slug)}/calendrier?error=${encodeURIComponent(error.message)}`)
   }
 
+  if (decision === 'refused' && before) {
+    try {
+      const { createServiceRoleClient } = await import('../../../../lib/supabase/serviceRole')
+      const admin = createServiceRoleClient()
+      const notifDb = admin ? chatDb(admin) : db
+      const { data: clientRow } = await ctx.supabase
+        .from('clients')
+        .select('first_name, last_name, email')
+        .eq('id', ctx.clientId)
+        .maybeSingle()
+      const who = clientRow
+        ? [clientRow.first_name, clientRow.last_name].filter(Boolean).join(' ').trim() ||
+          clientRow.email
+        : 'Un client'
+      await notifDb.from('notifications').insert({
+        user_id: ctx.coachId,
+        type: 'rdv_refused',
+        title: 'RDV refusé',
+        body: `${who} a refusé « ${before.title} »`,
+        payload: {
+          event_id: eventId,
+          client_id: ctx.clientId,
+          href: '/calendar',
+        },
+      })
+    } catch {
+      // best-effort
+    }
+  }
+
   revalidatePath(`${portalBase(slug)}/calendrier`)
   revalidatePath(`${portalBase(slug)}/home`)
   revalidatePath('/calendar')
+  revalidatePath('/home')
   redirect(
     `${portalBase(slug)}/calendrier?${decision === 'accepted' ? 'accepted' : 'refused'}=1`
   )

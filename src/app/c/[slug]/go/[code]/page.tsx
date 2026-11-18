@@ -1,5 +1,6 @@
 import Link from 'next/link'
-import { notFound } from 'next/navigation'
+import { headers } from 'next/headers'
+import { notFound, redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 
 import { ShowroomTrackedRef } from '../../../../../components/showroom/ShowroomTrackedRef'
@@ -11,6 +12,12 @@ export const dynamic = 'force-dynamic'
 
 type Props = {
   params: Promise<{ slug: string; code: string }> | { slug: string; code: string }
+}
+
+function isShareCrawler(ua: string) {
+  return /bot|crawler|spider|facebookexternalhit|facebot|WhatsApp|Twitterbot|Slackbot|LinkedInBot|Discordbot|TelegramBot|SkypeUriPreview|Googlebot/i.test(
+    ua,
+  )
 }
 
 async function loadCampaign(slug: string, code: string) {
@@ -29,7 +36,7 @@ async function loadCampaign(slug: string, code: string) {
   const { data: link } = await db
     .from('coach_tracked_links')
     .select(
-      'id, code, label, share_message, channel, target_kind, prestation_id, capture_leads, status'
+      'id, code, label, share_message, channel, target_kind, prestation_id, promo_code_id, capture_leads, status',
     )
     .eq('coach_id', branding.coach_id)
     .eq('status', 'active')
@@ -48,7 +55,19 @@ async function loadCampaign(slug: string, code: string) {
     prestaName = presta?.name ?? null
   }
 
-  return { branding, link, prestaName }
+  let promoCode: string | null = null
+  const promoId = (link as { promo_code_id?: string | null }).promo_code_id
+  if (promoId) {
+    const { data: promo } = await db
+      .from('coach_codes')
+      .select('code, type, status')
+      .eq('id', promoId)
+      .eq('coach_id', branding.coach_id)
+      .maybeSingle()
+    if (promo?.type === 'promo' && promo.status === 'active') promoCode = promo.code
+  }
+
+  return { branding, link, prestaName, promoCode }
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -63,7 +82,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     'Offre coaching'
   const description =
     data.prestaName
-      ? `${data.prestaName} · ${data.branding.app_name ?? 'Trainly'}`
+      ? `${data.prestaName} · ${data.branding.app_name ?? 'Krid'}`
       : data.branding.app_name?.trim() || 'Découvre les offres'
 
   return {
@@ -87,16 +106,30 @@ export default async function TrackedGoPage({ params }: Props) {
   const data = await loadCampaign(slug, code)
   if (!data) notFound()
 
-  const { branding, link, prestaName } = data
-  const brand = branding.primary_color?.trim() || '#341c44'
-  const appName = branding.app_name?.trim() || 'Trainly'
-  const headline = link.share_message?.trim() || link.label
+  const { branding, link, prestaName, promoCode } = data
   const dest = buildTrackedDestinationPath({
     slug,
     code: link.code,
     targetKind: link.target_kind === 'prestation' ? 'prestation' : 'showroom',
     prestationId: link.prestation_id,
+    promoCode,
   })
+
+  const ua = (await headers()).get('user-agent') ?? ''
+  const crawler = isShareCrawler(ua)
+
+  /**
+   * Humain → redirect immédiat.
+   * Pas de cookies().set ici (interdit hors Server Action / Route Handler) —
+   * le tracking + cookie sont faits sur la page d’arrivée via ShowroomTrackedRef.
+   */
+  if (!crawler) {
+    redirect(dest)
+  }
+
+  const brand = branding.primary_color?.trim() || '#341c44'
+  const appName = branding.app_name?.trim() || 'Krid'
+  const headline = link.share_message?.trim() || link.label
 
   return (
     <main className="flex min-h-screen flex-col bg-[#f6f4f8] text-[#1a1220]">
@@ -125,12 +158,13 @@ export default async function TrackedGoPage({ params }: Props) {
         </div>
 
         <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm">
-          <h1 className="whitespace-pre-wrap text-2xl font-extrabold leading-snug" style={{ color: brand }}>
+          <h1
+            className="whitespace-pre-wrap text-2xl font-extrabold leading-snug"
+            style={{ color: brand }}
+          >
             {headline}
           </h1>
-          <p className="mt-3 text-sm text-black/55">
-            Ouvre l’offre pour continuer (compte / paiement si besoin).
-          </p>
+          <p className="mt-3 text-sm text-black/55">Redirection vers l’offre…</p>
           <Link
             href={dest}
             className="mt-6 inline-flex w-full items-center justify-center rounded-lg px-4 py-3 text-sm font-bold text-white"

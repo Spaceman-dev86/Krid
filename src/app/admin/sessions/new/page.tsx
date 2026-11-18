@@ -192,10 +192,10 @@ export default async function NewAdminSessionPage({ searchParams }: Props) {
         />
         <div className="mt-5 flex flex-wrap gap-2">
           <ConfirmSubmitButton
-            confirmMessage="Publier cette séance ? Les blocs brouillon liés seront publiés aussi."
+            confirmMessage="Passer en publié admin ? Invisible coaches. Les blocs brouillon liés seront publiés aussi."
             formAction={createTrainlySessionPublishedAction}
           >
-            Publier
+            Publié admin
           </ConfirmSubmitButton>
           <Button type="submit" formAction={createTrainlySessionDraftAction} variant="secondary">
             Brouillon

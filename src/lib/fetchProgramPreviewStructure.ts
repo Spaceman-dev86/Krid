@@ -16,6 +16,14 @@ export type PreviewSessionRow = {
   session_order: number
 }
 
+export type PreviewRxRow = {
+  unit_id: string
+  value: string
+  group?: number
+  input_mode?: string | null
+  varies?: boolean
+}
+
 export type PreviewSessionItemRow = {
   id: string
   session_id: string
@@ -23,6 +31,15 @@ export type PreviewSessionItemRow = {
   kind: string
   program_exercise_id: string | null
   session_block_id: string | null
+  /** Source de vérité Rx exo solo (colonnes plates program_exercises dérivées). */
+  prescriptions?: PreviewRxRow[] | null
+}
+
+export type PreviewUnitRow = {
+  id: string
+  key: string
+  label: string
+  short_label: string | null
 }
 
 export type PreviewSessionBlockRow = {
@@ -63,6 +80,7 @@ export type PreviewBlockExerciseRow = {
   load_text: string | null
   rest_seconds: number | null
   notes: string | null
+  prescriptions?: PreviewRxRow[] | null
   exercise_library: { name: string; demo_media_path?: string | null } | null
   demo_media_url?: string | null
 }
@@ -74,6 +92,7 @@ export type ProgramPreviewStructure = {
   sessionBlocks: PreviewSessionBlockRow[]
   blockExercises: PreviewBlockExerciseRow[]
   programExercises: PreviewProgramExerciseRow[]
+  units: PreviewUnitRow[]
 }
 
 const STORAGE_BUCKET = 'exercise-media'
@@ -156,7 +175,58 @@ type BlockExerciseDbRow = {
   load_text: string | null
   rest_seconds: number | null
   notes: string | null
+  prescriptions?: PreviewRxRow[]
   exercise_library: { name: string; demo_media_path?: string | null } | null
+}
+
+function asPreviewRx(raw: unknown): PreviewRxRow[] {
+  if (!Array.isArray(raw)) return []
+  return raw
+    .map((p) => {
+      if (!p || typeof p !== 'object') return null
+      const row = p as { unit_id?: unknown; value?: unknown; group?: unknown }
+      const unit_id = String(row.unit_id ?? '').trim()
+      if (!unit_id) return null
+      return {
+        unit_id,
+        value: String(row.value ?? ''),
+        ...(typeof row.group === 'number' ? { group: row.group } : {}),
+      } satisfies PreviewRxRow
+    })
+    .filter(Boolean) as PreviewRxRow[]
+}
+
+/** Colonnes réelles `block_exercises` → shape aperçu (load_text / rest_seconds). */
+function mapBlockExercisePreviewRow(raw: {
+  id: string
+  session_block_id: string
+  position: number
+  exercise_id: string | null
+  exercise_name: string | null
+  sets?: number | string | null
+  reps?: number | string | null
+  load?: string | null
+  rest_time?: string | null
+  notes?: string | null
+  prescriptions?: unknown
+  exercise_library?: { name: string; demo_media_path?: string | null } | null
+}): BlockExerciseDbRow & { prescriptions?: PreviewRxRow[] } {
+  const restRaw = String(raw.rest_time ?? '').trim()
+  const restParsed = restRaw ? Number.parseInt(restRaw, 10) : NaN
+  return {
+    id: raw.id,
+    session_block_id: raw.session_block_id,
+    position: raw.position,
+    exercise_id: raw.exercise_id,
+    exercise_name: raw.exercise_name,
+    sets: raw.sets ?? null,
+    reps: raw.reps ?? null,
+    load_text: raw.load?.trim() || null,
+    rest_seconds: Number.isFinite(restParsed) ? restParsed : null,
+    notes: raw.notes ?? null,
+    prescriptions: asPreviewRx(raw.prescriptions),
+    exercise_library: raw.exercise_library ?? null,
+  }
 }
 
 async function fetchBlockExercisesForPreview(
@@ -176,26 +246,30 @@ async function fetchBlockExercisesForPreview(
       const beRes = await supabase
         .from('block_exercises')
         .select(
-          'id,session_block_id,position,exercise_id,exercise_name,sets,reps,load_text,rest_seconds,notes,exercise_library(name,demo_media_path)'
+          'id,session_block_id,position,exercise_id,exercise_name,sets,reps,load,rest_time,notes,prescriptions,exercise_library(name,demo_media_path)',
         )
         .in('session_block_id', chunk)
         .order('position', { ascending: true })
 
- 
-
       if (!beRes.error) {
-        return (beRes.data ?? []) as unknown as BlockExerciseDbRow[]
+        return ((beRes.data ?? []) as Parameters<typeof mapBlockExercisePreviewRow>[0][]).map(
+          mapBlockExercisePreviewRow,
+        )
       }
 
-      // Backward-compatible fallback: if some columns don't exist, select the legacy shape.
-      const retryWithJoin = await supabase
+      // Fallback sans join library si la relation échoue.
+      const retryFlat = await supabase
         .from('block_exercises')
-        .select('id,session_block_id,position,exercise_id,exercise_name,notes,exercise_library(name,demo_media_path)')
+        .select(
+          'id,session_block_id,position,exercise_id,exercise_name,sets,reps,load,rest_time,notes,prescriptions',
+        )
         .in('session_block_id', chunk)
         .order('position', { ascending: true })
 
-      if (!retryWithJoin.error) {
-        return (retryWithJoin.data ?? []) as unknown as BlockExerciseDbRow[]
+      if (!retryFlat.error) {
+        return ((retryFlat.data ?? []) as Parameters<typeof mapBlockExercisePreviewRow>[0][]).map(
+          mapBlockExercisePreviewRow,
+        )
       }
 
       const retryMinimal = await supabase
@@ -205,8 +279,10 @@ async function fetchBlockExercisesForPreview(
         .order('position', { ascending: true })
 
       if (retryMinimal.error) return []
-      return (retryMinimal.data ?? []) as unknown as BlockExerciseDbRow[]
-    })
+      return ((retryMinimal.data ?? []) as Parameters<typeof mapBlockExercisePreviewRow>[0][]).map(
+        mapBlockExercisePreviewRow,
+      )
+    }),
   )
 
   const blockExercisesRaw = chunkResults.flat()
@@ -250,10 +326,11 @@ export async function fetchProgramPreviewStructure(
       sessionBlocks: [],
       blockExercises: [],
       programExercises: [],
+      units: [],
     }
   }
 
-  const [sessionBlocksRes, sessionItemsRes, programExercisesRes] = await Promise.all([
+  const [sessionBlocksRes, sessionItemsRes, programExercisesRes, unitsRes] = await Promise.all([
     supabase
       .from('session_blocks')
       .select('id,program_session_id,position,type,title,notes,objective')
@@ -261,7 +338,7 @@ export async function fetchProgramPreviewStructure(
       .order('position', { ascending: true }),
     supabase
       .from('session_items')
-      .select('id,session_id,position,kind,program_exercise_id,session_block_id')
+      .select('id,session_id,position,kind,program_exercise_id,session_block_id,prescriptions')
       .in('session_id', sessionIds)
       .order('position', { ascending: true }),
     supabase
@@ -271,11 +348,26 @@ export async function fetchProgramPreviewStructure(
       )
       .in('session_id', sessionIds)
       .order('exercise_order', { ascending: true }),
+    supabase
+      .from('units')
+      .select('id,key,label,short_label')
+      .is('deleted_at', null),
   ])
 
   const sessionBlocks = (sessionBlocksRes.data ?? []) as PreviewSessionBlockRow[]
-  const sessionItems = (sessionItemsRes.data ?? []) as PreviewSessionItemRow[]
+  const sessionItems = ((sessionItemsRes.data ?? []) as (PreviewSessionItemRow & {
+    prescriptions?: unknown
+  })[]).map((it) => ({
+    ...it,
+    prescriptions: asPreviewRx(it.prescriptions),
+  }))
   const programExercisesRaw = (programExercisesRes.data ?? []) as unknown as PreviewProgramExerciseRow[]
+  const units = ((unitsRes.data ?? []) as PreviewUnitRow[]).map((u) => ({
+    id: u.id,
+    key: u.key,
+    label: u.label,
+    short_label: u.short_label ?? null,
+  }))
 
   const blockIdsFromItems = sessionItems
     .filter((r) => isSessionItemBlockKind(r.kind) && r.session_block_id)
@@ -329,5 +421,6 @@ export async function fetchProgramPreviewStructure(
     sessionBlocks,
     blockExercises,
     programExercises: programExercisesWithMedia,
+    units,
   }
 }

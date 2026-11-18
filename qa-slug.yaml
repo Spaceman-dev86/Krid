@@ -1,0 +1,40 @@
+- generic [active] [ref=f6e1]:
+  - generic [ref=f6e3]:
+    - complementary [ref=f6e4]:
+      - generic [ref=f6e5]:
+        - generic [ref=f6e6]
+        - paragraph [ref=f6e22]: Essai expiré
+      - navigation [ref=f6e23]:
+        - paragraph [ref=f6e24]: Navigation
+        - link "Dashboard" [ref=f6e25] [cursor=pointer]:
+          - /url: /home
+        - link "Clients" [ref=f6e30] [cursor=pointer]:
+          - /url: /clients
+        - link "Chat" [ref=f6e37] [cursor=pointer]:
+          - /url: /chat
+        - link "Calendrier" [ref=f6e41] [cursor=pointer]:
+          - /url: /calendar
+        - link "Programme" [ref=f6e45] [cursor=pointer]:
+          - /url: /programs
+        - link "Nutrition" [ref=f6e48] [cursor=pointer]:
+          - /url: /nutrition
+        - link "Exercices" [ref=f6e52] [cursor=pointer]:
+          - /url: /exercises
+        - link "Drive" [ref=f6e55] [cursor=pointer]:
+          - /url: /drive
+        - link "Documentation" [ref=f6e59] [cursor=pointer]:
+          - /url: /documentation
+        - link "Réseau" [ref=f6e64] [cursor=pointer]:
+          - /url: /reseau
+        - link "Comptabilités" [ref=f6e71] [cursor=pointer]:
+          - /url: /payments
+        - link "Profil public" [ref=f6e77] [cursor=pointer]:
+          - /url: /profile
+    - generic [ref=f6e82]:
+      - banner [ref=f6e83]:
+        - paragraph [ref=f6e84]: Mon app
+        - generic [ref=f6e85]
+      - main [ref=f6e98]:
+        - generic [ref=f6e99]
+  - button "Open Next.js Dev Tools" [ref=f6e194] [cursor=pointer]
+  - alert [ref=f6e198]

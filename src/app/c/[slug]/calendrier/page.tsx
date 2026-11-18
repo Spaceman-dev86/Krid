@@ -10,7 +10,7 @@ import {
   RDV_STATUS_LABELS,
   type CalendarEventRow,
 } from '../../../../lib/calendar/rdv'
-import { requireClientPortal } from '../../../../lib/client-portal/context'
+import { portalShellProps, requireClientPortal } from '../../../../lib/client-portal/context'
 import { createClient } from '../../../../lib/supabase/server'
 import { cancelClientRdvAction, requestRdvAction, respondRdvAction } from './actions'
 
@@ -145,7 +145,7 @@ export default async function ClientCalendrierPage({ params, searchParams }: Pro
   const todayIso = new Date().toISOString().slice(0, 10)
 
   return (
-    <ClientPortalShell slug={ctx.slug} appName={ctx.appName} primaryColor={ctx.primaryColor} logoUrl={ctx.logoUrl}>
+    <ClientPortalShell {...portalShellProps(ctx)}>
       <div className="grid gap-5">
         <div>
           <h1 className="text-2xl font-extrabold" style={{ color: ctx.primaryColor }}>

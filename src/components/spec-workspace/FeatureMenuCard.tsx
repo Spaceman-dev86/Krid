@@ -171,7 +171,7 @@ function FeatureNode({
       >
         <div
           id={feature.id}
-          className={`scroll-mt-28 ${collapsed ? 'rounded-lg border border-[var(--border)] bg-white px-3 py-2 shadow-sm' : style.card} ${collapsed ? '' : style.rail}`}
+          className={`scroll-mt-28 ${collapsed ? 'rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 shadow-da-sm' : style.card} ${collapsed ? '' : style.rail}`}
           style={depth > 0 ? { marginLeft: `${Math.min(depth, 5) * 16}px` } : undefined}
         >
           <div className="flex flex-wrap items-center gap-2">
@@ -184,8 +184,10 @@ function FeatureNode({
             >
               {collapsed ? '▸' : '▾'}
             </button>
-            <span className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide ${style.badge}`}>
-              {collapsed ? `N${depth + 1}` : style.label}
+            <span
+              className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide ${style.badgeClass}`}
+            >
+              {collapsed ? style.badge : style.label}
             </span>
             {!collapsed ? (
               <span className="min-w-0 flex-1 truncate text-[11px] text-[color:var(--muted)]" title={crumb}>
@@ -196,7 +198,7 @@ function FeatureNode({
               <button
                 type="button"
                 onClick={() => onRemove(feature.id)}
-                className="ml-auto rounded-full px-2 py-1 text-xs font-semibold text-red-600 hover:bg-red-50"
+                className="ml-auto rounded-full px-2 py-1 text-xs font-semibold text-[var(--danger)] hover:bg-[var(--danger-bg)]"
               >
                 Supprimer
               </button>
@@ -206,7 +208,7 @@ function FeatureNode({
           <div className={`flex flex-wrap items-start gap-2 ${collapsed ? 'mt-1.5' : 'mt-2'}`}>
             {!collapsed ? (
               <span
-                className={`mt-2 inline-flex h-8 min-w-8 items-center justify-center rounded-full px-2 text-xs font-extrabold text-white ${style.badge}`}
+                className={`mt-2 inline-flex h-8 min-w-8 items-center justify-center rounded-full px-2 text-xs font-extrabold ${style.badgeClass}`}
               >
                 {depth + 1}
               </span>
@@ -243,7 +245,7 @@ function FeatureNode({
               <button
                 type="button"
                 onClick={() => onRemove(feature.id)}
-                className="mt-6 rounded-full px-2 py-1 text-xs font-semibold text-red-600 hover:bg-red-50"
+                className="mt-6 rounded-full px-2 py-1 text-xs font-semibold text-[var(--danger)] hover:bg-[var(--danger-bg)]"
               >
                 Supprimer
               </button>
@@ -258,7 +260,7 @@ function FeatureNode({
               contentEditable
               suppressContentEditableWarning
               onInput={onDirty}
-              className="min-h-[4rem] rounded-md border border-dashed border-[var(--border)] bg-white px-3 py-2 text-sm outline-none focus:border-[var(--brand)]"
+              className="min-h-[4rem] rounded-md border border-dashed border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm outline-none focus:border-[var(--brand)]"
             />
           </div>
 
@@ -541,13 +543,13 @@ export function FeatureMenuCard({
 
   return (
     <div className="scroll-mt-28" id={node.id}>
-      <article className="overflow-hidden rounded-[var(--radius-lg)] border-2 border-[var(--brand)]/15 bg-white shadow-sm">
+      <article className="overflow-hidden rounded-[var(--radius-lg)] border-2 border-[var(--brand)]/15 bg-[var(--surface)] shadow-da-sm">
         <header className="border-b border-[var(--border)] bg-[var(--brand)]/5 px-5 py-4">
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={toggleCollapsed}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-sm font-bold text-[var(--brand)] ring-1 ring-[var(--border)] hover:bg-[var(--accent)]"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--surface)] text-sm font-bold text-[var(--brand)] ring-1 ring-[var(--border)] hover:bg-[var(--accent)]"
               title={collapsed ? 'Déplier la card' : 'Replier la card'}
               aria-expanded={!collapsed}
               aria-label={collapsed ? 'Déplier la card' : 'Replier la card'}
@@ -557,7 +559,7 @@ export function FeatureMenuCard({
             <h3 className="text-xl font-extrabold tracking-tight text-[var(--brand)]">{node.label}</h3>
             <a
               href="#route-tree"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-sm font-bold text-[var(--brand)] ring-1 ring-[var(--border)] hover:bg-[var(--accent)]"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--surface)] text-sm font-bold text-[var(--brand)] ring-1 ring-[var(--border)] hover:bg-[var(--accent)]"
               title="Retour à l’arbre des routes"
               aria-label="Retour à l’arbre des routes"
             >
@@ -581,7 +583,7 @@ export function FeatureMenuCard({
                 markRouteDirty()
               }}
               placeholder="ex. /dashboard/programs"
-              className="min-w-0 w-full rounded-md border border-[var(--border)] bg-white px-2 py-1.5 font-mono text-sm font-normal text-[color:var(--fg)] outline-none focus:border-[var(--brand)]"
+              className="min-w-0 w-full rounded-md border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 font-mono text-sm font-normal text-[color:var(--fg)] outline-none focus:border-[var(--brand)]"
             />
           </label>
           ) : null}
@@ -646,7 +648,7 @@ export function FeatureMenuCard({
                 contentEditable
                 suppressContentEditableWarning
                 onInput={markArrivalDirty}
-                className="min-h-[5rem] rounded-lg border border-dashed border-[var(--border)] bg-white px-3 py-2 text-sm outline-none focus:border-[var(--brand)]"
+                className="min-h-[5rem] rounded-lg border border-dashed border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm outline-none focus:border-[var(--brand)]"
               />
               {images.length > 0 ? (
                 <div className="mt-3 grid gap-2 sm:grid-cols-2">
@@ -682,7 +684,7 @@ export function FeatureMenuCard({
               <button
                 type="button"
                 onClick={() => setAllFeaturesCollapsed(true)}
-                className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-[var(--brand)] ring-1 ring-[var(--border)]"
+                className="rounded-full bg-[var(--surface)] px-3 py-1.5 text-xs font-semibold text-[var(--brand)] ring-1 ring-[var(--border)]"
               >
                 Tout réduire
               </button>
@@ -741,7 +743,7 @@ export function FeatureMenuCard({
           )}
         </section>
 
-        {error ? <p className="px-5 pb-4 text-sm text-red-600">{error}</p> : null}
+        {error ? <p className="px-5 pb-4 text-sm text-[var(--danger)]">{error}</p> : null}
         </>
         ) : null}
       </article>

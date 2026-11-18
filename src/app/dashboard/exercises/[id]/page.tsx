@@ -1,88 +1,10 @@
 import { redirect } from 'next/navigation'
 
-import ExerciseDetailView from '../../../../components/ExerciseDetailView'
-import { createClient } from '../../../../lib/supabase/server'
-import { signExerciseMediaUrl } from '../../../../lib/exerciseMedia'
+export const dynamic = 'force-dynamic'
 
-type PageProps = {
-  params: Promise<{ id: string }>
-  searchParams: Promise<{ returnTo?: string }>
-}
+type Props = { params: Promise<{ id: string }> | { id: string } }
 
-export default async function DashboardExerciseDetailPage(props: PageProps) {
-  const { id } = await props.params
-  const { returnTo } = await props.searchParams
-  const backHref = typeof returnTo === 'string' && returnTo.trim().length > 0 ? returnTo : '/dashboard'
-
-  const replacementReturnTo = (() => {
-    const url = new URL(`/dashboard/exercises/${id}`, 'http://localhost')
-    if (typeof returnTo === 'string' && returnTo.trim().length > 0) {
-      url.searchParams.set('returnTo', returnTo)
-    }
-    return url.pathname + url.search
-  })()
-
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect('/login')
-  }
-
-  const { data: exercise } = await supabase
-    .from('exercise_library')
-    .select(
-      'id,name,description,muscle_group,difficulty,video_url,common_mistakes,demo_media_path,replacement_exercise_id',
-    )
-    .eq('id', id)
-    .maybeSingle()
-
-  if (!exercise) {
-    redirect('/dashboard?error=exercise_not_found')
-  }
-
-  const typedExercise = exercise as unknown as {
-    id: string
-    name: string
-    description: string | null
-    muscle_group: string | null
-    difficulty: string | null
-    video_url: string | null
-    common_mistakes: string | null
-    demo_media_path: string | null
-    replacement_exercise_id: string | null
-  }
-
-  const demoMediaUrl = await signExerciseMediaUrl(supabase, typedExercise.demo_media_path ?? null)
-
-  const replacementId = typedExercise.replacement_exercise_id
-  const replacement = replacementId
-    ? (
-        (await supabase
-          .from('exercise_library')
-          .select('id,name,demo_media_path')
-          .eq('id', replacementId)
-          .maybeSingle()).data as unknown as { id: string; name: string; demo_media_path: string | null } | null
-      )
-    : null
-  const replacementMediaUrl = replacement?.demo_media_path
-    ? await signExerciseMediaUrl(supabase, replacement.demo_media_path)
-    : null
-
-  return (
-    <ExerciseDetailView
-      exercise={typedExercise}
-      demoMediaUrl={demoMediaUrl}
-      demoMediaPath={typedExercise.demo_media_path}
-      replacement={replacement}
-      replacementMediaUrl={replacementMediaUrl}
-      replacementMediaPath={replacement?.demo_media_path ?? null}
-      backHref={backHref}
-      preferBackHref={Boolean(returnTo)}
-      exerciseBasePath="/dashboard/exercises"
-      replacementReturnTo={replacementReturnTo}
-    />
-  )
+export default async function LegacyDashboardExercisePage({ params }: Props) {
+  const { id } = await Promise.resolve(params)
+  redirect(`/exercises/${id}`)
 }

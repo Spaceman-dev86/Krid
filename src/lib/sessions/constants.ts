@@ -23,6 +23,8 @@ export type SessionSlot = {
   key: string
   kind: SessionItemKind
   blockId?: string
+  /** Bloc programme sans source_block_library_id — préservé au rewrite. */
+  orphanSessionBlockId?: string
   exerciseId?: string
   /** Durée de repos (secondes) — uniquement si kind === 'rest'. */
   restSeconds?: number

@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
-import { PageTitle, Muted } from '@/src/components/ui'
+import { PageTitle, Muted, PendingFormButton } from '@/src/components/ui'
 import { CoachAppShell } from '../../components/coach/CoachAppShell'
 import { ManualPaymentForm } from '../../components/coach/ManualPaymentForm'
 import { PaymentsSubnav } from '../../components/coach/PaymentsSubnav'
@@ -41,6 +41,8 @@ function sourceLabel(s: string) {
       return 'Stripe'
     case 'showroom':
       return 'Showroom'
+    case 'cash':
+      return 'Code accès'
     default:
       return s
   }
@@ -151,7 +153,9 @@ export default async function PaymentsLedgerPage({ searchParams }: Props) {
   }
 
   return (
-    <CoachAppShell appName={shell.branding?.app_name} trialLabel={shell.trialLabel} title="Comptabilités" savUnread={shell.savUnread}>
+    <CoachAppShell appName={shell.branding?.app_name} trialLabel={shell.trialLabel} title="Comptabilités" savUnread={shell.savUnread} chatUnread={shell.chatUnread}
+      notifUnread={shell.notifUnread}
+      notifHref={shell.notifHref}>
       <div className="mx-auto grid max-w-4xl gap-6">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
@@ -205,7 +209,7 @@ export default async function PaymentsLedgerPage({ searchParams }: Props) {
           {!(prestations ?? []).length ? (
             <p className="mt-3 text-xs text-[color:var(--muted)]">
               Aucune presta active —{' '}
-              <Link href="/payments/prestations" className="font-semibold text-[color:var(--brand)] underline">
+              <Link href="/profile/prestations" className="font-semibold text-[color:var(--brand)] underline">
                 créer une prestation
               </Link>
               .
@@ -280,17 +284,27 @@ export default async function PaymentsLedgerPage({ searchParams }: Props) {
                       {r.status === 'pending' ? (
                         <form action={markPaymentPaidAction}>
                           <input type="hidden" name="ledger_id" value={r.id} />
-                          <button type="submit" className="text-xs font-bold text-emerald-700 hover:underline">
+                          <PendingFormButton
+                            type="submit"
+                            variant="secondary"
+                            className="!rounded-lg !px-2.5 !py-1 text-xs font-bold"
+                            pendingLabel="…"
+                          >
                             → Payé
-                          </button>
+                          </PendingFormButton>
                         </form>
                       ) : null}
                       {r.status === 'paid' ? (
                         <form action={refundPaymentAction}>
                           <input type="hidden" name="ledger_id" value={r.id} />
-                          <button type="submit" className="text-xs font-semibold text-red-700 hover:underline">
+                          <PendingFormButton
+                            type="submit"
+                            variant="secondary"
+                            className="!rounded-lg !px-2.5 !py-1 text-xs font-semibold"
+                            pendingLabel="…"
+                          >
                             Rembourser
-                          </button>
+                          </PendingFormButton>
                         </form>
                       ) : null}
                     </div>

@@ -131,7 +131,7 @@ function TreeRow({
     <div className="flex items-stretch gap-1.5">
       <div
         className={[
-          'flex min-w-0 flex-1 items-center gap-1.5 rounded-md border-l-4 bg-white px-2 py-2 text-sm shadow-sm',
+          'flex min-w-0 flex-1 items-center gap-1.5 rounded-md border-l-4 bg-[var(--surface)] px-2 py-2 text-sm shadow-da-sm',
           meta.border,
         ].join(' ')}
       >
@@ -464,7 +464,7 @@ function DndTree({
 
       <DragOverlay dropAnimation={null}>
         {overlayLabel ? (
-          <div className="rounded-md border border-[var(--border)] bg-white px-3 py-2.5 text-sm font-semibold shadow-lg">
+          <div className="rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm font-semibold shadow-lg">
             {overlayLabel}
           </div>
         ) : null}
@@ -551,7 +551,7 @@ export function RouteTree({ nodes, onDragResult }: Props) {
   return (
     <section
       id="route-tree"
-      className="scroll-mt-28 rounded-[var(--radius-lg)] border border-[var(--border)] bg-white/60 p-5 shadow-sm"
+      className="scroll-mt-28 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)]/60 p-5 shadow-da-sm"
     >
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
@@ -574,7 +574,7 @@ export function RouteTree({ nodes, onDragResult }: Props) {
           <button
             type="button"
             onClick={() => setOpen(new Set())}
-            className="rounded-full bg-white px-3 py-1 text-[11px] font-semibold text-[var(--brand)] ring-1 ring-[var(--border)]"
+            className="rounded-full bg-[var(--surface)] px-3 py-1 text-[11px] font-semibold text-[var(--brand)] ring-1 ring-[var(--border)]"
           >
             Tout fermer
           </button>

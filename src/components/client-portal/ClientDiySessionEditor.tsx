@@ -175,7 +175,7 @@ export function ClientDiySessionEditor({
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium">{row.name}</p>
                 <p className="text-[10px] text-black/40">
-                  {row.coach_id ? 'Coach' : 'Trainly'}
+                  {row.coach_id ? 'Coach' : 'Krid'}
                   {row.muscle_group ? ` · ${row.muscle_group}` : ''}
                 </p>
               </div>

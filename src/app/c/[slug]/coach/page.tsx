@@ -1,10 +1,10 @@
 import Link from 'next/link'
 
 import { ClientPortalShell } from '../../../../components/client-portal/ClientPortalShell'
-import { hasPortalModule, requireClientPortal } from '../../../../lib/client-portal/context'
+import { IconCalendar, IconChat } from '../../../../components/ui'
+import { portalShellProps, requireClientPortal } from '../../../../lib/client-portal/context'
 import { formatPriceCents, parseModules } from '../../../../lib/prestations/modules'
 import { createClient } from '../../../../lib/supabase/server'
-import { startCoachDmAction } from '../messages/actions'
 
 export const dynamic = 'force-dynamic'
 
@@ -31,12 +31,7 @@ export default async function ClientCoachPage({ params }: Props) {
     .order('name', { ascending: true })
 
   return (
-    <ClientPortalShell
-      slug={ctx.slug}
-      appName={ctx.appName}
-      primaryColor={ctx.primaryColor}
-      logoUrl={ctx.logoUrl}
-    >
+    <ClientPortalShell {...portalShellProps(ctx)}>
       <div className="grid gap-5">
         <div className="flex items-center gap-3">
           {ctx.logoUrl ? (
@@ -62,34 +57,23 @@ export default async function ClientCoachPage({ params }: Props) {
           </div>
         </div>
 
+        {/* Spec : 1 entrée Messages (inbox 1:1 + groupes coach) · pas de 2e CTA « Écrire » ici */}
         <div className="grid gap-2">
-          {hasPortalModule(ctx, 'messaging') ? (
-            <>
-              <form action={startCoachDmAction}>
-                <input type="hidden" name="slug" value={ctx.slug} />
-                <button
-                  type="submit"
-                  className="w-full rounded-xl px-4 py-3 text-sm font-bold text-white shadow-sm"
-                  style={{ backgroundColor: ctx.primaryColor }}
-                >
-                  Écrire au coach
-                </button>
-              </form>
-              <Link
-                href={`/c/${ctx.slug}/messages`}
-                className="rounded-xl border border-black/10 bg-white px-4 py-3 text-center text-sm font-semibold shadow-sm"
-                style={{ color: ctx.primaryColor }}
-              >
-                Boîte Messages →
-              </Link>
-            </>
-          ) : null}
+          <Link
+            href={`/c/${ctx.slug}/messages`}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold text-white shadow-sm"
+            style={{ backgroundColor: ctx.primaryColor }}
+          >
+            <IconChat size={18} className="shrink-0" />
+            Messages
+          </Link>
           <Link
             href={`/c/${ctx.slug}/calendrier`}
-            className="rounded-xl border border-black/10 bg-white px-4 py-3 text-center text-sm font-semibold shadow-sm"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-black/10 bg-white px-4 py-3 text-sm font-semibold shadow-sm"
             style={{ color: ctx.primaryColor }}
           >
-            RDV — demandes &amp; file →
+            <IconCalendar size={18} className="shrink-0" />
+            RDV — demandes &amp; file
           </Link>
           <Link
             href={`/c/${ctx.slug}/showroom`}

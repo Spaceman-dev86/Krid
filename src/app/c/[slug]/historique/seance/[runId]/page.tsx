@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 
 import { ClientPortalShell } from '../../../../../../components/client-portal/ClientPortalShell'
 import { ClientRunHistoryDetail } from '../../../../../../components/client-portal/ClientRunHistoryDetail'
-import { requireClientPortal } from '../../../../../../lib/client-portal/context'
+import { portalShellProps, requireClientPortal } from '../../../../../../lib/client-portal/context'
 import {
   RUN_STYLE_LABELS,
   summarizeRun,
@@ -48,7 +48,7 @@ export default async function ClientHistoriqueRunPage({ params }: Props) {
   const when = run.finished_at || run.actual_date || run.created_at
 
   return (
-    <ClientPortalShell slug={ctx.slug} appName={ctx.appName} primaryColor={ctx.primaryColor} logoUrl={ctx.logoUrl}>
+    <ClientPortalShell {...portalShellProps(ctx)}>
       <div className="grid gap-4">
         <div>
           <Link

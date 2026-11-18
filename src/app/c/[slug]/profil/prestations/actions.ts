@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
+import { safeInternalPath } from '../../../../../lib/navigation/safeReturnTo'
 import { createClient } from '../../../../../lib/supabase/server'
 
 function portalBase(slug: string) {
@@ -13,7 +14,7 @@ export async function requestInvoiceAction(formData: FormData) {
   const slug = String(formData.get('slug') ?? '').trim()
   const prestationId = String(formData.get('prestation_id') ?? '').trim() || null
   const comment = String(formData.get('comment') ?? '').trim() || null
-  const returnTo = String(formData.get('return_to') ?? '').trim() || `${portalBase(slug)}/profil/prestations`
+  const returnTo = safeInternalPath(formData.get('return_to'), `${portalBase(slug)}/profil/prestations`)
 
   if (!slug) redirect('/login/client')
 

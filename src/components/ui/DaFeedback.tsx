@@ -26,7 +26,7 @@ export function DaBanner({
   return <div className={cn(TONE[tone], className)}>{children}</div>
 }
 
-/** Champ formulaire thème-aware. */
+/** Champ formulaire thème-aware. ≥16px sous 1100px (évite zoom iOS). */
 export const daFieldClass =
   'rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--page-bg)] px-3 py-2 text-sm font-normal text-[color:var(--fg)] outline-none focus:ring-2 focus:ring-[var(--brand)]'
 

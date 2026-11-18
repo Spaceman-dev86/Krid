@@ -1,22 +1,17 @@
 import Link from 'next/link'
+import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
 
-import { PageTitle } from '@/src/components/ui'
-import { CoachAppShell } from '../../../components/coach/CoachAppShell'
-import { ExerciseForm } from '../../../components/exercises/ExerciseForm'
-import { ExercisesSubnav } from '../../../components/exercises/ExercisesSubnav'
+import { CoachExerciseFicheForm } from '../../../components/exercises/CoachExerciseFicheForm'
+import { CoachQueryFlash } from '../../../components/coach/CoachQueryFlash'
+import { DaBanner, Muted, PageTitle } from '@/src/components/ui'
 import { canAccessCoachApp } from '../../../lib/auth/roles'
-import { loadCoachShellContext } from '../../../lib/coach/loadCoachShellContext'
+import { loadCoachFicheOptions } from '../../../lib/exercises/loadCoachFicheOptions'
 import { createClient } from '../../../lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
 
-type Props = {
-  searchParams?: Promise<{ error?: string }> | { error?: string }
-}
-
-export default async function NewExercisePage({ searchParams }: Props) {
-  const q = await Promise.resolve(searchParams ?? {})
+export default async function NewExercisePage() {
   const supabase = await createClient()
   const {
     data: { user },
@@ -26,25 +21,41 @@ export default async function NewExercisePage({ searchParams }: Props) {
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
   if (!canAccessCoachApp(profile?.role)) redirect('/login')
 
-  const shell = await loadCoachShellContext(user.id)
+  const { types, sports, candidates } = await loadCoachFicheOptions(supabase, user.id)
 
   return (
-    <CoachAppShell appName={shell.branding?.app_name} trialLabel={shell.trialLabel} title="Nouvel exercice" savUnread={shell.savUnread}>
-      <div className="mx-auto grid max-w-3xl gap-5">
-        <div className="flex items-center justify-between gap-2">
-          <PageTitle className="text-2xl">Nouvel exercice</PageTitle>
-          <Link href="/exercises" className="text-sm font-semibold text-[color:var(--brand)] underline">
-            Annuler
+    <div className="mx-auto grid max-w-3xl gap-5">
+      <Suspense fallback={null}>
+        <CoachQueryFlash />
+      </Suspense>
+      <div>
+        <p className="text-sm text-[color:var(--muted)]">
+          <Link href="/exercises/mine" className="font-semibold text-[var(--brand)] hover:underline">
+            ← Ma biblio
           </Link>
-        </div>
-        <ExercisesSubnav pathname="/exercises/new" />
-        {q.error ? (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
-            {q.error}
-          </div>
-        ) : null}
-        <ExerciseForm mode="new" />
+        </p>
+        <PageTitle className="mt-2">Nouvel exercice</PageTitle>
+        <Muted className="mt-1">
+          Crée ta fiche, ajoute un média si besoin, puis publie — ou garde en brouillon.
+        </Muted>
       </div>
-    </CoachAppShell>
+
+      {!types.length ? (
+        <DaBanner tone="warning">
+          Aucun type catalogue disponible. Contacte le support Krid si le problème persiste.
+        </DaBanner>
+      ) : null}
+      {!sports.length ? (
+        <DaBanner tone="warning">Aucun sport catalogue disponible.</DaBanner>
+      ) : null}
+
+      <CoachExerciseFicheForm
+        mode="new"
+        coachId={user.id}
+        types={types}
+        sports={sports}
+        candidates={candidates}
+      />
+    </div>
   )
 }

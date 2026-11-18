@@ -12,7 +12,7 @@ import {
 import { CoachAppShell } from '../../../components/coach/CoachAppShell'
 import { SettingsSubnav } from '../../../components/coach/SettingsSubnav'
 import { CATEGORY_LABEL, STATUS_LABEL } from '../../../lib/admin/supportLabels'
-import { canAccessCoachApp } from '../../../lib/auth/roles'
+import { canAccessCoachApp, isPlatformAdmin } from '../../../lib/auth/roles'
 import { loadCoachShellContext } from '../../../lib/coach/loadCoachShellContext'
 import { createClient } from '../../../lib/supabase/server'
 import {
@@ -70,7 +70,9 @@ export default async function CoachSupportPage({ searchParams }: Props) {
       appName={shell.branding?.app_name}
       trialLabel={shell.trialLabel}
       title="Aide / SAV"
-      savUnread={shell.savUnread}
+      savUnread={shell.savUnread} chatUnread={shell.chatUnread}
+      notifUnread={shell.notifUnread}
+      notifHref={shell.notifHref}
     >
       <div className="mx-auto grid max-w-3xl gap-6">
         <div className="flex flex-wrap items-end justify-between gap-3">
@@ -79,7 +81,10 @@ export default async function CoachSupportPage({ searchParams }: Props) {
             <PageTitle className="mt-2 text-2xl">Aide / feedback</PageTitle>
             <Muted className="mt-1">Réponses admin in-app · pièces jointes</Muted>
           </div>
-          <SettingsSubnav savUnread={shell.savUnread} />
+          <SettingsSubnav
+            savUnread={shell.savUnread}
+            showAdminGateway={isPlatformAdmin(profile?.role)}
+          />
         </div>
 
         {q.error ? <DaBanner tone="danger">{q.error}</DaBanner> : null}
@@ -170,7 +175,7 @@ export default async function CoachSupportPage({ searchParams }: Props) {
                   }
                 >
                   <p className="text-[10px] font-bold uppercase tracking-wide text-[color:var(--muted)]">
-                    {m.sender_role === 'admin' ? 'Admin Trainly' : 'Toi'} ·{' '}
+                    {m.sender_role === 'admin' ? 'Admin Krid' : 'Toi'} ·{' '}
                     {new Date(m.created_at).toLocaleString('fr-FR')}
                   </p>
                   <p className="mt-1 whitespace-pre-wrap text-[color:var(--fg)]">{m.body}</p>

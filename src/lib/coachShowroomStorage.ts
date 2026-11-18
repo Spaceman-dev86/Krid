@@ -27,6 +27,36 @@ export function coachShowroomMediaCandidates(coachId: string, kind: CoachShowroo
   ]
 }
 
+/** Photo card / fiche d’une prestation (showroom). */
+export function coachPrestationPhotoPath(coachId: string, prestationId: string, mimeType: string) {
+  const ext = MIME_TO_EXT[mimeType] ?? 'jpg'
+  return `${coachId}/prestations/${prestationId}.${ext}`
+}
+
+export function coachPrestationPhotoCandidates(coachId: string, prestationId: string) {
+  return [
+    `${coachId}/prestations/${prestationId}.jpg`,
+    `${coachId}/prestations/${prestationId}.png`,
+    `${coachId}/prestations/${prestationId}.webp`,
+    `${coachId}/prestations/${prestationId}.gif`,
+  ]
+}
+
+/** Photo d’un témoignage showroom. */
+export function coachTestimonialPhotoPath(coachId: string, testimonialId: string, mimeType: string) {
+  const ext = MIME_TO_EXT[mimeType] ?? 'jpg'
+  return `${coachId}/testimonials/${testimonialId}.${ext}`
+}
+
+export function coachTestimonialPhotoCandidates(coachId: string, testimonialId: string) {
+  return [
+    `${coachId}/testimonials/${testimonialId}.jpg`,
+    `${coachId}/testimonials/${testimonialId}.png`,
+    `${coachId}/testimonials/${testimonialId}.webp`,
+    `${coachId}/testimonials/${testimonialId}.gif`,
+  ]
+}
+
 export function isAllowedCoachShowroomMime(mimeType: string) {
   return mimeType in MIME_TO_EXT
 }

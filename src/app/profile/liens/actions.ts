@@ -19,17 +19,12 @@ export async function createTrackedLinkAction(formData: FormData) {
   if (!user) redirect('/login')
 
   const label = clean(formData.get('label'))
-  const channel = clean(formData.get('channel')) ?? 'other'
+  const channel = 'other'
   const targetKind = clean(formData.get('target_kind')) ?? 'showroom'
   const prestationId = clean(formData.get('prestation_id'))
-  const customCode = clean(formData.get('code'))
-  const captureLeads = formData.get('capture_leads') === 'on'
-  const shareMessage = clean(formData.get('share_message'))
+  const promoCodeId = clean(formData.get('promo_code_id'))
 
   if (!label) redirect('/profile/liens?error=' + encodeURIComponent('Libellé requis'))
-  if (!['ig', 'wa', 'fb', 'other'].includes(channel)) {
-    redirect('/profile/liens?error=' + encodeURIComponent('Canal invalide'))
-  }
   if (targetKind === 'prestation' && !prestationId) {
     redirect('/profile/liens?error=' + encodeURIComponent('Choisis une prestation'))
   }
@@ -44,7 +39,28 @@ export async function createTrackedLinkAction(formData: FormData) {
     if (!presta) redirect('/profile/liens?error=' + encodeURIComponent('Prestation invalide'))
   }
 
-  const code = (customCode ?? randomRefCode(channel === 'other' ? 'r' : channel.slice(0, 2))).toLowerCase()
+  if (promoCodeId) {
+    const { data: promo } = await supabase
+      .from('coach_codes')
+      .select('id, type, status, prestation_ids')
+      .eq('id', promoCodeId)
+      .eq('coach_id', user.id)
+      .maybeSingle()
+    if (!promo || promo.type !== 'promo' || promo.status !== 'active') {
+      redirect('/profile/liens?error=' + encodeURIComponent('Promo invalide ou inactive'))
+    }
+    if (targetKind === 'prestation' && prestationId) {
+      const ids = promo.prestation_ids ?? []
+      if (!ids.includes(prestationId)) {
+        redirect(
+          '/profile/liens?error=' +
+            encodeURIComponent('Cette promo ne s’applique pas à la prestation choisie'),
+        )
+      }
+    }
+  }
+
+  const code = randomRefCode('r').toLowerCase()
   if (!/^[a-z0-9-]{3,24}$/.test(code)) {
     redirect('/profile/liens?error=' + encodeURIComponent('Code ref : 3–24 caractères (a-z, 0-9, -)'))
   }
@@ -56,8 +72,9 @@ export async function createTrackedLinkAction(formData: FormData) {
     channel,
     target_kind: targetKind,
     prestation_id: targetKind === 'prestation' ? prestationId : null,
-    capture_leads: captureLeads,
-    share_message: shareMessage,
+    promo_code_id: promoCodeId,
+    capture_leads: true,
+    share_message: null,
     is_default: false,
     status: 'active',
   } as never)
@@ -78,15 +95,23 @@ export async function ensureDefaultTrackedLinkAction() {
   } = await supabase.auth.getUser()
   if (!user) return
 
-  const { data: existing } = await supabase
+  // Self-heal : toutes les campagnes actives capturent les leads.
+  await supabase
+    .from('coach_tracked_links')
+    .update({ capture_leads: true } as never)
+    .eq('coach_id', user.id)
+    .eq('status', 'active')
+    .eq('capture_leads', false)
+
+  const { data: existingRows } = await supabase
     .from('coach_tracked_links')
     .select('id')
     .eq('coach_id', user.id)
     .eq('is_default', true)
     .eq('status', 'active')
-    .maybeSingle()
+    .limit(1)
 
-  if (existing) return
+  if (existingRows?.length) return
 
   await supabase.from('coach_tracked_links').insert({
     coach_id: user.id,
@@ -94,7 +119,7 @@ export async function ensureDefaultTrackedLinkAction() {
     label: 'Showroom principal',
     channel: 'other',
     target_kind: 'showroom',
-    capture_leads: false,
+    capture_leads: true,
     is_default: true,
     status: 'active',
   } as never)
@@ -162,4 +187,51 @@ export async function updateTrackedLinkShareAction(formData: FormData) {
 
   revalidatePath('/profile/liens')
   redirect('/profile/liens?saved=1')
+}
+
+/** Contacts IG / WA / FB utilisés pour ouvrir la discussion après Envoyer. */
+export async function saveLiensContactsAction(formData: FormData) {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const rawIg = clean(formData.get('contact_instagram'))
+  const contactInstagram = rawIg
+    ? rawIg
+        .replace(/^@+/, '')
+        .replace(/^https?:\/\/(www\.)?instagram\.com\//i, '')
+        .replace(/^instagram\.com\//i, '')
+        .split(/[/?#]/)[0]
+        ?.replace(/\/+$/, '')
+        .toLowerCase() || null
+    : null
+  const contactWhatsapp = clean(formData.get('contact_whatsapp'))?.replace(/\D/g, '') || null
+  const contactFacebook = clean(formData.get('contact_facebook'))
+
+  const { data: existing } = await supabase
+    .from('coach_branding')
+    .select('slug, app_name')
+    .eq('coach_id', user.id)
+    .maybeSingle()
+
+  const { error } = await supabase.from('coach_branding').upsert(
+    {
+      coach_id: user.id,
+      slug: existing?.slug ?? `coach-${user.id.slice(0, 8)}`,
+      app_name: existing?.app_name ?? 'Mon app',
+      contact_instagram: contactInstagram,
+      contact_whatsapp: contactWhatsapp,
+      contact_facebook: contactFacebook,
+      updated_at: new Date().toISOString(),
+    } as never,
+    { onConflict: 'coach_id' },
+  )
+
+  if (error) redirect('/profile/liens?error=' + encodeURIComponent(error.message))
+
+  revalidatePath('/profile/liens')
+  revalidatePath('/profile/mon-app')
+  redirect('/profile/liens?contacts=1')
 }

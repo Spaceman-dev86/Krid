@@ -84,9 +84,30 @@ export const DESIGN_TOKENS = {
     border: { css: '--border', usage: 'Séparateurs' },
   },
   feedback: {
-    success: { css: '--success', bg: '--success-bg', border: '--success-border', usage: 'OK' },
-    danger: { css: '--danger', bg: '--danger-bg', border: '--danger-border', usage: 'Erreur' },
-    warning: { css: '--warning', bg: '--warning-bg', border: '--warning-border', usage: 'Attention' },
+    success: {
+      css: '--success',
+      bg: '--success-bg',
+      border: '--success-border',
+      usage: 'OK · conforme (--status-ok)',
+    },
+    warning: {
+      css: '--warning',
+      bg: '--warning-bg',
+      border: '--warning-border',
+      usage: 'Attention · adapté (--status-warn) — orange clair ≠ danger',
+    },
+    danger: {
+      css: '--danger',
+      bg: '--danger-bg',
+      border: '--danger-border',
+      usage: 'Erreur · non fait (--status-bad)',
+    },
+  },
+  /** Pastilles conformité programme — alias des feedback (pas de hex hors DA). */
+  status: {
+    ok: { css: '--status-ok', usage: 'Conforme' },
+    warn: { css: '--status-warn', usage: 'Adapté' },
+    bad: { css: '--status-bad', usage: 'Non fait' },
   },
   radius: {
     sm: { css: '--radius-sm', value: '12px' },
@@ -107,4 +128,7 @@ export const DESIGN_RULES = [
   'Boutons : 2/mode — Black mist/beam · White cta/secondary. Secondary = --btn-secondary-*.',
   'Utilitaire .on-brand = bg brand + color brand-fg. Ombres = shadow-da-*.',
   'UI : @/src/components/ui · tokens CSS · pas de hex hors DA.',
+  'Statuts conformité : --status-ok/--status-warn/--status-bad (= success/warning/danger).',
+  'Dossiers doc : uniquement DocFolderCard (onglet gauche, feuille peek, tokens dark/light).',
+  'Nav shell : barre progress + prefetch — pas de remount page (key=pathname) à chaque clic.',
 ] as const

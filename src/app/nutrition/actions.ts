@@ -10,6 +10,7 @@ import {
   parseStructure,
   type NutritionStructure,
 } from '../../lib/nutrition/plans'
+import { safeInternalPath } from '../../lib/navigation/safeReturnTo'
 import { createClient } from '../../lib/supabase/server'
 
 async function requireCoach() {
@@ -126,18 +127,6 @@ export async function sendNutritionPlanAction(formData: FormData) {
   }
 
   const db = chatDb(supabase)
-  const { data: plan, error: planErr } = await db
-    .from('nutrition_plans')
-    .select('id, title, structure')
-    .eq('id', planId)
-    .eq('coach_id', userId)
-    .is('deleted_at', null)
-    .maybeSingle()
-
-  if (planErr || !plan) {
-    redirect('/nutrition?error=' + encodeURIComponent(planErr?.message || 'Plan introuvable'))
-  }
-
   const { data: client } = await db
     .from('clients')
     .select('id')
@@ -150,18 +139,17 @@ export async function sendNutritionPlanAction(formData: FormData) {
     redirect(`/nutrition/${planId}?error=` + encodeURIComponent('Client introuvable'))
   }
 
-  const snapshot = parseStructure(plan.structure)
-  const { error } = await db.from('client_nutrition_plans').insert({
-    client_id: clientId,
-    coach_id: userId,
-    source_plan_id: planId,
-    title: plan.title,
-    status: 'waiting',
-    snapshot,
+  const { pushNutritionToClients } = await import('../../lib/coach/linkedGroups')
+  const { pushed } = await pushNutritionToClients(db, {
+    coachId: userId,
+    clientIds: [clientId],
+    nutritionPlanId: planId,
   })
-
-  if (error) {
-    redirect(`/nutrition/${planId}?error=` + encodeURIComponent(error.message))
+  if (pushed === 0) {
+    redirect(
+      `/nutrition/${planId}?error=` +
+        encodeURIComponent('Plan introuvable ou déjà en cours pour ce client'),
+    )
   }
 
   revalidatePath('/nutrition')
@@ -177,6 +165,85 @@ export async function sendNutritionPlanAction(formData: FormData) {
   }
 
   redirect(`/nutrition/${planId}?sent=1`)
+}
+
+/** Envoi depuis fiche client (return_to = /clients/[id]/nutrition). */
+export async function assignNutritionToClientAction(formData: FormData) {
+  const { supabase, userId } = await requireCoach()
+  const planId = String(formData.get('plan_id') ?? '').trim()
+  const clientId = String(formData.get('client_id') ?? '').trim()
+  const returnTo = safeInternalPath(formData.get('return_to'), `/clients/${clientId}/nutrition`)
+
+  if (!planId || !clientId) {
+    redirect(`${returnTo}?error=` + encodeURIComponent('Plan et client requis'))
+  }
+
+  const db = chatDb(supabase)
+  const { data: client } = await db
+    .from('clients')
+    .select('id')
+    .eq('id', clientId)
+    .eq('coach_id', userId)
+    .is('deleted_at', null)
+    .maybeSingle()
+
+  if (!client) {
+    redirect(`${returnTo}?error=` + encodeURIComponent('Client introuvable'))
+  }
+
+  const { pushNutritionToClients } = await import('../../lib/coach/linkedGroups')
+  const { pushed } = await pushNutritionToClients(db, {
+    coachId: userId,
+    clientIds: [clientId],
+    nutritionPlanId: planId,
+  })
+  if (pushed === 0) {
+    redirect(
+      `${returnTo}?error=` +
+        encodeURIComponent('Plan introuvable ou déjà en cours pour ce client'),
+    )
+  }
+
+  revalidatePath('/nutrition')
+  revalidatePath(`/clients/${clientId}`)
+  revalidatePath(returnTo)
+  redirect(`${returnTo}?assigned=1`)
+}
+
+/** Fiche client : pause · reprendre · terminer un plan nutrition. */
+export async function setClientNutritionPlanStatusAction(formData: FormData) {
+  const { supabase, userId } = await requireCoach()
+  const planId = String(formData.get('plan_id') ?? '').trim()
+  const intent = String(formData.get('intent') ?? '').trim()
+  const clientId = String(formData.get('client_id') ?? '').trim()
+  const returnTo = safeInternalPath(formData.get('return_to'), `/clients/${clientId}/nutrition`)
+  if (!planId || !intent) redirect(returnTo)
+
+  const db = chatDb(supabase)
+  const { data: plan } = await db
+    .from('client_nutrition_plans')
+    .select('id, status, start_date')
+    .eq('id', planId)
+    .eq('coach_id', userId)
+    .maybeSingle()
+  if (!plan) redirect(`${returnTo}?error=` + encodeURIComponent('Plan introuvable'))
+
+  let next: string | null = null
+  if (intent === 'pause' && (plan.status === 'started' || plan.status === 'waiting')) next = 'paused'
+  if (intent === 'resume' && plan.status === 'paused') next = plan.start_date ? 'started' : 'waiting'
+  if (intent === 'done' && plan.status !== 'done') next = 'done'
+  if (!next) redirect(`${returnTo}?error=` + encodeURIComponent('Action impossible sur ce plan'))
+
+  const { error } = await db
+    .from('client_nutrition_plans')
+    .update({ status: next, updated_at: new Date().toISOString() })
+    .eq('id', planId)
+    .eq('coach_id', userId)
+  if (error) redirect(`${returnTo}?error=` + encodeURIComponent(error.message))
+
+  revalidatePath('/nutrition')
+  revalidatePath(returnTo)
+  redirect(returnTo)
 }
 
 export async function saveRecipeAction(formData: FormData) {

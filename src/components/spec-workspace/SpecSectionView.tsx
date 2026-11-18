@@ -96,10 +96,12 @@ export async function SpecSectionView({
         {doc.description ? <p className="mt-2 max-w-3xl text-sm text-[color:var(--muted)]">{doc.description}</p> : null}
         {useFeatureMenus ? (
           <p className="mt-3 max-w-3xl rounded-lg border border-[var(--border)] bg-[var(--accent)]/50 px-3 py-2 text-xs text-[color:var(--muted)]">
-            Chaque menu : <strong>À l’arrivée</strong> + <strong>Header</strong> (boutons de redirection + features
-            imbriquées). Colonne ambre à droite = <strong>notes / questions</strong> (hors card).{' '}
-            <strong>Pas d’auto-save</strong> — utilise le bouton <strong>Sauvegarder</strong> sticky en haut. Bouton{' '}
-            <strong>▾/▸</strong> = replier. Bouton <strong>↑</strong> = retour à l’arbre.
+            Chaque menu : <strong className="text-[color:var(--fg)]">À l’arrivée</strong> +{' '}
+            <strong className="text-[color:var(--fg)]">Header</strong> (boutons de redirection + features imbriquées).
+            Colonne warning à droite = <strong className="text-[color:var(--fg)]">notes / questions</strong> (hors
+            card). <strong className="text-[color:var(--fg)]">Pas d’auto-save</strong> — bouton{' '}
+            <strong className="text-[color:var(--fg)]">Sauvegarder</strong> sticky. Bouton{' '}
+            <strong className="text-[color:var(--fg)]">▾/▸</strong> = replier.
           </p>
         ) : null}
         {useShellLayout ? (

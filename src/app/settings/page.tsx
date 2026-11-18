@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
 import {
@@ -11,7 +12,7 @@ import {
 import { CoachAppShell } from '../../components/coach/CoachAppShell'
 import { SettingsSubnav } from '../../components/coach/SettingsSubnav'
 import { ShellThemeToggle } from '../../components/design/ThemeToggle'
-import { canAccessCoachApp } from '../../lib/auth/roles'
+import { canAccessCoachApp, isPlatformAdmin } from '../../lib/auth/roles'
 import { loadCoachShellContext } from '../../lib/coach/loadCoachShellContext'
 import { createClient } from '../../lib/supabase/server'
 import { trialDaysRemaining } from '../../lib/tenancy/ensureCoachTrial'
@@ -47,13 +48,16 @@ export default async function SettingsAccountPage({ searchParams }: Props) {
   const shell = await loadCoachShellContext(user.id)
   const days = trialDaysRemaining(shell.subscription)
   const pendingEmail = (user as { new_email?: string | null }).new_email || null
+  const adminGateway = isPlatformAdmin(profile?.role)
 
   return (
     <CoachAppShell
       appName={shell.branding?.app_name}
       trialLabel={shell.trialLabel}
       title="Paramètres"
-      savUnread={shell.savUnread}
+      savUnread={shell.savUnread} chatUnread={shell.chatUnread}
+      notifUnread={shell.notifUnread}
+      notifHref={shell.notifHref}
     >
       <div className="mx-auto grid max-w-xl gap-6">
         <div className="flex flex-wrap items-end justify-between gap-3">
@@ -62,8 +66,17 @@ export default async function SettingsAccountPage({ searchParams }: Props) {
             <PageTitle className="mt-2 text-2xl">Compte</PageTitle>
             <Muted className="mt-1">Identité login · thème · aperçu abo</Muted>
           </div>
-          <SettingsSubnav savUnread={shell.savUnread} />
+          <SettingsSubnav savUnread={shell.savUnread} showAdminGateway={adminGateway} />
         </div>
+
+        {adminGateway ? (
+          <section className="rounded-[var(--radius-lg)] border border-[color-mix(in_srgb,var(--brand)_35%,var(--border))] bg-[color-mix(in_srgb,var(--brand)_10%,var(--surface))] px-4 py-3 text-sm text-[color:var(--fg)]">
+            Compte staff ·{' '}
+            <Link href="/admin" className="font-bold text-[var(--brand)] underline underline-offset-2">
+              Retour à la plateforme Admin
+            </Link>
+          </section>
+        ) : null}
 
         {q.error ? <DaBanner tone="danger">{q.error}</DaBanner> : null}
         {q.ok === 'name' ? <DaBanner tone="success">Nom mis à jour.</DaBanner> : null}

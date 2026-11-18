@@ -112,7 +112,7 @@ export default function PublicHeaderClient() {
       </Link>
 
       {role === 'coach' ? (
-        <Link href="/dashboard" className="rounded-full px-3 py-2 text-sm font-semibold text-black/80 hover:bg-[#f5f5f5]">
+        <Link href="/home" className="rounded-full px-3 py-2 text-sm font-semibold text-black/80 hover:bg-[#f5f5f5]">
           Dashboard
         </Link>
       ) : null}
@@ -158,7 +158,7 @@ export default function PublicHeaderClient() {
 
       {role === 'coach' ? (
         <Link
-          href="/dashboard"
+          href="/home"
           className="rounded-2xl bg-[#f5f5f5] px-4 py-3 text-sm font-semibold text-[#341c44]"
           onClick={() => setOpen(false)}
         >
@@ -185,11 +185,11 @@ export default function PublicHeaderClient() {
   const isNutritionOpaqueHeaderPage = (() => {
     const p = pathname.split('?')[0] ?? ''
     return (
-      p === '/dashboard/nutrition' ||
-      p.startsWith('/dashboard/nutrition/recipes') ||
-      p === '/dashboard/exercises' ||
-      p.startsWith('/dashboard/exercises/') ||
-      p === '/dashboard/calendar'
+      p === '/nutrition' ||
+      p.startsWith('/nutrition/recipes') ||
+      p === '/exercises' ||
+      p.startsWith('/exercises/') ||
+      p === '/calendar'
     )
   })()
 
@@ -209,7 +209,7 @@ export default function PublicHeaderClient() {
         ref={menuRef}
       >
         <Link href="/" className="text-base font-extrabold tracking-tight text-[#341c44]">
-          Trainly
+          Krid
         </Link>
 
         {isPromoGenVariant ? (

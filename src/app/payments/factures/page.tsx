@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 
-import { Button, PageTitle, Muted } from '@/src/components/ui'
+import { PageTitle, Muted, PendingFormButton } from '@/src/components/ui'
 import { CoachAppShell } from '../../../components/coach/CoachAppShell'
 import { PaymentsSubnav } from '../../../components/coach/PaymentsSubnav'
 import { canAccessCoachApp } from '../../../lib/auth/roles'
@@ -66,7 +66,9 @@ export default async function PaymentsFacturesPage({ searchParams }: Props) {
   const invoicedLedgerIds = new Set(invoices.map((i) => i.payment_ledger_id))
 
   return (
-    <CoachAppShell appName={shell.branding?.app_name} trialLabel={shell.trialLabel} title="Factures" savUnread={shell.savUnread}>
+    <CoachAppShell appName={shell.branding?.app_name} trialLabel={shell.trialLabel} title="Factures" savUnread={shell.savUnread} chatUnread={shell.chatUnread}
+      notifUnread={shell.notifUnread}
+      notifHref={shell.notifHref}>
       <div className="mx-auto grid max-w-4xl gap-6">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
@@ -158,7 +160,13 @@ export default async function PaymentsFacturesPage({ searchParams }: Props) {
                     </div>
                     <form action={generateInvoiceAction}>
                       <input type="hidden" name="ledger_id" value={p.id} />
-                      <Button type="submit" className="!rounded-lg !px-3 !py-1.5 text-xs font-bold">Générer facture</Button>
+                      <PendingFormButton
+                        type="submit"
+                        className="!rounded-lg !px-3 !py-1.5 text-xs font-bold"
+                        pendingLabel="Génération…"
+                      >
+                        Générer facture
+                      </PendingFormButton>
                     </form>
                   </li>
                 )

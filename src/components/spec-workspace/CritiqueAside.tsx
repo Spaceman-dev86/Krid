@@ -14,7 +14,7 @@ type Props = {
   onInput?: () => void
 }
 
-/** Notes / questions column — sits outside the content card. */
+/** Notes / questions — tokens warning (lisible dark + light). */
 export function CritiqueAside({
   entityId,
   initialHtml,
@@ -38,10 +38,10 @@ export function CritiqueAside({
     <aside
       className={
         className ??
-        'sticky top-24 rounded-xl border border-amber-300/80 bg-amber-50/90 p-3 shadow-sm'
+        'sticky top-24 rounded-xl border border-[var(--warning-border)] bg-[var(--warning-bg)] p-3 shadow-da-sm'
       }
     >
-      <p className="mb-1.5 text-[10px] font-extrabold uppercase tracking-wider text-amber-900/80">
+      <p className="mb-1.5 text-[10px] font-extrabold uppercase tracking-wider text-[var(--warning)]">
         {label}
       </p>
       <div
@@ -50,7 +50,7 @@ export function CritiqueAside({
         contentEditable
         suppressContentEditableWarning
         onInput={() => onInput?.()}
-        className="min-h-[3.5rem] rounded-md border border-dashed border-amber-400/70 bg-white/80 px-2 py-1.5 text-xs leading-relaxed text-amber-950 outline-none focus:border-amber-600 [&_p]:mb-1.5 [&_p:last-child]:mb-0"
+        className="min-h-[3.5rem] rounded-md border border-dashed border-[var(--warning-border)] bg-[var(--surface)]/85 px-2 py-1.5 text-xs leading-relaxed text-[color:var(--fg)] outline-none focus:border-[var(--warning)] [&_p]:mb-1.5 [&_p:last-child]:mb-0"
       />
     </aside>
   )

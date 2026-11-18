@@ -21,6 +21,8 @@ type Props = {
   programId: string
   basePath?: string
   backHref?: string
+  /** Ouvre semaine + séance au chargement (ex. depuis fiche plan). */
+  initialOpenSessionId?: string | null
   initialDocument: MinimalProgramDocument
   exerciseLibrary: ExerciseLibraryCatalog
 }
@@ -29,6 +31,7 @@ export default function ProgramEditorShell({
   programId,
   basePath,
   backHref,
+  initialOpenSessionId = null,
   initialDocument,
   exerciseLibrary,
 }: Props) {
@@ -83,6 +86,15 @@ export default function ProgramEditorShell({
       stopProgramEditorPersistence()
     }
   }, [programId, hydrationEpoch])
+
+  useEffect(() => {
+    if (!document || !initialOpenSessionId) return
+    const session = document.entities.sessions[initialOpenSessionId]
+    if (!session) return
+    const ui = useProgramEditorUiStore.getState()
+    ui.setWeekOpen(session.weekId, true)
+    ui.setSessionOpen(initialOpenSessionId, true)
+  }, [document, initialOpenSessionId, hydrationEpoch])
 
   if (hydrateError) {
     const message =

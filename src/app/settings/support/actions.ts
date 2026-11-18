@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 
 import { canAccessCoachApp, isPlatformAdmin } from '../../../lib/auth/roles'
 import { isUploadFile, storageSafeName } from '../../../lib/admin/trainlyMedia'
+import { safeInternalPath } from '../../../lib/navigation/safeReturnTo'
 import { createClient } from '../../../lib/supabase/server'
 
 const SUPPORT_BASE = '/settings/support'
@@ -28,16 +29,29 @@ async function uploadSupportAttachment(
   return { path, name: file.name.slice(0, 240), mime: file.type || 'application/octet-stream' }
 }
 
+function safeReturnTo(raw: FormDataEntryValue | null): string | null {
+  return safeInternalPath(raw, '') || null
+}
+
 export async function createSupportTicketAction(formData: FormData) {
   const subject = String(formData.get('subject') || '').trim()
   const category = String(formData.get('category') || 'autre')
   const body = String(formData.get('body') || '').trim()
   const file = formData.get('attachment')
+  const returnTo = safeReturnTo(formData.get('return_to'))
 
-  if (subject.length < 3) redirect(`${SUPPORT_BASE}?error=empty`)
-  if (body.length < 1 && !isUploadFile(file)) redirect(`${SUPPORT_BASE}?error=empty`)
+  if (subject.length < 3) {
+    redirect(returnTo ? `${returnTo}${returnTo.includes('?') ? '&' : '?'}error=empty` : `${SUPPORT_BASE}?error=empty`)
+  }
+  if (body.length < 1 && !isUploadFile(file)) {
+    redirect(returnTo ? `${returnTo}${returnTo.includes('?') ? '&' : '?'}error=empty` : `${SUPPORT_BASE}?error=empty`)
+  }
   if (!['bug', 'billing', 'compte', 'produit', 'autre'].includes(category)) {
-    redirect(`${SUPPORT_BASE}?error=category`)
+    redirect(
+      returnTo
+        ? `${returnTo}${returnTo.includes('?') ? '&' : '?'}error=category`
+        : `${SUPPORT_BASE}?error=category`,
+    )
   }
 
   const supabase = await createClient()
@@ -89,6 +103,11 @@ export async function createSupportTicketAction(formData: FormData) {
 
   revalidatePath(SUPPORT_BASE)
   revalidatePath('/profile/aide')
+  if (returnTo) {
+    revalidatePath(returnTo.split('?')[0] || returnTo)
+    const sep = returnTo.includes('?') ? '&' : '?'
+    redirect(`${returnTo}${sep}request_sent=1`)
+  }
   redirect(`${SUPPORT_BASE}?created=${ticket.id}`)
 }
 

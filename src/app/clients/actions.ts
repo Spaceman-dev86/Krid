@@ -44,48 +44,24 @@ export async function createClientAction(formData: FormData) {
   redirect(`/clients/${data!.id}?created=1`)
 }
 
-export async function updateClientAction(formData: FormData) {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+/** Lifecycle hors archive : lié → active, sinon invited. */
+function lifecycleStatus(userId: string | null | undefined) {
+  return userId ? 'active' : 'invited'
+}
 
+/**
+ * @deprecated Le statut invited/active n’est plus éditable à la main.
+ * Conservé pour d’éventuels forms legacy → no-op redirect.
+ */
+export async function updateClientStatusAction(formData: FormData) {
   const id = clean(formData.get('id'))
   if (!id) redirect('/clients')
+  redirect(`/clients/${id}`)
+}
 
-  const email = clean(formData.get('email'))?.toLowerCase()
-  if (!email || !email.includes('@')) {
-    redirect(`/clients/${id}?error=email`)
-  }
-
-  const status = clean(formData.get('status')) ?? 'invited'
-  if (!['invited', 'active', 'archived'].includes(status)) {
-    redirect(`/clients/${id}?error=status`)
-  }
-
-  const { error } = await supabase
-    .from('clients')
-    .update({
-      email,
-      first_name: clean(formData.get('first_name')),
-      last_name: clean(formData.get('last_name')),
-      phone: clean(formData.get('phone')),
-      sex: clean(formData.get('sex')),
-      birth_date: clean(formData.get('birth_date')),
-      status,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', id)
-    .eq('coach_id', user.id)
-
-  if (error) {
-    redirect(`/clients/${id}?error=${encodeURIComponent(error.message)}`)
-  }
-
-  revalidatePath('/clients')
-  revalidatePath(`/clients/${id}`)
-  redirect(`/clients/${id}?saved=1`)
+/** @deprecated */
+export async function updateClientAction(formData: FormData) {
+  return updateClientStatusAction(formData)
 }
 
 export async function archiveClientAction(formData: FormData) {
@@ -98,11 +74,11 @@ export async function archiveClientAction(formData: FormData) {
   const id = clean(formData.get('id'))
   if (!id) redirect('/clients')
 
+  // Archivé = reste en base (visible via filtre), sans soft-delete
   const { error } = await supabase
     .from('clients')
     .update({
       status: 'archived',
-      deleted_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
     .eq('id', id)
@@ -113,5 +89,45 @@ export async function archiveClientAction(formData: FormData) {
   }
 
   revalidatePath('/clients')
+  revalidatePath(`/clients/${id}`)
   redirect('/clients?archived=1')
+}
+
+/** Désarchive → invited ou active selon présence du compte lié. */
+export async function unarchiveClientAction(formData: FormData) {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const id = clean(formData.get('id'))
+  if (!id) redirect('/clients')
+
+  const { data: row } = await supabase
+    .from('clients')
+    .select('id, user_id, status')
+    .eq('id', id)
+    .eq('coach_id', user.id)
+    .is('deleted_at', null)
+    .maybeSingle()
+
+  if (!row) redirect('/clients')
+
+  const { error } = await supabase
+    .from('clients')
+    .update({
+      status: lifecycleStatus(row.user_id),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', id)
+    .eq('coach_id', user.id)
+
+  if (error) {
+    redirect(`/clients/${id}?error=${encodeURIComponent(error.message)}`)
+  }
+
+  revalidatePath('/clients')
+  revalidatePath(`/clients/${id}`)
+  redirect(`/clients/${id}?saved=1`)
 }

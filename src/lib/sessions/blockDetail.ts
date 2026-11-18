@@ -19,10 +19,14 @@ export type SessionBlockDetail = {
   expected_result_unit_id: string | null
   expected_result_label: string | null
   allow_duplicate: boolean
+  /** null = catalogue plateforme · absent sur copies programme. */
+  coach_id?: string | null
   exercise_ids: string[]
   exercise_prescriptions: ExercisePrescription[][]
   hidden_type_ids: string[]
   exercises: SessionBlockDetailExercise[]
+  /** Provenance catalogue (copie programme) — pour Publier admin / update. */
+  source_block_library_id?: string | null
 }
 
 type AdminSupabase = Awaited<ReturnType<typeof createClient>>
@@ -149,6 +153,7 @@ export async function loadSessionBlockDetail(
       expected_result_unit_id: block.expected_result_unit_id,
       expected_result_label,
       allow_duplicate: block.allow_duplicate !== false,
+      coach_id: block.coach_id,
       exercise_ids: exerciseIds,
       exercise_prescriptions: exercisePrescriptions,
       hidden_type_ids,
@@ -164,12 +169,10 @@ export async function loadSessionBlockDetails(
 ): Promise<SessionBlockDetail[]> {
   const unique = [...new Set(blockIds.filter(Boolean))]
   if (!unique.length) return []
-  const out: SessionBlockDetail[] = []
-  for (const id of unique) {
-    const { detail } = await loadSessionBlockDetail(supabase, id)
-    if (detail) out.push(detail)
-  }
-  return out
+  const details = await Promise.all(
+    unique.map((id) => loadSessionBlockDetail(supabase, id)),
+  )
+  return details.map((r) => r.detail).filter((d): d is SessionBlockDetail => Boolean(d))
 }
 
 export function formatBlockTimerSummary(timerNote: string | null | undefined): string | null {
@@ -179,7 +182,7 @@ export function formatBlockTimerSummary(timerNote: string | null | undefined): s
 }
 
 export function formatFilledPrescriptions(
-  prescriptions: Array<{ unit_id: string; value: string }>,
+  prescriptions: Array<{ unit_id: string; value: string; group?: number }>,
   unitById: Map<
     string,
     { key: string; label: string; short_label?: string | null }
@@ -198,4 +201,27 @@ export function formatFilledPrescriptions(
       return `${short} ${String(p.value).trim()}`
     })
     .join(' · ')
+}
+
+/** Une ligne par série (group) — pour aperçu compact multi-paliers. */
+export function formatFilledPrescriptionLines(
+  prescriptions: Array<{ unit_id: string; value: string; group?: number }>,
+  unitById: Map<
+    string,
+    { key: string; label: string; short_label?: string | null }
+  >,
+  shortByKey?: Record<string, string>,
+): string[] {
+  const byGroup = new Map<number, Array<{ unit_id: string; value: string; group?: number }>>()
+  for (const p of prescriptions) {
+    if (!p?.unit_id || String(p.value ?? '').trim() === '') continue
+    const g = typeof p.group === 'number' && p.group >= 0 ? p.group : 0
+    const list = byGroup.get(g) ?? []
+    list.push(p)
+    byGroup.set(g, list)
+  }
+  return [...byGroup.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([, rows]) => formatFilledPrescriptions(rows, unitById, shortByKey))
+    .filter(Boolean)
 }

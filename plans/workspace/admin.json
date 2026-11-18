@@ -1,7 +1,7 @@
 {
   "id": "admin",
   "title": "Admin (plateforme)",
-  "description": "Back-office secret Trainly (toi seul V1). Ops · Coaches · Catalogue · Drive · Formation · SAV · Compta · Accès · Settings staff · Spec/Design. Essai = état compte 15j dès 1ʳᵉ connexion app.",
+  "description": "Back-office secret Trainly (toi seul V1). Ops · Coaches · Catalogue · Documentation · SAV · Compta · Accès · Settings staff · Spec/Design. Essai = état compte 15j dès 1ʳᵉ connexion app.",
   "featureMenuLayout": true,
   "pageShellLayout": false,
   "tree": [
@@ -24,15 +24,9 @@
       "kind": "menu"
     },
     {
-      "id": "drive-packs",
-      "label": "Drive & PDF",
-      "route": "/admin/drive-packs",
-      "kind": "menu"
-    },
-    {
-      "id": "formation",
-      "label": "Formation",
-      "route": "/admin/formation",
+      "id": "documentation",
+      "label": "Documentation",
+      "route": "/admin/documentation",
       "kind": "menu"
     },
     {
@@ -163,7 +157,35 @@
           "bodyHtml": "<p>Hub unique (comme Exercices &amp; blocs) : toggle <strong>Programmes</strong> | <strong>Séances</strong>.</p>\n<p><strong>Séances</strong> (<code>session_library</code>) : draft/publish · composition blocs + exos publiés + <strong>repos</strong> (<code>item_kind=rest</code>, 1 max entre deux items) · Rx exo standard · <strong>groupes de séries</strong> (même règle que builder coach) · héritage types/sports masquable · feedback client post-séance.</p>\n<p><strong>Blocs depuis séance / cycle de vie (FIGÉ 2026-09-16)</strong> :</p>\n<ul>\n<li>Créer depuis une séance <em>brouillon</em> → bloc brouillon + rattachement (ref)</li>\n<li>Créer depuis une séance <em>publiée</em> → bloc <strong>publié</strong> directement</li>\n<li><strong>Publier une séance</strong> → publie automatiquement tous les blocs brouillon liés (contraintes publish bloc : nom, sport, résultat, ≥1 exo)</li>\n<li><strong>Interdit</strong> : laisser un bloc brouillon dans une séance publiée · <strong>interdit</strong> de dépublier un bloc encore lié à une séance publiée</li>\n<li>Picker d’ajout = blocs publiés only · soft-delete bloc = lien séance conservé (admin)</li>\n</ul>\n<p><strong>Chaîne Trainly → coach → client</strong> : admin publie programmes/séances/blocs → visibles coaches (réutilisation). Coach : onglets brouillon (en construction) → templates validés → seul le <strong>programme final</strong> est « publié » au sens envoi (1 client ou groupe, lié à une presta). Le client ne voit que son plan ; pas le statut catalogue.</p>",
           "critiqueHtml": "<p><strong>✅ 2026-09-17</strong> Création + shell + bandeau semaines (←→, rename, dup, delete, sync durée). Suite : calendrier/slots → palette session_library.</p>",
           "images": [],
-          "children": []
+          "children": [
+            {
+              "id": "f-adm-cat-programs-qa",
+              "label": "QA — Program builder (rapports)",
+              "route": "/qa/program-builder-2026-10-20-1410.html",
+              "bodyHtml": "<p><strong>Dernier rapport QA</strong> — 2026-10-20-1410</p><p><a href=\"/qa/program-builder-2026-10-20-1410.html\" target=\"_blank\" rel=\"noopener\">Ouvrir le rapport HTML</a></p><p>Vidéo locale : <code>recordings/qa-program-builder-2026-10-20-1410.webm</code> (ouvrir dans l’IDE).</p><iframe src=\"/qa/program-builder-2026-10-20-1410.html\" style=\"width:100%;min-height:70vh;border:1px solid #333;border-radius:12px;background:#0c0c0e\" title=\"QA Program Builder\"></iframe>",
+              "images": [],
+              "children": [],
+              "critiqueHtml": "<p>Généré automatiquement (playwright-cli headed). Chrome full matrix OK · Firefox/WebKit SKIP auth cross-browser.</p>"
+            },
+            {
+              "id": "f-adm-qa-coach-drive",
+              "label": "QA — Coach Drive (rapports)",
+              "route": "/qa/coach-drive-2026-10-21-1447.html",
+              "bodyHtml": "<p><strong>Dernier rapport QA Coach Drive</strong> — 2026-10-21-1447 · note <strong>7.2 / 10</strong></p><p><a href=\"/qa/coach-drive-2026-10-21-1447.html\" target=\"_blank\" rel=\"noopener\">Ouvrir le rapport HTML</a> · <a href=\"/admin/spec/coach\" target=\"_blank\" rel=\"noopener\">Spec Coach → Drive</a></p><p>Vidéo : <a href=\"/qa/qa-coach-drive-2026-10-21-1447.webm\" target=\"_blank\" rel=\"noopener\">lecture in-app</a>.</p><iframe src=\"/qa/coach-drive-2026-10-21-1447.html\" style=\"width:100%;min-height:70vh;border:1px solid #333;border-radius:12px;background:#0c0c0e\" title=\"QA Coach Drive\"></iframe>",
+              "images": [],
+              "children": [],
+              "critiqueHtml": "<p>playwright-cli headed 2026-10-21. Panels dossier OK · rename optimistic OK · self-drop silencieux · cold /drive ~15s P0.</p>"
+            },
+            {
+              "id": "f-adm-qa-chat-v1",
+              "label": "QA — Chat V1 (rapports)",
+              "route": "/qa/chat-v1-2026-10-24-2218.html",
+              "bodyHtml": "<p><strong>Dernier rapport QA Chat V1</strong> — 2026-10-24-2218 · note <strong>9.7 / 10</strong></p><p><a href=\"/qa/chat-v1-2026-10-24-2218.html\" target=\"_blank\" rel=\"noopener\">Ouvrir le rapport HTML</a> · <a href=\"/admin/spec/coach\" target=\"_blank\" rel=\"noopener\">Spec Coach → Chat</a></p><p>Vidéo : <a href=\"/qa/qa-chat-v1-2026-10-24-2218.webm\" target=\"_blank\" rel=\"noopener\">lecture in-app</a>.</p><iframe src=\"/qa/chat-v1-2026-10-24-2218.html\" style=\"width:100%;min-height:70vh;border:1px solid #333;border-radius:12px;background:#0c0c0e\" title=\"QA Chat V1\"></iframe>",
+              "images": [],
+              "children": [],
+              "critiqueHtml": "<p>playwright-cli + Playwright headed 2026-10-24. Switch ~169ms · send ~162ms · chrome/ff/webkit OK · <strong>lien coach↔client OK</strong> (Edge, realtime 3–5s) · <a href=\"/qa/chat-link-2026-10-24-2238.html\" target=\"_blank\" rel=\"noopener\">rapport lien</a>.</p>"
+            }
+          ]
         },
         {
           "id": "f-adm-cat-spec-vs-code",
@@ -189,42 +211,6 @@
           "route": "/admin/exercises",
           "bodyHtml": "<p>Alimente la biblio globale Trainly (palette coach). Workflow brouillon → publié.</p>\n<p><strong>Visible builders / coach</strong> : uniquement <code>status=published</code> + non corbeille (drafts admin only).</p>\n<p><strong>Publier</strong> (fiche + liste) : nom + type + sport obligatoires.</p>\n<p><strong>Ponts</strong> : multi via <code>exercise_replacements</code> ; cibles = exos publiés uniquement.</p>\n<p><strong>Historique client (build futur)</strong> — Rx / unités :</p>\n<ul>\n<li>Sur <strong>blocs</strong>, prescriptions = JSON texte <code>[{unit_id, value, input_mode, varies}]</code> (value toujours string). Stats = parse à la lecture si <code>input_mode=number|time</code>.</li>\n<li>Quand on ajoutera des <strong>unités sur la fiche exercice</strong> : <strong>numérique only</strong> (plus simple pour l’historique / PR).</li>\n<li>Même shape admin → coach builder → snapshot séance client.</li>\n</ul>\n<p>Pas d’autosave fiche (save explicite = stable).</p>",
           "critiqueHtml": "<p><strong>✅ FIGÉ 2026-09-15</strong> published-only builders · publish nom+type+sport · ponts durcis · Rx texte blocs · unités exo futures = number · pas d’autosave.</p>",
-          "images": [],
-          "children": []
-        }
-      ]
-    },
-    "drive-packs": {
-      "arrival": {
-        "bodyHtml": "<p><code>/admin/drive-packs</code> — biblio PDF Trainly (V1 PDF only) → section <strong>Trainly</strong> du Drive coach (même pattern que Trainly exos / nutrition / programmes).</p>\n<p><strong>Stockage</strong> : bucket Supabase Storage dédié (décision produit).</p>\n<p><strong>Coach</strong> : ouvrir in-app + actions selon flags admin. <strong>Hors quota</strong> tant que consulté depuis la biblio partagée. Si le coach récupère (duplique) ou télécharge puis ré-upload dans <em>son</em> Drive → compte dans son quota.</p>\n<p><strong>Droits par document</strong> (même logique catalogue) : admin choisit <strong>duplicable</strong> (récupérer dans l’espace coach / envoyer à ses clients) et/ou <strong>téléchargeable</strong>.</p>\n<p><strong>Dépublier</strong> : disparaît du dossier de partage Trainly (plus de nouvelle récupération). Copies déjà dans l’espace coach / clients inchangées.</p>\n<p>Workflow brouillon → publié (confirm).</p>",
-        "images": [],
-        "critiqueHtml": "<p><strong>✅ FIGÉ 2026-03-13</strong> · PDF only V1 · Storage Supabase · section Drive Trainly · flags duplicable/téléchargeable · dépublish = plus de récup depuis partage · hors quota biblio · SQL 34 OK.</p>"
-      },
-      "features": [
-        {
-          "id": "f-adm-drive-lib",
-          "label": "Biblio docs Trainly",
-          "route": "/admin/drive-packs",
-          "bodyHtml": "<p>CRUD admin : upload PDF · titre · description · flags <code>allow_duplicate</code> / <code>allow_download</code> · publier / dépublier · preview · filtres.</p>\n<p>Coach <code>/drive</code> section Trainly : liste publiés · ouvrir · Dupliquer si autorisé · Télécharger si autorisé.</p>",
-          "critiqueHtml": "<p><strong>✅ live 2026-09-13</strong> filtres · preview · publier/dépublier · section coach.</p>",
-          "images": [],
-          "children": []
-        }
-      ]
-    },
-    "formation": {
-      "arrival": {
-        "bodyHtml": "<p><code>/admin/formation</code> — contenus de <strong>formation</strong> pour les coaches (séparé du Drive biblio docs).</p>\n<p>Médias V1 : <strong>PDF · vidéo · image</strong>. Coach = <strong>lecture seule</strong> (viewer in-app <code>/formation/[id]</code>).</p>\n<p>Sidebar coach : entrée <strong>Formation</strong> dédiée. Admin : section dédiée (cette page).</p>\n<p>Workflow brouillon → publié · dépublier = plus visible côté coach.</p>",
-        "images": [],
-        "critiqueHtml": "<p><strong>✅ FIGÉ + live 2026-09-13</strong> admin UX + viewer coach.</p>"
-      },
-      "features": [
-        {
-          "id": "f-adm-formation-lib",
-          "label": "Bibliothèque Formation",
-          "route": "/admin/formation",
-          "bodyHtml": "<p>Upload / métadonnées / publier. Types : pdf, video, image. Visible coaches sur <code>/formation</code> + viewer <code>/formation/[id]</code>.</p>",
-          "critiqueHtml": "<p><strong>✅ live</strong> filtres · preview · publish · viewer.</p>",
           "images": [],
           "children": []
         }
@@ -360,6 +346,33 @@
           "route": "/admin/design",
           "bodyHtml": "<p><strong>Route</strong> : <code>/admin/design</code> (existe déjà — à enrichir).</p><p><strong>Rôle</strong> : page où on <strong>bloque / fige</strong> le design system Trainly :</p><ul><li>Tokens couleurs (brand, bg, surface, accent, text, muted, border)</li><li>Boutons (primary / secondary / ghost) · états hover/disabled</li><li>Radii · ombres · typo</li><li>Cards / surfaces app (shell coach, portail)</li><li>Référence visuelle alignée sur le <strong>site vitrine</strong> (même famille, pas un look admin gris séparé)</li></ul><p><strong>Process</strong> : 1) figer ici · 2) appliquer aux shells <code>/home</code> puis écrans métier · 3) white-label coach (branding) = surcharge contrôlée des tokens, pas un 2ᵉ design system.</p><p><strong>Hors scope immédiat</strong> : ne pas refaire toute la DA app pendant les tranches SQL/CRM — d’abord fondations, puis passe Design lock, puis apply.</p>",
           "critiqueHtml": "<p><strong>✅ FIGÉ produit</strong> : page Design = verrou couleurs + boutons + composants. Alignement vitrine obligatoire. Timing : après tranche Clients (ou dès que le shell est stable), pas pendant chaque feature.</p>",
+          "images": [],
+          "children": []
+        }
+      ]
+    },
+    "documentation": {
+      "arrival": {
+        "bodyHtml": "<p><code>/admin/documentation</code> — hub unique (remplace <code>/admin/formation</code> + <code>/admin/drive-packs</code>).</p>\n<p>Dossiers système : <strong>Formation</strong> · <strong>Contenu KRID</strong>. Admin peut créer des dossiers custom.</p>\n<p>Items : PDF · vidéo · image · brouillon / publié · flag <code>allow_duplicate</code> (Récupérer côté coach) · <strong>pas de téléchargement coach</strong> en V1.</p>\n<p>Surface coach : <code>/documentation</code> (publiés only).</p>",
+        "images": [],
+        "critiqueHtml": "<p><strong>✅ FIGÉ 2026-10-20</strong> · slice 61 · live admin + coach.</p>"
+      },
+      "features": [
+        {
+          "id": "f-adm-doc-folders",
+          "label": "Dossiers",
+          "route": "/admin/documentation",
+          "bodyHtml": "<p>Créer / ouvrir / supprimer (dossiers système non supprimables). Badge publiés + pastille brouillons.</p>",
+          "critiqueHtml": "<p><strong>✅ live</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-adm-doc-items",
+          "label": "Documents",
+          "route": "/admin/documentation",
+          "bodyHtml": "<p>Upload · métadonnées · publier / dépublier · allow_duplicate · preview. Visible coach uniquement si publié.</p>",
+          "critiqueHtml": "<p><strong>✅ live</strong> · pas de allow_download V1.</p>",
           "images": [],
           "children": []
         }

@@ -63,7 +63,6 @@ function toExercise(
   name: string,
   prescriptions: RxRow[],
   unitKeyById: Map<string, string>,
-  media: { path: string | null; url: string | null },
 ): LibraryPreviewExercise {
   const byKey = rxByUnitKey(prescriptions, unitKeyById)
   const restRaw = byKey.rest_s
@@ -78,8 +77,9 @@ function toExercise(
     rpe: byKey.rpe ?? null,
     tempo: byKey.tempo ?? null,
     notes: byKey.note ?? null,
-    demoMediaUrl: media.url,
-    demoMediaPath: media.path,
+    // Aperçu « i » : pas de médias (non affichés) — évite createSignedUrls.
+    demoMediaUrl: null,
+    demoMediaPath: null,
   }
 }
 
@@ -137,56 +137,18 @@ export async function fetchSessionLibraryPreview(
     ...new Set(items.filter((i) => i.item_kind === 'block' && i.block_id).map((i) => i.block_id!)),
   ]
 
-  const exoById = new Map<string, { name: string; demo_media_path: string | null }>()
-  if (exoIds.length) {
-    const { data } = await supabase
-      .from('exercise_library')
-      .select('id, name, demo_media_path')
-      .in('id', exoIds)
-    for (const e of (data ?? []) as { id: string; name: string; demo_media_path: string | null }[]) {
-      exoById.set(e.id, { name: e.name, demo_media_path: e.demo_media_path })
-    }
-  }
+  const [exoResult, blockDetails] = await Promise.all([
+    exoIds.length
+      ? supabase.from('exercise_library').select('id, name').in('id', exoIds)
+      : Promise.resolve({ data: [] as { id: string; name: string }[] }),
+    loadSessionBlockDetails(supabase, blockIds),
+  ])
 
-  const blockDetails = await loadSessionBlockDetails(supabase, blockIds)
+  const exoById = new Map<string, string>()
+  for (const e of (exoResult.data ?? []) as { id: string; name: string }[]) {
+    exoById.set(e.id, e.name)
+  }
   const blockById = new Map(blockDetails.map((b) => [b.id, b]))
-
-  const allMediaPaths = new Set<string>()
-  for (const e of exoById.values()) {
-    if (e.demo_media_path) allMediaPaths.add(e.demo_media_path)
-  }
-  for (const b of blockDetails) {
-    for (const ex of b.exercises) {
-      // names only from block detail — fetch paths for block exos
-    }
-  }
-  const blockExoIds = [...new Set(blockDetails.flatMap((b) => b.exercise_ids))]
-  const missingMedia = blockExoIds.filter((id) => !exoById.has(id))
-  if (missingMedia.length) {
-    const { data } = await supabase
-      .from('exercise_library')
-      .select('id, name, demo_media_path')
-      .in('id', missingMedia)
-    for (const e of (data ?? []) as { id: string; name: string; demo_media_path: string | null }[]) {
-      exoById.set(e.id, { name: e.name, demo_media_path: e.demo_media_path })
-      if (e.demo_media_path) allMediaPaths.add(e.demo_media_path)
-    }
-  }
-
-  const signed = new Map<string, string>()
-  const paths = [...allMediaPaths]
-  if (paths.length) {
-    const { data } = await supabase.storage.from('exercise-media').createSignedUrls(paths, 60 * 60)
-    for (const row of data ?? []) {
-      if (row.path && row.signedUrl) signed.set(row.path, row.signedUrl)
-    }
-  }
-
-  function mediaFor(exerciseId: string) {
-    const row = exoById.get(exerciseId)
-    const path = row?.demo_media_path ?? null
-    return { path, url: path ? signed.get(path) ?? null : null }
-  }
 
   const slots: LibraryPreviewSlot[] = []
   for (const item of items) {
@@ -196,16 +158,14 @@ export async function fetchSessionLibraryPreview(
       continue
     }
     if (item.item_kind === 'exercise' && item.exercise_id) {
-      const meta = exoById.get(item.exercise_id)
       slots.push({
         kind: 'exercise',
         id: item.id,
         exercise: toExercise(
           item.exercise_id,
-          meta?.name ?? 'Exercice',
+          exoById.get(item.exercise_id) ?? 'Exercice',
           asRx(item.prescriptions),
           unitKeyById,
-          mediaFor(item.exercise_id),
         ),
       })
       continue
@@ -219,13 +179,7 @@ export async function fetchSessionLibraryPreview(
         title: block.name,
         notes: block.notes,
         exercises: block.exercises.map((ex) =>
-          toExercise(
-            ex.exercise_id,
-            ex.name,
-            ex.prescriptions as RxRow[],
-            unitKeyById,
-            mediaFor(ex.exercise_id),
-          ),
+          toExercise(ex.exercise_id, ex.name, ex.prescriptions as RxRow[], unitKeyById),
         ),
       })
     }

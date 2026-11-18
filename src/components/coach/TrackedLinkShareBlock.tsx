@@ -50,16 +50,16 @@ export function TrackedLinkShareBlock({
   const shortUrl = url.replace(/^https?:\/\//, '')
 
   return (
-    <div className="mt-2.5 space-y-2">
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
-        <code className="max-w-[min(100%,18rem)] truncate rounded-md bg-[var(--accent)] px-2 py-1 font-mono text-[11px] text-[color:var(--muted)]">
+    <div className="space-y-1.5">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <code className="max-w-[min(100%,16rem)] truncate rounded-md bg-[var(--accent)] px-2 py-0.5 font-mono text-[11px] text-[color:var(--muted)]">
           {shortUrl}
         </code>
         <button
           type="button"
           onClick={() =>
-            void copyLinkWithText(message, url).then(() => {
-              setHint('Copié')
+            void navigator.clipboard.writeText(url).then(() => {
+              setHint('URL copiée')
               window.setTimeout(() => setHint(null), 1800)
             })
           }
@@ -67,6 +67,20 @@ export function TrackedLinkShareBlock({
         >
           Copier lien
         </button>
+        {message ? (
+          <button
+            type="button"
+            onClick={() =>
+              void copyLinkWithText(message, url).then(() => {
+                setHint('Texte + URL')
+                window.setTimeout(() => setHint(null), 1800)
+              })
+            }
+            className="rounded-md px-2 py-1 text-[11px] font-semibold text-[color:var(--muted)] hover:bg-[var(--accent)]"
+          >
+            Copier texte + lien
+          </button>
+        ) : null}
         {hint ? <span className="text-[11px] font-medium text-emerald-700">{hint}</span> : null}
       </div>
 

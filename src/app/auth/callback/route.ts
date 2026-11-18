@@ -4,16 +4,38 @@ import { canAccessCoachApp, isPlatformAdmin } from '../../../lib/auth/roles'
 import { completeAuthCallback } from '../../../lib/auth/completeAuthCallback'
 import { resolveClientPortalHome } from '../../../lib/client-portal/context'
 
+function rewriteLegacyCoachPath(path: string): string {
+  if (path === '/dashboard' || path.startsWith('/dashboard/')) return '/home'
+  return path
+}
+
 function isCoachAppPath(path: string): boolean {
+  const p = rewriteLegacyCoachPath(path)
   return (
-    path === '/home' ||
-    path.startsWith('/home/') ||
-    path === '/clients' ||
-    path.startsWith('/clients/') ||
-    path === '/payments' ||
-    path.startsWith('/payments/') ||
-    path === '/dashboard' ||
-    path.startsWith('/dashboard/')
+    p === '/home' ||
+    p.startsWith('/home/') ||
+    p === '/clients' ||
+    p.startsWith('/clients/') ||
+    p === '/payments' ||
+    p.startsWith('/payments/') ||
+    p === '/programs' ||
+    p.startsWith('/programs/') ||
+    p === '/chat' ||
+    p.startsWith('/chat/') ||
+    p === '/calendar' ||
+    p.startsWith('/calendar/') ||
+    p === '/nutrition' ||
+    p.startsWith('/nutrition/') ||
+    p === '/exercises' ||
+    p.startsWith('/exercises/') ||
+    p === '/drive' ||
+    p.startsWith('/drive/') ||
+    p === '/profile' ||
+    p.startsWith('/profile/') ||
+    p === '/settings' ||
+    p.startsWith('/settings/') ||
+    p === '/dashboard' ||
+    p.startsWith('/dashboard/')
   )
 }
 
@@ -51,7 +73,7 @@ export async function GET(request: Request) {
     if (role === 'client' && isCoachAppPath(safeNext)) {
       return NextResponse.redirect(new URL('/login/client?error=client_sur_coach_login', url.origin))
     }
-    return NextResponse.redirect(new URL(safeNext, url.origin))
+    return NextResponse.redirect(new URL(rewriteLegacyCoachPath(safeNext), url.origin))
   }
 
   if (role === 'client') {

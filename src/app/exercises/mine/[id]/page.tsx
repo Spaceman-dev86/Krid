@@ -1,27 +1,41 @@
 import Link from 'next/link'
+import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
 
-import { PageTitle } from '@/src/components/ui'
-import { CoachAppShell } from '../../../../components/coach/CoachAppShell'
-import { ExerciseForm } from '../../../../components/exercises/ExerciseForm'
-import { ExercisesSubnav } from '../../../../components/exercises/ExercisesSubnav'
+import { CoachExerciseFicheForm } from '../../../../components/exercises/CoachExerciseFicheForm'
+import { CoachQueryFlash } from '../../../../components/coach/CoachQueryFlash'
+import { Muted, PageTitle } from '@/src/components/ui'
+import { signExerciseMediaUrl } from '@/src/lib/exerciseMedia'
 import { canAccessCoachApp } from '../../../../lib/auth/roles'
-import { loadCoachShellContext } from '../../../../lib/coach/loadCoachShellContext'
-import { getExercise } from '../../../../lib/exercises/library'
+import { loadCoachFicheOptions } from '../../../../lib/exercises/loadCoachFicheOptions'
 import { createClient } from '../../../../lib/supabase/server'
+import type { ExerciseSourceKind } from '../../../../lib/exercises/library'
 
 export const dynamic = 'force-dynamic'
 
 type Props = {
   params: Promise<{ id: string }> | { id: string }
-  searchParams?:
-    | Promise<{ error?: string; saved?: string; transferred?: string }>
-    | { error?: string; saved?: string; transferred?: string }
+  searchParams?: Promise<{ error?: string; saved?: string }> | { error?: string; saved?: string }
 }
 
-export default async function EditMineExercisePage({ params, searchParams }: Props) {
+type ExerciseRow = {
+  id: string
+  name: string
+  description: string | null
+  muscle_group: string | null
+  difficulty: string | null
+  video_url: string | null
+  demo_media_path: string | null
+  exercise_type_id: string | null
+  sport_id: string | null
+  coach_id: string | null
+  status: string | null
+  source_kind: string | null
+  named_notes?: { title: string; body: string }[] | null
+}
+
+export default async function EditMineExercisePage({ params }: Props) {
   const { id } = await Promise.resolve(params)
-  const q = await Promise.resolve(searchParams ?? {})
   const supabase = await createClient()
   const {
     data: { user },
@@ -31,35 +45,75 @@ export default async function EditMineExercisePage({ params, searchParams }: Pro
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
   if (!canAccessCoachApp(profile?.role)) redirect('/login')
 
-  const shell = await loadCoachShellContext(user.id)
-  const exercise = await getExercise(supabase, id)
+  const { data: exercise } = await supabase
+    .from('exercise_library')
+    .select(
+      'id,name,description,muscle_group,difficulty,video_url,demo_media_path,exercise_type_id,sport_id,coach_id,named_notes,status,source_kind',
+    )
+    .eq('id', id)
+    .is('deleted_at', null)
+    .maybeSingle()
 
-  if (!exercise || exercise.coach_id !== user.id) {
+  const row = exercise as unknown as ExerciseRow | null
+  if (!row || row.coach_id !== user.id) {
     redirect('/exercises/mine?error=' + encodeURIComponent('Exercice introuvable'))
   }
+  if (row.status === 'draft') redirect(`/exercises/brouillon/${id}`)
+
+  const { data: bridgesRaw } = await supabase
+    .from('exercise_replacements' as never)
+    .select('title, note, replacement_id, position')
+    .eq('exercise_id' as never, id as never)
+    .order('position' as never, { ascending: true })
+
+  const bridges = ((bridgesRaw ?? []) as {
+    title?: string | null
+    note?: string | null
+    replacement_id: string
+  }[]).map((b) => ({
+    title: b.title ?? 'Remplacement',
+    note: b.note ?? '',
+    exerciseId: b.replacement_id,
+  }))
+
+  const { types, sports, candidates } = await loadCoachFicheOptions(supabase, user.id)
 
   return (
-    <CoachAppShell appName={shell.branding?.app_name} trialLabel={shell.trialLabel} title="Éditer" savUnread={shell.savUnread}>
-      <div className="mx-auto grid max-w-3xl gap-5">
-        <div className="flex items-center justify-between gap-2">
-          <PageTitle className="text-2xl">{exercise.name}</PageTitle>
-          <Link href="/exercises/mine" className="text-sm font-semibold text-[color:var(--brand)] underline">
+    <div className="mx-auto grid max-w-3xl gap-5">
+      <Suspense fallback={null}>
+        <CoachQueryFlash />
+      </Suspense>
+      <div>
+        <p className="text-sm text-[color:var(--muted)]">
+          <Link href="/exercises/mine" className="font-semibold text-[var(--brand)] hover:underline">
             ← Ma biblio
           </Link>
-        </div>
-        <ExercisesSubnav pathname="/exercises/mine" />
-        {q.error ? (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
-            {q.error}
-          </div>
-        ) : null}
-        {q.saved || q.transferred ? (
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-            {q.transferred ? 'Copie Trainly ajoutée à ta biblio.' : 'Enregistré.'}
-          </div>
-        ) : null}
-        <ExerciseForm mode="mine" exercise={exercise} />
+        </p>
+        <PageTitle className="mt-2">{row.name}</PageTitle>
+        <Muted className="mt-1">Publié · visible dans ton builder programme</Muted>
       </div>
-    </CoachAppShell>
+      <CoachExerciseFicheForm
+        mode="mine"
+        coachId={user.id}
+        types={types}
+        sports={sports}
+        candidates={candidates}
+        initial={{
+          id: row.id,
+          name: row.name,
+          description: row.description,
+          muscle_group: row.muscle_group,
+          difficulty: row.difficulty,
+          video_url: row.video_url,
+          demo_media_path: row.demo_media_path,
+          demo_media_url: await signExerciseMediaUrl(supabase, row.demo_media_path),
+          exercise_type_id: row.exercise_type_id,
+          sport_id: row.sport_id,
+          source_kind: (row.source_kind as ExerciseSourceKind) || 'own',
+          named_notes: row.named_notes,
+          bridges,
+        }}
+      />
+    </div>
   )
 }

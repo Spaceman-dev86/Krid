@@ -283,7 +283,11 @@ export default async function EditAdminSessionPage({ params, searchParams }: Pro
           </Link>
         </p>
         <PageTitle className="mt-2">Éditer la séance</PageTitle>
-        <Muted className="mt-1">{session.name}</Muted>
+        <Muted className="mt-1">
+          {session.name}
+          {' · '}
+          {session.status === 'published' ? 'Publié admin' : 'Brouillon'}
+        </Muted>
       </div>
 
       {q.error ? <DaBanner tone="danger" className="mb-4">{q.error}</DaBanner> : null}
@@ -342,10 +346,10 @@ export default async function EditAdminSessionPage({ params, searchParams }: Pro
           ) : (
             <>
               <ConfirmSubmitButton
-                confirmMessage="Publier cette séance ? Les blocs brouillon liés seront publiés aussi."
+                confirmMessage="Passer en publié admin ? Invisible coaches. Les blocs brouillon liés seront publiés aussi."
                 formAction={publishTrainlySessionAction}
               >
-                Publier
+                Publié admin
               </ConfirmSubmitButton>
               <Button type="submit" formAction={saveDraftTrainlySessionAction} variant="secondary">
                 Sauvegarder brouillon

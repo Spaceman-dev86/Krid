@@ -5,9 +5,13 @@ export type { IconButtonTone } from './IconButton'
 export { default as Card } from './Card'
 export { default as Container } from './Container'
 export { default as Input } from './Input'
+export { AutoGrowTextarea } from './AutoGrowTextarea'
 export { DaBanner, daFieldClass, daSelectClass } from './DaFeedback'
+export { EphemeralFlash, FLASH_QUERY_KEYS } from './EphemeralFlash'
+export type { FlashItem, FlashTone } from './EphemeralFlash'
 export { FilePickField } from './FilePickField'
 export { ConfirmSubmitButton } from './ConfirmSubmitButton'
+export { PendingFormButton } from './PendingFormButton'
 export {
   PageTitle,
   SectionTitle,
@@ -29,6 +33,7 @@ export {
   IconUser,
   IconEdit,
   IconTrash,
+  IconCaret,
   IconCheck,
   IconLink,
   IconOpen,
@@ -36,8 +41,13 @@ export {
   IconPanelLeft,
   IconHome,
   IconUsers,
+  IconShare,
+  IconMove,
   IconChat,
+  IconSend,
   IconCalendar,
+  IconClock,
+  IconBell,
   IconList,
   IconFolder,
   IconBook,
@@ -46,6 +56,7 @@ export {
   IconPalette,
   IconDumbbell,
   IconRest,
+  IconGrip,
   IconClose,
   IconMenu,
 } from './icons'

@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
-import { isPlatformAdmin } from '@/src/lib/auth/roles'
+import { canAccessCoachApp, isPlatformAdmin } from '@/src/lib/auth/roles'
 import { durationLabelFromWeekCount } from '@/src/lib/formatProgramDuration'
 import { createClient } from '@/src/lib/supabase/server'
 import { uploadProgramCoverImage } from '@/src/lib/uploadProgramCoverImage'
@@ -106,4 +106,96 @@ export async function createTrainlyProgramAction(formData: FormData) {
   revalidatePath('/admin/programs')
   revalidatePath(`/admin/programs/${programId}`)
   redirect(`/admin/programs/${programId}`)
+}
+
+export type ProgramInfosPatch = {
+  title: string
+  description: string | null
+  goal: string | null
+  level: string
+  image_url: string | null
+}
+
+/** Met à jour les infos générales (titre, description, objectif, niveau, cover). */
+export async function updateTrainlyProgramInfosQuietAction(
+  formData: FormData,
+): Promise<
+  | { ok: true; flash: string; patch: ProgramInfosPatch }
+  | { ok: false; error: string }
+> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: 'Non authentifié' }
+
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
+  const role = (profile as { role?: string | null } | null)?.role
+  const isAdmin = isPlatformAdmin(role)
+  if (!isAdmin && !canAccessCoachApp(role)) {
+    return { ok: false, error: 'Non autorisé' }
+  }
+
+  const programId = String(formData.get('program_id') ?? '').trim()
+  const title = String(formData.get('title') ?? '').trim()
+  const description = String(formData.get('description') ?? '').trim() || null
+  const goal = String(formData.get('goal') ?? '').trim() || null
+  const level = normalizeLevel(String(formData.get('level') ?? ''))
+  const cover = formData.get('coverImage')
+
+  if (!programId) return { ok: false, error: 'Programme manquant' }
+  if (!title) return { ok: false, error: 'Nom requis' }
+  if (!level) return { ok: false, error: 'Niveau requis' }
+
+  const { data: prog } = await supabase
+    .from('programs')
+    .select('id,image_url,is_trainly_catalog,coach_id,deleted_at')
+    .eq('id', programId)
+    .maybeSingle()
+  const row = prog as {
+    id: string
+    image_url: string | null
+    is_trainly_catalog: boolean | null
+    coach_id: string | null
+    deleted_at: string | null
+  } | null
+  const canEdit =
+    row &&
+    !row.deleted_at &&
+    ((isAdmin && row.is_trainly_catalog === true) || row.coach_id === user.id)
+  if (!canEdit) {
+    return { ok: false, error: 'Programme introuvable' }
+  }
+
+  let imageUrl = row.image_url
+  if (cover instanceof File && cover.size > 0) {
+    const upload = await uploadProgramCoverImage(programId, cover)
+    if (!upload.ok) return { ok: false, error: upload.error || 'Upload image impossible' }
+    imageUrl = upload.imageUrl
+  }
+
+  const { error } = await supabase
+    .from('programs')
+    .update({
+      title,
+      description,
+      goal,
+      level,
+      image_url: imageUrl,
+      updated_at: new Date().toISOString(),
+    } as never)
+    .eq('id', programId)
+  if (error) return { ok: false, error: error.message }
+
+  return {
+    ok: true,
+    flash: 'Infos enregistrées',
+    patch: {
+      title,
+      description,
+      goal,
+      level,
+      image_url: imageUrl,
+    },
+  }
 }

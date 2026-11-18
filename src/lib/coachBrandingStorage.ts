@@ -16,6 +16,11 @@ export function coachLogoStoragePath(coachId: string, mimeType: string) {
   return `${coachId}/logo.${ext}`
 }
 
+export function coachPwaIconStoragePath(coachId: string, mimeType: string) {
+  const ext = MIME_TO_EXT[mimeType] ?? 'jpg'
+  return `${coachId}/pwa-icon.${ext}`
+}
+
 export function isAllowedCoachLogoMime(mimeType: string) {
   return mimeType in MIME_TO_EXT
 }

@@ -403,9 +403,9 @@
     },
     "drive": {
       "arrival": {
-        "bodyHtml": "<p>Drive coach perso (quota) + biblio Trainly (hors quota, consult/download). Partage client/groupe.</p>",
+        "bodyHtml": "<p>Drive coach perso (quota, partage client). Docs plateforme = tables <code>documentation_*</code> (hub /documentation), plus trainly_drive_library / trainly_formation_items en surface produit.</p>",
         "images": [],
-        "critiqueHtml": "<p><strong>⏳ Stub</strong></p>"
+        "critiqueHtml": "<p><strong>✅ FIGÉ 2026-10-20</strong> · slice 61 documentation · Drive perso 21.</p>"
       },
       "features": [
         {
@@ -418,20 +418,20 @@
           "children": []
         },
         {
-          "id": "f-sb-drive-trainly",
-          "label": "trainly_drive_library",
+          "id": "f-sb-documentation",
+          "label": "documentation_folders / documentation_items",
           "route": "/admin/spec/supabase",
-          "bodyHtml": "<p>Admin published PDFs. Colonnes : title · description · file_path · published · <code>allow_duplicate</code> · <code>allow_download</code>.</p>\n<p>Coach SELECT published · open in-app · duplicate/download selon flags. Dépublier = plus de récup depuis partage ; copies locales inchangées.</p>\n<p>RLS admin CRUD · coach SELECT published. Storage bucket dédié.</p>",
-          "critiqueHtml": "<p><strong>✅ FIGÉ 2026-03-13</strong> · flags · slice 34 base + migration flags à venir.</p>",
+          "bodyHtml": "<p>Hub unifié admin/coach. Folders : slug · title · is_system · sort_order. Items : folder_id · media_type · storage_bucket · file_path · published · allow_duplicate · size_bytes.</p>\n<p>RLS : admin ALL · coach SELECT folders · coach SELECT items published=true. Storage buckets trainly-formation / trainly-library.</p>\n<p>Pas de colonne allow_download en V1 (lecture + recover seulement).</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ 2026-10-20</strong> · slice 61 (+ 62 share Drive récursif séparément).</p>",
           "images": [],
           "children": []
         },
         {
-          "id": "f-sb-formation",
-          "label": "trainly_formation_items",
+          "id": "f-sb-drive-legacy-note",
+          "label": "Legacy trainly_* (migré)",
           "route": "/admin/spec/supabase",
-          "bodyHtml": "<p>Contenus Formation (PDF · vidéo · image). published · media_type · file_path. Coach SELECT published RO. Admin CRUD.</p>\n<p>Surface coach <code>/formation</code> · admin <code>/admin/formation</code>. Séparé de trainly_drive_library.</p>",
-          "critiqueHtml": "<p><strong>✅ FIGÉ 2026-03-13</strong> · table à créer (slice 35).</p>",
+          "bodyHtml": "<p><code>trainly_drive_library</code> et <code>trainly_formation_items</code> : migrés vers <code>documentation_items</code> (slice 61). Plus de surface produit coach/admin sur ces tables.</p>",
+          "critiqueHtml": "<p><strong>✅</strong> legacy / déprécié surface.</p>",
           "images": [],
           "children": []
         }

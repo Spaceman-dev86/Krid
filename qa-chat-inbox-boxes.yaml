@@ -1,0 +1,56 @@
+- generic [active] [ref=f1e1] [box=0,0,1037,739]:
+  - generic [ref=f1e3] [box=0,0,1037,739]:
+    - complementary [ref=f1e4] [box=0,0,240,739]:
+      - generic [ref=f1e5] [box=0,0,240,123]:
+        - generic [ref=f1e6] [box=16,20,208,42]:
+          - link "KRID — Accueil" [ref=f1e7] [cursor=pointer] [box=16,20,36,42]:
+            - /url: /home
+          - generic [ref=f1e16] [box=64,21,116,41]:
+            - text: KRID
+            - paragraph [ref=f1e17] [box=64,45,116,17]: Fitness_coach
+          - button "Replier la sidebar" [ref=f1e18] [box=192,25,32,32]
+        - paragraph [ref=f1e22] [box=16,74,208,29]: Essai expiré
+      - navigation [ref=f1e23] [box=0,123,240,616]:
+        - paragraph [ref=f1e24] [box=12,135,216,15]: Navigation
+        - link "Dashboard" [ref=f1e25] [cursor=pointer] [box=12,158,216,39]:
+          - /url: /home
+        - link "Clients" [ref=f1e30] [cursor=pointer] [box=12,201,216,39]:
+          - /url: /clients
+        - link "Chat" [ref=f1e37] [cursor=pointer] [box=12,243,216,39]:
+          - /url: /chat
+        - link "Calendrier" [ref=f1e41] [cursor=pointer] [box=12,286,216,39]:
+          - /url: /calendar
+        - link "Programme" [ref=f1e45] [cursor=pointer] [box=12,328,216,39]:
+          - /url: /programs
+        - link "Nutrition" [ref=f1e48] [cursor=pointer] [box=12,371,216,39]:
+          - /url: /nutrition
+        - link "Exercices" [ref=f1e52] [cursor=pointer] [box=12,414,216,39]:
+          - /url: /exercises
+        - link "Drive" [ref=f1e55] [cursor=pointer] [box=12,456,216,39]:
+          - /url: /drive
+        - link "Documentation" [ref=f1e59] [cursor=pointer] [box=12,499,216,39]:
+          - /url: /documentation
+        - link "Réseau" [ref=f1e64] [cursor=pointer] [box=12,541,216,39]:
+          - /url: /reseau
+        - link "Comptabilités" [ref=f1e71] [cursor=pointer] [box=12,584,216,39]:
+          - /url: /payments
+        - link "Profil public" [ref=f1e77] [cursor=pointer] [box=12,627,216,39]:
+          - /url: /profile
+    - generic [ref=f1e82] [box=240,0,797,739]:
+      - banner [ref=f1e83] [box=240,0,797,61]:
+        - paragraph [ref=f1e84] [box=264,20,30,20]: Chat
+        - generic [ref=f1e85] [box=933,12,80,36]:
+          - link "Notifications" [ref=f1e87] [cursor=pointer] [box=933,12,36,36]:
+            - /url: /calendar
+          - link "Paramètres" [ref=f1e92] [cursor=pointer] [box=977,12,36,36]:
+            - /url: /settings
+      - main [ref=f1e98] [box=240,61,797,671]:
+        - generic [ref=f1e99] [box=240,61,797,671]:
+          - complementary [ref=f1e100] [box=240,62,352,670]:
+            - generic [ref=f1e101] [box=240,62,351,158]
+            - list [ref=f1e114] [box=240,220,351,512]
+          - generic [ref=f1e138] [box=630,338,370,118]:
+            - paragraph [ref=f1e139] [box=655,363,320,24]: Tes messages
+            - paragraph [ref=f1e140] [box=655,391,320,40]
+  - button "Open Next.js Dev Tools" [ref=f1e147] [cursor=pointer] [box=22,685,32,32]
+  - alert [ref=f1e159] [box=-1,738,1,1]

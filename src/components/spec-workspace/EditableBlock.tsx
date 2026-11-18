@@ -107,8 +107,8 @@ export function EditableBlock({ sectionId, blockId, title, route, initial, embed
   }
 
   const shell = embedded
-    ? 'rounded-lg border border-dashed border-[var(--border)] bg-white p-3'
-    : 'scroll-mt-28 rounded-[var(--radius-lg)] border border-[var(--border)] bg-white/70 p-5 shadow-sm'
+    ? 'rounded-lg border border-dashed border-[var(--border)] bg-[var(--surface)] p-3'
+    : 'scroll-mt-28 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)]/90 p-5 shadow-da-sm'
 
   const statusLabel =
     status === 'saving'
@@ -169,7 +169,7 @@ export function EditableBlock({ sectionId, blockId, title, route, initial, embed
           contentEditable
           suppressContentEditableWarning
           onInput={markDirty}
-          className="prose prose-sm mt-3 max-w-none min-h-[5rem] rounded-lg border border-dashed border-[var(--border)] bg-white px-3 py-2 outline-none focus:border-[var(--brand)] [&_code]:rounded [&_code]:bg-[var(--accent)] [&_code]:px-1 [&_table]:w-full [&_td]:border [&_td]:border-[var(--border)] [&_td]:px-2 [&_td]:py-1 [&_th]:border [&_th]:border-[var(--border)] [&_th]:px-2 [&_th]:py-1"
+          className="prose prose-sm mt-3 max-w-none min-h-[5rem] rounded-lg border border-dashed border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-[color:var(--fg)] outline-none focus:border-[var(--brand)] prose-headings:text-[color:var(--fg)] prose-p:text-[color:var(--fg)] prose-strong:text-[color:var(--fg)] prose-li:text-[color:var(--fg)] dark:prose-invert [&_code]:rounded [&_code]:bg-[var(--accent)] [&_code]:px-1 [&_table]:w-full [&_td]:border [&_td]:border-[var(--border)] [&_td]:px-2 [&_td]:py-1 [&_th]:border [&_th]:border-[var(--border)] [&_th]:px-2 [&_th]:py-1"
         />
 
         {images.length > 0 ? (
@@ -191,7 +191,7 @@ export function EditableBlock({ sectionId, blockId, title, route, initial, embed
           </div>
         ) : null}
 
-        {error ? <p className="mt-2 text-sm text-red-600">{error}</p> : null}
+        {error ? <p className="mt-2 text-sm text-[var(--danger)]">{error}</p> : null}
       </section>
 
       <CritiqueAside

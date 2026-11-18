@@ -1,0 +1,12 @@
+# Chat link QA 2026-10-24-2233
+[OK] Coach /chat ouvert
+[WAIT] Edge client: connecte-toi dans la fenêtre Edge (90s max)
+[OK] Client connecté — state-save — .playwright-auth/client.auth-state.json
+[OK] Client inbox — 2 conversations
+[OK] Coach ouvre DM — RS
+[BAD] Coach→Client — non reçu
+[WARN] Client→Coach — visible après refresh
+[OK] Ticks après lecture client — Lu=12 Reçu=1 (avant Lu=12)
+[OK] Client sans Archivées — count=0
+
+Assets: /qa/assets-link-2026-10-24-2233/

@@ -1,9 +1,11 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { cache } from 'react'
 
 import type { Database } from './database.types'
 
-export async function createClient() {
+/** Un client Supabase par requête RSC (évite de recréer cookies/auth N fois). */
+export const createClient = cache(async () => {
   const cookieStore = await cookies()
 
   return createServerClient<Database>(
@@ -28,6 +30,6 @@ export async function createClient() {
       auth: {
         flowType: 'pkce',
       },
-    }
+    },
   )
-}
+})

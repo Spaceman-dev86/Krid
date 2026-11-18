@@ -118,7 +118,7 @@ export function RedirectsEditor({ sectionId, blockId, initial }: Props) {
             type="button"
             disabled={pending}
             onClick={addRow}
-            className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-[var(--brand)] ring-1 ring-[var(--border)] disabled:opacity-50"
+            className="rounded-full bg-[var(--surface)] px-3 py-1.5 text-xs font-semibold text-[var(--brand)] ring-1 ring-[var(--border)] disabled:opacity-50"
           >
             + Ajouter une redirection
           </button>
@@ -133,7 +133,7 @@ export function RedirectsEditor({ sectionId, blockId, initial }: Props) {
           {rows.map((row) => (
             <li
               key={row.id}
-              className="grid gap-2 rounded-md border border-[var(--border)] bg-white p-3 sm:grid-cols-2"
+              className="grid gap-2 rounded-md border border-[var(--border)] bg-[var(--surface)] p-3 sm:grid-cols-2"
             >
               <label className="grid gap-1 text-[10px] font-semibold text-[color:var(--muted)]">
                 Label
@@ -170,7 +170,7 @@ export function RedirectsEditor({ sectionId, blockId, initial }: Props) {
               <button
                 type="button"
                 onClick={() => removeRow(row.id)}
-                className="justify-self-start text-xs font-semibold text-red-600"
+                className="justify-self-start text-xs font-semibold text-[var(--danger)]"
               >
                 Supprimer
               </button>
@@ -178,7 +178,7 @@ export function RedirectsEditor({ sectionId, blockId, initial }: Props) {
           ))}
         </ul>
       )}
-      {error ? <p className="mt-2 text-sm text-red-600">{error}</p> : null}
+      {error ? <p className="mt-2 text-sm text-[var(--danger)]">{error}</p> : null}
     </div>
   )
 }

@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
 import { ClientPortalShell } from '../../../../../components/client-portal/ClientPortalShell'
-import { requireClientPortal } from '../../../../../lib/client-portal/context'
+import { portalShellProps, requireClientPortal } from '../../../../../lib/client-portal/context'
 import { formatPriceCents, parseModules } from '../../../../../lib/prestations/modules'
 import { selectFieldClass, selectFieldStyle } from '../../../../../lib/ui/selectField'
 import { createClient } from '../../../../../lib/supabase/server'
@@ -150,7 +150,7 @@ export default async function ClientPrestationsPage({ params, searchParams }: Pr
   }
 
   return (
-    <ClientPortalShell slug={ctx.slug} appName={ctx.appName} primaryColor={ctx.primaryColor} logoUrl={ctx.logoUrl}>
+    <ClientPortalShell {...portalShellProps(ctx)}>
       <div className="grid gap-5">
         <div>
           <Link

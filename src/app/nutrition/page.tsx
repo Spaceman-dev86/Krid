@@ -64,7 +64,9 @@ export default async function NutritionLandPage({ searchParams }: Props) {
   }
 
   return (
-    <CoachAppShell appName={shell.branding?.app_name} trialLabel={shell.trialLabel} title="Nutrition" savUnread={shell.savUnread}>
+    <CoachAppShell appName={shell.branding?.app_name} trialLabel={shell.trialLabel} title="Nutrition" savUnread={shell.savUnread} chatUnread={shell.chatUnread}
+      notifUnread={shell.notifUnread}
+      notifHref={shell.notifHref}>
       <div className="mx-auto grid max-w-3xl gap-6">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>

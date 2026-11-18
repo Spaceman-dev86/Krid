@@ -1,5 +1,9 @@
 import type { ReactNode } from 'react'
 
+import { FluidSpinner } from '@/src/components/admin/FluidSpinner'
+import { CompositionInsertMarker } from '@/src/components/admin/useCompositionLongPressReorder'
+import { KridMark, KridWordmark } from '@/src/components/brand/KridLogo'
+import { DocFolderDesignDemo } from '@/src/components/documentation/DocFolderDesignDemo'
 import { DesignDaSummary, DesignThemeToggle } from '../../../components/design/ThemeToggle'
 import {
   Body,
@@ -9,15 +13,20 @@ import {
   Eyebrow,
   IconBack,
   IconButton,
+  IconCaret,
   IconCheck,
   IconEdit,
+  IconGrip,
   IconPlus,
+  IconRest,
   IconSearch,
   IconTrash,
   Input,
   Muted,
   PageTitle,
   SectionTitle,
+  daFieldClass,
+  daSelectClass,
 } from '../../../components/ui'
 import { DESIGN_RULES, DESIGN_TOKENS } from '../../../lib/design/tokens'
 
@@ -31,6 +40,8 @@ const TOC = [
   { id: 'forms', label: 'Formulaires' },
   { id: 'surfaces', label: 'Surfaces' },
   { id: 'feedback', label: 'Feedback' },
+  { id: 'builder', label: 'Builder' },
+  { id: 'folders', label: 'Dossiers' },
   { id: 'icons', label: 'Icônes' },
 ] as const
 
@@ -178,6 +189,20 @@ export default function AdminDesignPage() {
               <Swatch name="brand-soft" cssVar="--brand-soft" usage="Dark #e8dff2 · White #d6c4e8" />
               <Swatch name="brand-fg" cssVar="--brand-fg" value="theme" usage="Texte sur brand · black=#1a1a1e · white=#fff" />
             </div>
+            <Card className="mt-4 rounded-[var(--radius-lg)] p-4 ring-1 ring-[var(--border)]">
+              <p className="text-sm font-extrabold text-[color:var(--fg)]">.on-brand</p>
+              <Muted className="mt-1">
+                Fond brand + encre <code>--brand-fg</code> — jamais <code>text-white</code> en black mode.
+              </Muted>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <span className="on-brand inline-flex rounded-full px-3 py-1.5 text-xs font-bold">
+                  Chip on-brand
+                </span>
+                <span className="inline-flex rounded-full bg-[var(--brand)] px-3 py-1.5 text-xs font-bold text-[var(--brand-fg)]">
+                  bg-brand + text-brand-fg
+                </span>
+              </div>
+            </Card>
             <h3 className="mb-3 mt-8 text-sm font-extrabold uppercase tracking-wide text-[color:var(--muted)]">
               Surfaces & texte
             </h3>
@@ -281,7 +306,7 @@ export default function AdminDesignPage() {
               </ul>
             </div>
 
-            <div className="da-only-light grid gap-4">
+              <div className="da-only-light grid gap-4">
               <Eyebrow>White DA · 2 boutons</Eyebrow>
               <div className="flex flex-wrap items-center gap-3">
                 <Button type="button" variant="cta">
@@ -302,6 +327,29 @@ export default function AdminDesignPage() {
                 </li>
               </ul>
             </div>
+
+            <div className="mt-8 grid gap-3">
+              <Eyebrow>Toolbar compact (builder)</Eyebrow>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button type="button" size="sm" className="!h-8 !rounded-full !px-3 !text-[12px]">
+                  <IconPlus size={14} />
+                  Séance
+                </Button>
+                <Button type="button" size="sm" variant="secondary" className="!h-8 !rounded-full !px-3 !text-[12px]">
+                  Infos
+                </Button>
+                <Button type="button" size="sm" className="!h-7 !gap-1.5 !rounded-full !px-3 !text-[11px]">
+                  <FluidSpinner size={12} className="text-[var(--brand-fg)]" />
+                  Enregistrement…
+                </Button>
+                <Button type="button" size="sm" variant="ghost">
+                  Ghost
+                </Button>
+                <Button type="button" size="sm" variant="danger">
+                  Danger
+                </Button>
+              </div>
+            </div>
           </Section>
 
           <Section id="forms" title="Formulaires">
@@ -318,8 +366,18 @@ export default function AdminDesignPage() {
                 <Input placeholder="Désactivé" disabled />
               </Card>
               <Card className="grid gap-3 rounded-[var(--radius-lg)] p-6 ring-1 ring-[var(--border)]">
-                <p className="text-sm font-extrabold">Pattern label</p>
-                <Muted>Label font-semibold brand · input h-14 · focus ring brand.</Muted>
+                <p className="text-sm font-extrabold">Builder · daField / daSelect</p>
+                <Muted>
+                  Champs densifiés Infos / Rx — <code>daFieldClass</code> · <code>daSelectClass</code>.
+                </Muted>
+                <input className={daFieldClass} placeholder="Titre séance" />
+                <select className={daSelectClass} defaultValue="">
+                  <option value="" disabled>
+                    Unité
+                  </option>
+                  <option value="reps">Reps</option>
+                  <option value="kg">Kg</option>
+                </select>
               </Card>
             </div>
           </Section>
@@ -333,11 +391,9 @@ export default function AdminDesignPage() {
               <div className="flex min-h-[240px]">
                 <div className="app-shell-aside hidden w-44 shrink-0 p-3 sm:block">
                   <div className="mb-3 flex items-center gap-2 px-1">
-                    <div className="app-shell-brand-mark h-7 w-7 rounded-[var(--radius-sm)]" />
+                    <KridMark size="sm" />
                     <div>
-                      <p className="text-[9px] font-semibold uppercase tracking-wider text-[var(--shell-muted)]">
-                        Trainly
-                      </p>
+                      <KridWordmark className="!text-[11px]" />
                       <p className="text-xs font-extrabold text-[var(--shell-fg)]">
                         <span className="da-only-dark">Shell dark</span>
                         <span className="da-only-light">Shell light</span>
@@ -368,7 +424,11 @@ export default function AdminDesignPage() {
             </div>
           </Section>
 
-          <Section id="feedback" title="Feedback" hint="Bannières / états — toujours ces tokens.">
+          <Section
+            id="feedback"
+            title="Feedback"
+            hint="Bannières / états / conformité programme — toujours ces tokens (pas de hex ad hoc)."
+          >
             <div className="grid gap-3">
               <div className="rounded-[var(--radius-md)] border border-[var(--success-border)] bg-[var(--success-bg)] px-4 py-3 text-sm text-[var(--success)]">
                 Succès — enregistrement OK
@@ -380,6 +440,201 @@ export default function AdminDesignPage() {
                 Erreur — action impossible
               </div>
             </div>
+            <div className="mt-4 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-4 py-3">
+              <p className="text-xs font-extrabold uppercase tracking-wide text-[color:var(--muted)]">
+                Conformité programme — pastilles
+              </p>
+              <p className="mt-1 text-[11px] text-[color:var(--muted)]">
+                Alias : --status-ok / --status-warn / --status-bad (= success / warning / danger)
+              </p>
+              <div className="mt-3 flex flex-wrap gap-4 text-sm">
+                <span className="inline-flex items-center gap-2 text-[var(--status-ok)]">
+                  <span className="h-2.5 w-2.5 rounded-full bg-[var(--status-ok)]" /> conforme
+                </span>
+                <span className="inline-flex items-center gap-2 text-[var(--status-warn)]">
+                  <span className="h-2.5 w-2.5 rounded-full bg-[var(--status-warn)]" /> adapté
+                </span>
+                <span className="inline-flex items-center gap-2 text-[var(--status-bad)]">
+                  <span className="h-2.5 w-2.5 rounded-full bg-[var(--status-bad)]" /> non fait
+                </span>
+              </div>
+            </div>
+            <div className="mt-6 grid gap-4 md:grid-cols-2">
+              <Card className="rounded-[var(--radius-lg)] p-4 ring-1 ring-[var(--border)]">
+                <p className="text-sm font-extrabold">Soft flash (builder)</p>
+                <Muted className="mt-1">Succès discret dans le header — pas de bannière.</Muted>
+                <p className="mt-3 truncate text-sm font-bold text-[color:var(--fg)]">
+                  Programme sans titre
+                  <span className="ml-1.5 text-[10px] font-medium text-[var(--success)]">
+                    · Séance enregistrée
+                  </span>
+                </p>
+              </Card>
+              <Card className="rounded-[var(--radius-lg)] p-4 ring-1 ring-[var(--border)]">
+                <p className="text-sm font-extrabold">FluidSpinner</p>
+                <Muted className="mt-1">CTA / overlay — tailles 10 · 12 · 14.</Muted>
+                <div className="mt-3 flex items-center gap-4">
+                  <FluidSpinner size={10} />
+                  <FluidSpinner size={12} />
+                  <FluidSpinner size={14} />
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--brand)] px-3 py-1.5 text-[11px] font-bold text-[var(--brand-fg)]">
+                    <FluidSpinner size={12} className="text-[var(--brand-fg)]" />
+                    Sauvegarde…
+                  </span>
+                </div>
+              </Card>
+            </div>
+          </Section>
+
+          <Section
+            id="builder"
+            title="Builder programme"
+            hint="Patterns figés du program builder admin — réutiliser tels quels (fluidité + chrome)."
+          >
+            <div className="grid gap-6">
+              <Card className="relative min-h-[120px] overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-4">
+                <p className="text-sm font-extrabold">Pending board overlay</p>
+                <Muted className="mt-1">Zone seule — pas de freeze page entière.</Muted>
+                <div className="mt-3 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--page-bg)] p-6">
+                  Contenu board…
+                </div>
+                <div
+                  className="absolute inset-0 z-10 flex items-center justify-center rounded-[var(--radius-lg)] bg-[var(--page-bg)]/55 backdrop-blur-[1px]"
+                  aria-hidden
+                >
+                  <div className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 shadow-da-sm">
+                    <FluidSpinner size={14} />
+                    <span className="text-[11px] font-semibold text-[color:var(--muted)]">
+                      Sauvegarde…
+                    </span>
+                  </div>
+                </div>
+              </Card>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <Card className="rounded-[var(--radius-lg)] p-4 ring-1 ring-[var(--border)]">
+                  <p className="text-sm font-extrabold">Week chips · day pills</p>
+                  <div className="da-scrollbar mt-3 flex gap-1.5 overflow-x-auto py-0.5">
+                    <span className="shrink-0 rounded-full bg-[var(--brand)] px-2.5 py-1 text-[11px] font-semibold text-[var(--brand-fg)] shadow-da-sm">
+                      S1
+                    </span>
+                    <span className="shrink-0 rounded-full bg-[var(--accent)] px-2.5 py-1 text-[11px] font-semibold text-[color:var(--fg)] hover:ring-1 hover:ring-[var(--border)]">
+                      S2
+                    </span>
+                    <span className="shrink-0 rounded-full bg-[var(--accent)] px-2.5 py-1 text-[11px] font-semibold text-[color:var(--fg)]">
+                      S3
+                    </span>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-1">
+                    <span className="rounded-full bg-[var(--brand)] px-2.5 py-1 text-[11px] font-semibold text-[var(--brand-fg)] shadow-da-sm">
+                      Lun
+                    </span>
+                    <span className="rounded-full bg-[var(--accent)] px-2.5 py-1 text-[11px] font-semibold text-[color:var(--fg)]">
+                      Mar
+                    </span>
+                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-[var(--radius-sm)] bg-[var(--accent)] text-[color:var(--muted)]">
+                      <IconCaret dir="left" />
+                    </span>
+                    <span className="rounded bg-[var(--accent)] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[color:var(--muted)]">
+                      Brouillon
+                    </span>
+                  </div>
+                </Card>
+
+                <Card className="rounded-[var(--radius-lg)] p-4 ring-1 ring-[var(--border)]">
+                  <p className="text-sm font-extrabold">Kind badges · filtres</p>
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    <span className="rounded-full bg-[var(--brand)]/20 px-2 py-0.5 text-[10px] font-bold text-[var(--brand)]">
+                      Bloc
+                    </span>
+                    <span className="rounded-full bg-[var(--accent)] px-2 py-0.5 text-[10px] font-bold text-[color:var(--muted)] ring-1 ring-[var(--border)]">
+                      Exo
+                    </span>
+                    <span className="rounded-full bg-[var(--brand)] px-2.5 py-1 text-[10px] font-semibold text-[var(--brand-fg)]">
+                      Force
+                    </span>
+                    <span className="rounded-full bg-[var(--accent)] px-2.5 py-1 text-[10px] font-semibold text-[color:var(--muted)] ring-1 ring-[var(--border)]">
+                      Cardio
+                    </span>
+                  </div>
+                </Card>
+              </div>
+
+              <Card className="rounded-[var(--radius-lg)] p-4 ring-1 ring-[var(--border)]">
+                <p className="text-sm font-extrabold">Insert marker · grip · repos</p>
+                <Muted className="mt-1">
+                  Catalogue + reorder composition — même look « Insérer ».
+                </Muted>
+                <ul className="mt-3 grid gap-2">
+                  <CompositionInsertMarker />
+                  <li className="flex list-none items-center gap-2 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--page-bg)] px-3 py-2">
+                    <button
+                      type="button"
+                      className="inline-flex h-8 w-8 cursor-grab items-center justify-center rounded-[var(--radius-sm)] text-[color:var(--muted)] hover:text-[var(--brand)]"
+                      aria-label="Poignée reorder"
+                    >
+                      <IconGrip size={16} />
+                    </button>
+                    <span className="min-w-0 flex-1 truncate text-sm font-semibold">Squat</span>
+                    <span className="rounded-full bg-[var(--accent)] px-2 py-0.5 text-[10px] font-bold text-[color:var(--muted)] ring-1 ring-[var(--border)]">
+                      Exo
+                    </span>
+                  </li>
+                  <li className="flex list-none items-center gap-2 rounded-[var(--radius-md)] border border-dashed border-[var(--border)] bg-[var(--page-bg)] px-3 py-2">
+                    <IconRest size={14} className="shrink-0 text-[color:var(--muted)]" />
+                    <span className="text-[12px] font-semibold text-[color:var(--fg)]">Pause 60s</span>
+                  </li>
+                </ul>
+              </Card>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <Card className="rounded-[var(--radius-lg)] border border-dashed border-[var(--border)] bg-[var(--page-bg)] p-4">
+                  <p className="text-sm font-extrabold">Drop zone vide</p>
+                  <p className="mt-2 text-center text-[13px] text-[color:var(--muted)]">
+                    Glisser un bloc / exo ici
+                  </p>
+                  <div className="mt-3 rounded-[var(--radius-md)] border border-[var(--brand)] bg-[var(--brand)]/15 px-3 py-2 text-center text-[12px] font-semibold text-[var(--brand)]">
+                    Survol drop → brand /15
+                  </div>
+                </Card>
+                <Card className="rounded-[var(--radius-lg)] border border-[var(--brand)] bg-[var(--surface)] p-4 shadow-da-md ring-1 ring-[var(--brand)]/40">
+                  <p className="text-sm font-extrabold">Jour focus</p>
+                  <Muted className="mt-1">
+                    <code>data-builder-day-focus</code> · ring brand · shadow-da-md
+                  </Muted>
+                  <div className="mt-3 flex h-16 items-center justify-center rounded-[var(--radius-md)] border border-dashed border-[var(--border)] bg-[var(--page-bg)] text-[12px] text-[color:var(--muted)] opacity-70">
+                    Jour compact dimmé
+                  </div>
+                </Card>
+              </div>
+
+              <Card className="rounded-[var(--radius-lg)] p-4 ring-1 ring-[var(--border)]">
+                <p className="text-sm font-extrabold">Chrome click-outside</p>
+                <Muted className="mt-1">
+                  Zones qui <strong className="text-[color:var(--fg)]">ne</strong> ferment pas le mode
+                  jour : <code>data-builder-chrome</code>, catalogue, compact day, pills, dialogs.
+                  Top bar / bandeau semaines ferment volontairement.
+                </Muted>
+              </Card>
+            </div>
+          </Section>
+
+          <Section
+            id="folders"
+            title="Dossiers documentation"
+            hint="Forme figée admin + coach — DocFolderCard · onglet gauche · feuille peek · hover léger. Dark/light via tokens."
+          >
+            <Card className="rounded-[var(--radius-lg)] p-4 ring-1 ring-[var(--border)] md:p-6">
+              <p className="text-sm font-extrabold text-[color:var(--fg)]">DocFolderCard</p>
+              <Muted className="mt-1">
+                Composant <code>src/components/documentation/DocFolderCard.tsx</code> · styles{' '}
+                <code>.doc-folder-real*</code> dans <code>globals.css</code>. Ne pas réinventer une silhouette
+                dossier ailleurs.
+              </Muted>
+              <div className="mt-5">
+                <DocFolderDesignDemo />
+              </div>
+            </Card>
           </Section>
 
           <Section
@@ -405,6 +660,12 @@ export default function AdminDesignPage() {
               </IconTile>
               <IconTile label="Valide">
                 <IconCheck />
+              </IconTile>
+              <IconTile label="Grip">
+                <IconGrip />
+              </IconTile>
+              <IconTile label="Repos">
+                <IconRest />
               </IconTile>
             </div>
           </Section>

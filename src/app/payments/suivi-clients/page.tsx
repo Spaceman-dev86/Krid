@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
-import { PageTitle, Muted } from '@/src/components/ui'
+import { PageTitle, Muted, PendingFormButton } from '@/src/components/ui'
 import { CoachAppShell } from '../../../components/coach/CoachAppShell'
 import { PaymentsSubnav } from '../../../components/coach/PaymentsSubnav'
 import { canAccessCoachApp } from '../../../lib/auth/roles'
@@ -92,7 +92,9 @@ export default async function PaymentsSuiviPage({ searchParams }: Props) {
   }
 
   return (
-    <CoachAppShell appName={shell.branding?.app_name} trialLabel={shell.trialLabel} title="Suivi clients" savUnread={shell.savUnread}>
+    <CoachAppShell appName={shell.branding?.app_name} trialLabel={shell.trialLabel} title="Suivi clients" savUnread={shell.savUnread} chatUnread={shell.chatUnread}
+      notifUnread={shell.notifUnread}
+      notifHref={shell.notifHref}>
       <div className="mx-auto grid max-w-4xl gap-6">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
@@ -148,9 +150,14 @@ export default async function PaymentsSuiviPage({ searchParams }: Props) {
                               <form action={generateInvoiceAction}>
                                 <input type="hidden" name="ledger_id" value={r.payment_ledger_id} />
                                 <input type="hidden" name="request_id" value={r.id} />
-                                <button type="submit" className="font-bold text-[color:var(--brand)] underline">
+                                <PendingFormButton
+                                  type="submit"
+                                  variant="secondary"
+                                  className="!rounded-lg !px-2 !py-1 text-xs font-bold"
+                                  pendingLabel="…"
+                                >
                                   Générer facture
-                                </button>
+                                </PendingFormButton>
                               </form>
                             ) : (
                               <span className="text-[color:var(--muted)]">Lier un paiement d’abord</span>

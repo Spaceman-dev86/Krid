@@ -1,0 +1,241 @@
+{
+  "stamp": "2026-10-24-2218",
+  "results": [
+    {
+      "id": "C1",
+      "scenario": "Auth coach + /chat",
+      "status": "OK",
+      "notes": "state-load coach.auth-state.json",
+      "ms": 1855
+    },
+    {
+      "id": "C2",
+      "scenario": "Inbox list / empty panel",
+      "status": "OK",
+      "notes": "5 fils visibles",
+      "ms": null
+    },
+    {
+      "id": "C3",
+      "scenario": "Filtres Toutes / Non lues / Groupe / Archivées",
+      "status": "OK",
+      "notes": "",
+      "ms": null
+    },
+    {
+      "id": "C4",
+      "scenario": "Recherche inbox",
+      "status": "OK",
+      "notes": "empty=1 match(groupe)=1",
+      "ms": null
+    },
+    {
+      "id": "C5",
+      "scenario": "Switch multi-fils (href)",
+      "status": "OK",
+      "notes": "moyenne ~169 ms",
+      "ms": null
+    },
+    {
+      "id": "C6",
+      "scenario": "Rapid switch spam ×6",
+      "status": "OK",
+      "notes": "stable",
+      "ms": null
+    },
+    {
+      "id": "C7",
+      "scenario": "Envoi message Enter",
+      "status": "OK",
+      "notes": "optimiste + persist",
+      "ms": 162
+    },
+    {
+      "id": "C8",
+      "scenario": "Menu ⋯ outils",
+      "status": "OK",
+      "notes": "opened",
+      "ms": null
+    },
+    {
+      "id": "C9",
+      "scenario": "Attach composer +",
+      "status": "OK",
+      "notes": "🎬 Vidéo visible",
+      "ms": null
+    },
+    {
+      "id": "C10",
+      "scenario": "Bouton RDV présent",
+      "status": "OK",
+      "notes": "DM/header",
+      "ms": null
+    },
+    {
+      "id": "C11",
+      "scenario": "Modal Nouveau chat",
+      "status": "OK",
+      "notes": "",
+      "ms": null
+    },
+    {
+      "id": "C19",
+      "scenario": "Ticks delivery UI (✓ / ✓✓)",
+      "status": "OK",
+      "notes": "10 marqueurs",
+      "ms": null
+    },
+    {
+      "id": "E1",
+      "scenario": "Thread UUID invalide",
+      "status": "OK",
+      "notes": "erreur claire",
+      "ms": null
+    },
+    {
+      "id": "C12",
+      "scenario": "Viewport 390×844",
+      "status": "OK",
+      "notes": "open 1208 ms",
+      "ms": 1208
+    },
+    {
+      "id": "C13",
+      "scenario": "Viewport 900×1200",
+      "status": "OK",
+      "notes": "open 1038 ms",
+      "ms": 1038
+    },
+    {
+      "id": "C14",
+      "scenario": "Viewport 1440×900",
+      "status": "OK",
+      "notes": "open 1100 ms",
+      "ms": 1100
+    },
+    {
+      "id": "C15",
+      "scenario": "C15 smoke",
+      "status": "OK",
+      "notes": "open 1130 ms",
+      "ms": 1130
+    },
+    {
+      "id": "C16",
+      "scenario": "C16 smoke",
+      "status": "OK",
+      "notes": "open 1288 ms",
+      "ms": 1288
+    },
+    {
+      "id": "C17",
+      "scenario": "Client /messages sans auth",
+      "status": "OK",
+      "notes": "→ http://localhost:3000/login/client?redirectTo=%2Fc%2Fstudio-remi%2Fmessages",
+      "ms": null
+    },
+    {
+      "id": "C18",
+      "scenario": "Client connecté messages + fil",
+      "status": "SKIP",
+      "notes": "pas de client.auth-state.json",
+      "ms": null
+    },
+    {
+      "id": "C20",
+      "scenario": "Client scroll trackpad / ticks / no archive",
+      "status": "SKIP",
+      "notes": "auth client manquant",
+      "ms": null
+    }
+  ],
+  "timings": [
+    {
+      "round": 1,
+      "title": "groupe matin sport",
+      "ms": 503
+    },
+    {
+      "round": 1,
+      "title": "RS",
+      "ms": 252
+    },
+    {
+      "round": 1,
+      "title": "HB",
+      "ms": 101
+    },
+    {
+      "round": 1,
+      "title": "PS",
+      "ms": 111
+    },
+    {
+      "round": 2,
+      "title": "groupe matin sport",
+      "ms": 77
+    },
+    {
+      "round": 2,
+      "title": "RS",
+      "ms": 101
+    },
+    {
+      "round": 2,
+      "title": "HB",
+      "ms": 97
+    },
+    {
+      "round": 2,
+      "title": "PS",
+      "ms": 110
+    }
+  ],
+  "consoleNotes": [],
+  "chrome": {
+    "avg": 169,
+    "sendMs": 162,
+    "switchMs": [
+      {
+        "round": 1,
+        "title": "groupe matin sport",
+        "ms": 503
+      },
+      {
+        "round": 1,
+        "title": "RS",
+        "ms": 252
+      },
+      {
+        "round": 1,
+        "title": "HB",
+        "ms": 101
+      },
+      {
+        "round": 1,
+        "title": "PS",
+        "ms": 111
+      },
+      {
+        "round": 2,
+        "title": "groupe matin sport",
+        "ms": 77
+      },
+      {
+        "round": 2,
+        "title": "RS",
+        "ms": 101
+      },
+      {
+        "round": 2,
+        "title": "HB",
+        "ms": 97
+      },
+      {
+        "round": 2,
+        "title": "PS",
+        "ms": 110
+      }
+    ]
+  }
+}

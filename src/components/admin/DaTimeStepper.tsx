@@ -2,6 +2,7 @@
 
 import {
   formatSecondsToMmSs,
+  parseFlexibleTimeToSeconds,
   parseMmSsToSeconds,
 } from '@/src/components/program-editor-v2/utils/prescriptionHelpers'
 
@@ -33,7 +34,7 @@ function StepperShell({ label, onRemove, children }: ShellProps) {
           ) : null}
         </div>
       ) : null}
-      <div className="flex h-10 overflow-hidden rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--page-bg)] focus-within:ring-2 focus-within:ring-inset focus-within:ring-[var(--brand)]">
+      <div className="box-border flex h-10 overflow-hidden rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--page-bg)] focus-within:border-[var(--brand)] max-[1099px]:h-14">
         {children}
       </div>
     </div>
@@ -44,10 +45,10 @@ const inputInShell =
   'min-w-0 flex-1 border-0 bg-transparent px-3 py-2 text-sm text-[color:var(--fg)] outline-none'
 
 const btnCol =
-  'flex w-9 shrink-0 flex-col border-l border-[var(--border)] bg-[var(--surface)]'
+  'flex w-9 shrink-0 flex-col self-stretch border-l border-[var(--border)] bg-transparent max-[1099px]:w-12'
 
 const btn =
-  'flex flex-1 items-center justify-center text-[13px] font-bold leading-none text-[color:var(--fg)] hover:bg-[var(--accent)]'
+  'flex min-h-0 flex-1 items-center justify-center text-[13px] font-bold leading-none text-[color:var(--fg)] hover:bg-[var(--accent)] max-[1099px]:text-[17px]'
 
 type TimeProps = {
   name: string
@@ -78,7 +79,7 @@ export function DaTimeStepper({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onBlur={() => {
-          const sec = parseMmSsToSeconds(value)
+          const sec = parseFlexibleTimeToSeconds(value)
           if (sec == null) {
             if (!value.trim()) return
             onChange('00:00')
@@ -86,7 +87,18 @@ export function DaTimeStepper({
           }
           onChange(formatSecondsToMmSs(sec))
         }}
-        placeholder="mm:ss"
+        onKeyDown={(e) => {
+          if (e.key !== 'Enter') return
+          e.preventDefault()
+          const sec = parseFlexibleTimeToSeconds(value)
+          if (sec == null) {
+            if (value.trim()) onChange('00:00')
+          } else {
+            onChange(formatSecondsToMmSs(sec))
+          }
+          ;(e.currentTarget as HTMLInputElement).blur()
+        }}
+        placeholder="mm:ss ou 20 → 20:00"
         inputMode="text"
         className={inputInShell}
       />

@@ -2,23 +2,40 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 type Untyped = SupabaseClient<any>
 
-async function ticketHasAdminUnread(
-  supabase: Untyped,
-  ticket: { id: string; admin_last_read_at: string | null },
-): Promise<boolean> {
-  const { data: lastCoach } = await supabase
-    .from('support_messages')
-    .select('created_at')
-    .eq('ticket_id', ticket.id)
-    .eq('sender_role', 'coach')
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
+type TicketRead = {
+  id: string
+  admin_last_read_at?: string | null
+  coach_last_read_at?: string | null
+}
 
-  if (!ticket.admin_last_read_at) return true
-  const readAt = new Date(ticket.admin_last_read_at).getTime()
-  if (lastCoach?.created_at && new Date(lastCoach.created_at).getTime() > readAt) return true
-  return false
+/** Dernier message par ticket (1 requête) — évite le N+1 qui freinait chaque nav shell. */
+async function latestMessageAtByTicket(
+  supabase: Untyped,
+  ticketIds: string[],
+  senderRole: 'coach' | 'admin',
+): Promise<Map<string, number>> {
+  const latest = new Map<string, number>()
+  if (!ticketIds.length) return latest
+
+  const { data: msgs } = await supabase
+    .from('support_messages')
+    .select('ticket_id, created_at')
+    .in('ticket_id', ticketIds)
+    .eq('sender_role', senderRole)
+    .order('created_at', { ascending: false })
+    .limit(Math.min(500, ticketIds.length * 3))
+
+  for (const m of msgs ?? []) {
+    if (!m.ticket_id || latest.has(m.ticket_id)) continue
+    latest.set(m.ticket_id, new Date(m.created_at).getTime())
+  }
+  return latest
+}
+
+function isUnread(readAt: string | null | undefined, lastMsgAt: number | undefined, neverReadCounts: boolean) {
+  if (!readAt) return neverReadCounts
+  if (lastMsgAt == null) return false
+  return lastMsgAt > new Date(readAt).getTime()
 }
 
 /** Tickets où le coach a un message admin plus récent que sa dernière lecture (ou jamais lu). */
@@ -32,20 +49,15 @@ export async function countCoachUnreadSav(supabase: Untyped, coachId: string): P
 
   if (!tickets?.length) return 0
 
-  let unread = 0
-  for (const t of tickets) {
-    const { data: lastAdmin } = await supabase
-      .from('support_messages')
-      .select('created_at')
-      .eq('ticket_id', t.id)
-      .eq('sender_role', 'admin')
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
+  const latestAdmin = await latestMessageAtByTicket(
+    supabase,
+    tickets.map((t: TicketRead) => t.id),
+    'admin',
+  )
 
-    if (!lastAdmin?.created_at) continue
-    const readAt = t.coach_last_read_at ? new Date(t.coach_last_read_at).getTime() : 0
-    if (new Date(lastAdmin.created_at).getTime() > readAt) unread += 1
+  let unread = 0
+  for (const t of tickets as TicketRead[]) {
+    if (isUnread(t.coach_last_read_at, latestAdmin.get(t.id), false)) unread += 1
   }
   return unread
 }
@@ -66,8 +78,23 @@ export async function listAdminUnreadTicketIds(supabase: Untyped): Promise<Set<s
   const unread = new Set<string>()
   if (!tickets?.length) return unread
 
-  for (const t of tickets) {
-    if (await ticketHasAdminUnread(supabase, t)) unread.add(t.id)
+  const rows = tickets as TicketRead[]
+  const needCheck: TicketRead[] = []
+  for (const t of rows) {
+    if (!t.admin_last_read_at) unread.add(t.id)
+    else needCheck.push(t)
+  }
+
+  if (!needCheck.length) return unread
+
+  const latestCoach = await latestMessageAtByTicket(
+    supabase,
+    needCheck.map((t) => t.id),
+    'coach',
+  )
+
+  for (const t of needCheck) {
+    if (isUnread(t.admin_last_read_at, latestCoach.get(t.id), false)) unread.add(t.id)
   }
   return unread
 }

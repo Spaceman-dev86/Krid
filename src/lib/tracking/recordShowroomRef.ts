@@ -14,6 +14,31 @@ export type ResolvedTrackedLink = {
   label: string
   targetKind: string
   prestationId: string | null
+  promoCodeId: string | null
+}
+
+function mapTrackedLinkRow(data: {
+  id: string
+  coach_id: string
+  code: string
+  channel: string
+  capture_leads: boolean | null
+  label: string
+  target_kind: string
+  prestation_id: string | null
+  promo_code_id?: string | null
+}): ResolvedTrackedLink {
+  return {
+    id: data.id,
+    coachId: data.coach_id,
+    code: data.code,
+    channel: data.channel,
+    captureLeads: true,
+    label: data.label,
+    targetKind: data.target_kind,
+    prestationId: data.prestation_id,
+    promoCodeId: data.promo_code_id ?? null,
+  }
 }
 
 export async function resolveTrackedLinkByRef(
@@ -26,25 +51,75 @@ export async function resolveTrackedLinkByRef(
   const admin = createServiceRoleClient()
   if (!admin) return null
 
+  // Exact match case-insensitive (évite wildcards %/_ d’un ilike brut).
+  const safe = code.replace(/[%_]/g, '')
+  if (!safe) return null
+
   const { data } = await admin
     .from('coach_tracked_links')
-    .select('id, coach_id, code, channel, capture_leads, label, target_kind, prestation_id, status')
+    .select(
+      'id, coach_id, code, channel, capture_leads, label, target_kind, prestation_id, promo_code_id, status',
+    )
     .eq('coach_id', coachId)
     .eq('status', 'active')
-    .ilike('code', code)
+    .ilike('code', safe)
     .maybeSingle()
 
   if (!data) return null
-  return {
-    id: data.id,
-    coachId: data.coach_id,
-    code: data.code,
-    channel: data.channel,
-    captureLeads: Boolean(data.capture_leads),
-    label: data.label,
-    targetKind: data.target_kind,
-    prestationId: data.prestation_id,
-  }
+  return mapTrackedLinkRow(data)
+}
+
+/** Lien défaut coach (ou premier actif) — pour CTA intérêt sans ?ref=. */
+export async function resolveDefaultTrackedLink(
+  coachId: string,
+): Promise<ResolvedTrackedLink | null> {
+  const admin = createServiceRoleClient()
+  if (!admin) return null
+
+  const { data: defaults } = await admin
+    .from('coach_tracked_links')
+    .select(
+      'id, coach_id, code, channel, capture_leads, label, target_kind, prestation_id, promo_code_id, status',
+    )
+    .eq('coach_id', coachId)
+    .eq('status', 'active')
+    .eq('is_default', true)
+    .order('created_at', { ascending: true })
+    .limit(1)
+
+  const fallback = defaults?.[0]
+  if (fallback) return mapTrackedLinkRow(fallback)
+
+  const { data: anyActive } = await admin
+    .from('coach_tracked_links')
+    .select(
+      'id, coach_id, code, channel, capture_leads, label, target_kind, prestation_id, promo_code_id, status',
+    )
+    .eq('coach_id', coachId)
+    .eq('status', 'active')
+    .order('created_at', { ascending: true })
+    .limit(1)
+
+  const row = anyActive?.[0]
+  return row ? mapTrackedLinkRow(row) : null
+}
+
+/** Charge le code texte d’une promo liée à une campagne (active). */
+export async function loadPromoCodeForLink(
+  coachId: string,
+  promoCodeId: string | null | undefined
+): Promise<{ code: string; percentOff: number | null } | null> {
+  if (!promoCodeId) return null
+  const admin = createServiceRoleClient()
+  if (!admin) return null
+  const { data } = await admin
+    .from('coach_codes')
+    .select('code, percent_off, type, status')
+    .eq('id', promoCodeId)
+    .eq('coach_id', coachId)
+    .maybeSingle()
+  if (!data || data.type !== 'promo' || data.status !== 'active') return null
+  return { code: data.code, percentOff: data.percent_off }
 }
 
 export async function recordTrackedClickAndSetCookie(opts: {

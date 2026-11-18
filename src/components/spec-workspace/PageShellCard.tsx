@@ -13,15 +13,26 @@ type Props = {
 
 function KindBadge({ kind }: { kind?: string }) {
   const map: Record<string, { label: string; className: string }> = {
-    shell: { label: 'Page shell', className: 'bg-[var(--brand)] text-white' },
-    tab: { label: 'Zone dynamique', className: 'bg-orange-100 text-orange-800' },
-    detail: { label: 'Fiche détail', className: 'bg-sky-100 text-sky-800' },
-    fullscreen: { label: 'Plein écran', className: 'bg-violet-100 text-violet-800' },
+    shell: { label: 'Page shell', className: 'bg-[var(--brand)] text-[var(--brand-fg)]' },
+    tab: {
+      label: 'Zone dynamique',
+      className: 'border border-orange-500/40 bg-orange-500/15 text-[color:var(--fg)]',
+    },
+    detail: {
+      label: 'Fiche détail',
+      className: 'border border-sky-500/40 bg-sky-500/15 text-[color:var(--fg)]',
+    },
+    fullscreen: {
+      label: 'Plein écran',
+      className: 'border border-violet-500/40 bg-violet-500/15 text-[color:var(--fg)]',
+    },
     plain: { label: 'Page', className: 'bg-[var(--accent)] text-[var(--brand)]' },
   }
   const conf = map[kind ?? 'plain'] ?? map.plain
   return (
-    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide ${conf.className}`}>
+    <span
+      className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide ${conf.className}`}
+    >
       {conf.label}
     </span>
   )
@@ -36,9 +47,9 @@ export function PageShellCard({ sectionId, node, blocks }: Props) {
   return (
     <article
       id={node.id}
-      className="scroll-mt-28 overflow-hidden rounded-[var(--radius-lg)] border-2 border-[var(--brand)]/20 bg-white shadow-sm"
+      className="scroll-mt-28 overflow-hidden rounded-[var(--radius-lg)] border-2 border-[var(--brand)]/25 bg-[var(--surface)] shadow-da-sm"
     >
-      <header className="border-b border-[var(--border)] bg-[var(--brand)]/5 px-5 py-4">
+      <header className="border-b border-[var(--border)] bg-[var(--brand)]/10 px-5 py-4">
         <div className="flex flex-wrap items-center gap-2">
           <KindBadge kind="shell" />
           <h3 className="text-xl font-extrabold tracking-tight text-[var(--brand)]">{node.label}</h3>
@@ -50,10 +61,9 @@ export function PageShellCard({ sectionId, node, blocks }: Props) {
       </header>
 
       <div className="grid gap-0 divide-y divide-[var(--border)]">
-        {/* 1. Vue d'ensemble */}
         <div className="p-5">
           <div className="mb-3 flex items-center gap-2">
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--brand)] text-[11px] font-extrabold text-white">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--brand)] text-[11px] font-extrabold text-[var(--brand-fg)]">
               1
             </span>
             <h4 className="text-sm font-extrabold text-[color:var(--fg)]">Vue d’ensemble</h4>
@@ -70,8 +80,7 @@ export function PageShellCard({ sectionId, node, blocks }: Props) {
           <RedirectsEditor sectionId={sectionId} blockId={node.id} initial={overview.redirects ?? []} />
         </div>
 
-        {/* 2. Header fixe */}
-        <div className="bg-[var(--accent)]/30 p-5">
+        <div className="bg-[var(--accent)]/40 p-5">
           <div className="mb-3 flex items-center gap-2">
             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-orange-500 text-[11px] font-extrabold text-white">
               2
@@ -79,10 +88,10 @@ export function PageShellCard({ sectionId, node, blocks }: Props) {
             <h4 className="text-sm font-extrabold text-[color:var(--fg)]">Header d’interaction (fixe)</h4>
             <span className="text-xs text-[color:var(--muted)]">— onglets · filtres · CTA (reste visible)</span>
           </div>
-          <div className="mb-3 flex flex-wrap gap-2 rounded-lg border border-dashed border-orange-300 bg-white/80 px-3 py-2 text-[11px] font-semibold text-orange-800">
-            <span className="rounded-md bg-orange-100 px-2 py-1">Onglets</span>
-            <span className="rounded-md bg-orange-100 px-2 py-1">Filtres</span>
-            <span className="rounded-md bg-orange-100 px-2 py-1">Recherche</span>
+          <div className="mb-3 flex flex-wrap gap-2 rounded-lg border border-dashed border-orange-500/40 bg-orange-500/10 px-3 py-2 text-[11px] font-semibold text-[color:var(--fg)]">
+            <span className="rounded-md bg-orange-500/20 px-2 py-1">Onglets</span>
+            <span className="rounded-md bg-orange-500/20 px-2 py-1">Filtres</span>
+            <span className="rounded-md bg-orange-500/20 px-2 py-1">Recherche</span>
             <span className="rounded-md bg-orange-500 px-2 py-1 text-white">CTA (ex. Créer…)</span>
           </div>
           <EditableBlock
@@ -99,7 +108,6 @@ export function PageShellCard({ sectionId, node, blocks }: Props) {
           />
         </div>
 
-        {/* 3. Zone dynamique */}
         <div className="p-5">
           <div className="mb-4 flex items-center gap-2">
             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-orange-500 text-[11px] font-extrabold text-white">
@@ -154,8 +162,8 @@ export function PageShellCard({ sectionId, node, blocks }: Props) {
         </div>
 
         {otherChildren.length > 0 ? (
-          <div className="bg-[var(--bg)] p-5">
-            <h4 className="mb-3 text-sm font-extrabold">Autres (hors onglets liste)</h4>
+          <div className="bg-[var(--page-bg)] p-5">
+            <h4 className="mb-3 text-sm font-extrabold text-[color:var(--fg)]">Autres (hors onglets liste)</h4>
             <div className="grid gap-4">
               {otherChildren.map((child) => (
                 <div key={child.id} id={child.id} className="scroll-mt-28">

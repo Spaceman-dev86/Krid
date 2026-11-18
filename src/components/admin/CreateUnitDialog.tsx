@@ -30,20 +30,23 @@ export function CreateUnitDialog({ open, onClose, onCreated }: Props) {
   if (!open || !mounted) return null
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999]">
+    <div
+      className="da-vv-overlay z-[9999]"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="create-unit-title"
+      data-builder-chrome=""
+      onPointerDown={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
+    >
       <button
         type="button"
         className="absolute inset-0 bg-black/50"
         aria-label="Fermer"
         onClick={onClose}
       />
-      <div
-        className="absolute left-1/2 top-1/2 z-10 w-[min(440px,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="create-unit-title"
-      >
-        <div className="overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] shadow-da-md">
+      <div className="absolute left-1/2 top-1/2 z-10 w-[min(440px,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2">
+        <div className="da-vv-dialog overflow-y-auto rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] shadow-da-md">
           <div className="border-b border-[var(--border)] px-4 py-3">
             <h2 id="create-unit-title" className="text-sm font-bold text-[color:var(--fg)]">
               Nouvelle unité

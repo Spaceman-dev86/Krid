@@ -9,7 +9,7 @@ export default async function SpecHomePage() {
 
   if (!doc) {
     return (
-      <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-sm text-red-800">
+      <div className="rounded-lg border border-[var(--danger-border)] bg-[var(--danger-bg)] p-6 text-sm text-[var(--danger)]">
         <p className="font-extrabold">Impossible de charger la section Accueil.</p>
         <p className="mt-2">
           Vérifie que le fichier <code>plans/workspace/home.json</code> existe à la racine du projet.

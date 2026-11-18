@@ -220,7 +220,7 @@ export function CoachSpecWorkspace({ sectionId, tree, menus }: Props) {
 
   return (
     <div className="grid gap-8">
-      <div className="sticky top-16 z-20 flex flex-wrap items-center justify-between gap-2 rounded-[var(--radius-lg)] border border-[var(--border)] bg-white/90 px-4 py-2.5 shadow-sm backdrop-blur">
+      <div className="sticky top-16 z-20 flex flex-wrap items-center justify-between gap-2 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)]/95 px-4 py-2.5 shadow-da-sm backdrop-blur">
         <p className="text-xs text-[color:var(--muted)]">
           Annuler un déplacement / promotion dans l’arbre —{' '}
           <kbd className="rounded bg-[var(--accent)] px-1.5 py-0.5 font-mono text-[10px]">Ctrl</kbd>+
@@ -233,7 +233,7 @@ export function CoachSpecWorkspace({ sectionId, tree, menus }: Props) {
           type="button"
           onClick={undo}
           disabled={undoCount === 0}
-          className="inline-flex items-center gap-2 rounded-full bg-[var(--brand)] px-4 py-1.5 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
+          className="inline-flex items-center gap-2 rounded-full bg-[var(--brand)] px-4 py-1.5 text-xs font-semibold text-[var(--brand-fg)] disabled:cursor-not-allowed disabled:opacity-40"
           title="Ctrl+Z"
         >
           ↶ Annuler

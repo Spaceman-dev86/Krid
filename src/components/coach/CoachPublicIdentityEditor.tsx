@@ -263,7 +263,7 @@ export function CoachPublicIdentityEditor({
                     onClick={() => photoInputRef.current?.click()}
                     className="absolute -bottom-1 -right-1 z-20 rounded-full bg-[var(--surface)] px-2 py-0.5 text-[10px] font-bold text-[color:var(--brand)] shadow"
                   >
-                    Photo
+                    Portrait
                   </button>
                 </div>
                 <div className="min-w-0 flex-1 pb-1 text-white">

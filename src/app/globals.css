@@ -40,15 +40,21 @@
   --btn-secondary-ring: rgba(214, 196, 232, 0.45);
   --btn-secondary-hover: #1f1f22;
 
+  /* Feedback + conformité programme (mêmes 3 teintes partout) */
   --success: #86efac;
   --success-bg: rgba(22, 101, 52, 0.28);
   --success-border: rgba(134, 239, 172, 0.35);
   --danger: #fca5a5;
   --danger-bg: rgba(153, 27, 27, 0.28);
   --danger-border: rgba(252, 165, 165, 0.35);
-  --warning: #fcd34d;
-  --warning-bg: rgba(146, 64, 14, 0.28);
-  --warning-border: rgba(252, 211, 77, 0.35);
+  /* Orange clair — distinct du danger */
+  --warning: #f5b041;
+  --warning-bg: rgba(180, 83, 9, 0.28);
+  --warning-border: rgba(245, 176, 65, 0.45);
+  /* Alias conformité (réutiliser ces tokens, pas de hex ad hoc) */
+  --status-ok: var(--success);
+  --status-warn: var(--warning);
+  --status-bad: var(--danger);
 
   --radius-sm: 12px;
   --radius-md: 16px;
@@ -100,15 +106,20 @@ html[data-theme='light'],
   --btn-secondary-ring: #9b6bb8;
   --btn-secondary-hover: #faf7ff;
 
+  /* Feedback + conformité — mêmes rôles qu’en dark */
   --success: #166534;
   --success-bg: #ecfdf5;
   --success-border: #a7f3d0;
   --danger: #991b1b;
   --danger-bg: #fef2f2;
   --danger-border: #fecaca;
-  --warning: #92400e;
-  --warning-bg: #fffbeb;
-  --warning-border: #fde68a;
+  /* Orange lisible sur fond clair, loin du rouge erreur */
+  --warning: #c27803;
+  --warning-bg: #fff7ed;
+  --warning-border: #fdba74;
+  --status-ok: var(--success);
+  --status-warn: var(--warning);
+  --status-bad: var(--danger);
 
   --shadow-sm: 0 1px 2px rgba(17, 24, 39, 0.05);
   --shadow-md: 0 10px 28px rgba(17, 24, 39, 0.08);
@@ -150,11 +161,34 @@ html[data-theme='light'],
 html[data-theme='dark'],
 html[data-theme='dark'] body {
   color: #f4f4f5;
+  color-scheme: dark;
 }
 
 html[data-theme='light'],
 html[data-theme='light'] body {
   color: #111827;
+  color-scheme: light;
+}
+
+/* Date/heure : icône native totalement retirée — ouverture via bouton custom. */
+.da-datetime-field {
+  color-scheme: dark;
+}
+
+.da-datetime-field::-webkit-calendar-picker-indicator {
+  display: none !important;
+  -webkit-appearance: none;
+  appearance: none;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  margin: 0;
+  padding: 0;
+  pointer-events: none;
+}
+
+html[data-theme='light'] .da-datetime-field {
+  color-scheme: light;
 }
 
 /* Page canvas — dark = carbon · light = carbon clair (blanc / gris) */
@@ -163,6 +197,7 @@ html[data-theme='light'] body {
 }
 
 [data-theme='dark'] .bg-da-canvas,
+.bg-da-canvas[data-theme='dark'],
 .bg-carbon-rail {
   background-color: #0c0c0d;
   background-image:
@@ -183,8 +218,11 @@ html[data-theme='light'] body {
     linear-gradient(180deg, #141416 0%, #0c0c0d 48%, #111113 100%);
 }
 
+/* Light carbon : descendant OU même nœud (portail / preview mon-app) */
 [data-theme='light'] .bg-da-canvas,
-[data-theme='light'] .bg-carbon-rail {
+.bg-da-canvas[data-theme='light'],
+[data-theme='light'] .bg-carbon-rail,
+.bg-carbon-rail[data-theme='light'] {
   /* Traits diagonaux uniques (pas de croisement = pas de carreaux) */
   --da-rail:
     repeating-linear-gradient(
@@ -202,7 +240,8 @@ html[data-theme='light'] body {
 }
 
 /* Flou uniquement sur une copie du fond à traits (contenu net au-dessus) */
-[data-theme='light'] .bg-da-canvas::before {
+[data-theme='light'] .bg-da-canvas::before,
+.bg-da-canvas[data-theme='light']::before {
   content: '';
   pointer-events: none;
   position: absolute;
@@ -218,7 +257,8 @@ html[data-theme='light'] body {
   -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 40%, transparent 100%);
 }
 
-[data-theme='light'] .bg-da-canvas::after {
+[data-theme='light'] .bg-da-canvas::after,
+.bg-da-canvas[data-theme='light']::after {
   content: '';
   pointer-events: none;
   position: absolute;
@@ -258,6 +298,10 @@ html[data-theme='light'] body {
 .app-shell-aside {
   --shell-fg: #f4f4f5;
   --shell-muted: rgba(244, 244, 245, 0.58);
+  /* Colonne icône fixe : même X rail replié / déplié */
+  --shell-pad-x: 0.5rem;
+  --shell-row-px: 0.375rem;
+  --shell-icon-slot: 2.25rem;
   background-color: var(--shell);
   background-image: none;
   border-right: none;
@@ -265,6 +309,7 @@ html[data-theme='light'] body {
   z-index: 50;
   /* Ombre claire (volume soft, pas un puits noir) */
   box-shadow: inset -10px 0 28px rgba(255, 255, 255, 0.06);
+  transition: width 0.22s ease;
 }
 
 [data-theme='light'] .app-shell-aside {
@@ -288,9 +333,10 @@ html[data-theme='light'] body {
 .app-shell-nav-link {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.625rem;
+  min-height: calc(var(--shell-icon-slot) + 0.5rem);
   border-radius: var(--radius-sm);
-  padding: 0.55rem 0.75rem;
+  padding: 0.25rem var(--shell-row-px);
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--shell-muted);
@@ -298,6 +344,15 @@ html[data-theme='light'] body {
     background-color 0.15s ease,
     color 0.15s ease,
     box-shadow 0.15s ease;
+}
+
+.app-shell-nav-icon {
+  display: inline-flex;
+  width: var(--shell-icon-slot);
+  height: var(--shell-icon-slot);
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
 }
 
 .app-shell-nav-link:hover {
@@ -334,14 +389,418 @@ html[data-theme='light'] body {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 25%, transparent);
 }
 
-.app-shell-aside[data-collapsed='true'] .app-shell-nav-link {
-  justify-content: center;
-  padding-left: 0.5rem;
-  padding-right: 0.5rem;
-}
-
 .app-shell-aside[data-collapsed='true'] .app-shell-nav-link[data-active='true'] {
   box-shadow: none;
+}
+
+/* Nav shell admin + coach — feedback sans remount page */
+.shell-route-pending,
+.admin-route-pending {
+  opacity: 0.78;
+  transition: opacity 0.12s ease;
+}
+
+.shell-nav-progress-track,
+.admin-nav-progress-track {
+  pointer-events: none;
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  z-index: 30;
+  height: 2px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--border) 80%, transparent);
+}
+
+.shell-nav-progress-track--bottom {
+  top: auto;
+  bottom: 0;
+}
+
+.shell-nav-progress-bar,
+.admin-nav-progress-bar {
+  height: 100%;
+  width: 38%;
+  background: var(--brand);
+  animation: shell-nav-progress 0.85s ease-in-out infinite;
+}
+
+@keyframes shell-nav-progress {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(320%);
+  }
+}
+
+/* Dashboard coach — entrées + couleurs Krid */
+@keyframes coach-dash-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes coach-dash-bar-grow {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes coach-dash-donut-in {
+  from {
+    opacity: 0;
+    transform: rotate(-18deg) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(0) scale(1);
+  }
+}
+
+@keyframes coach-dash-pulse-soft {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--brand) 35%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 8px color-mix(in srgb, var(--brand) 0%, transparent);
+  }
+}
+
+.coach-dash {
+  --dash-lavender: var(--brand);
+  --dash-orchid: var(--brand-mid);
+  --dash-mist: var(--brand-soft);
+  --dash-violet: color-mix(in srgb, var(--brand-mid) 70%, #5b3d7a);
+  --dash-lilac: color-mix(in srgb, var(--brand) 55%, #ffffff);
+  --dash-plum: color-mix(in srgb, var(--brand-mid) 55%, #2a1a38);
+}
+
+.coach-dash-in {
+  animation: coach-dash-in 0.45s ease both;
+}
+
+.coach-dash-kpi {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--brand) 14%, var(--surface)) 0%,
+      var(--surface) 55%
+    );
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.coach-dash-kpi::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: linear-gradient(180deg, var(--brand-soft), var(--brand-mid));
+  opacity: 0.9;
+}
+
+.coach-dash-kpi:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--brand) 55%, var(--border));
+  box-shadow: var(--shadow-brand);
+}
+
+.coach-dash-panel {
+  background:
+    linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--brand) 10%, var(--surface)) 0%,
+      var(--surface) 42%
+    );
+}
+
+.coach-dash-bar {
+  transform-origin: bottom center;
+  animation: coach-dash-bar-grow 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  background: linear-gradient(
+    180deg,
+    var(--brand-soft) 0%,
+    var(--brand) 45%,
+    var(--brand-mid) 100%
+  );
+  box-shadow: 0 0 16px color-mix(in srgb, var(--brand) 28%, transparent);
+}
+
+.coach-dash-donut {
+  animation: coach-dash-donut-in 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+  filter: drop-shadow(0 8px 20px color-mix(in srgb, var(--brand) 22%, transparent));
+}
+
+.coach-dash-logo-glow {
+  animation: coach-dash-pulse-soft 3.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-shell-aside {
+    transition: none;
+  }
+  .shell-nav-progress-bar,
+  .admin-nav-progress-bar {
+    animation: none;
+    width: 100%;
+    opacity: 0.7;
+  }
+  .coach-dash-in,
+  .coach-dash-bar,
+  .coach-dash-donut,
+  .coach-dash-logo-glow {
+    animation: none !important;
+  }
+  .coach-dash-kpi:hover {
+    transform: none;
+  }
+  .doc-folder-real,
+  .doc-folder-real__stage,
+  .doc-folder-real__sheet,
+  .doc-folder-real__back,
+  .doc-folder-real__front,
+  .doc-folder-real__contact,
+  .doc-media-card {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Documentation — dossier clay / manila (DA Trainly, ref 3D) */
+.doc-folder-real {
+  display: block;
+  transform: translateZ(0);
+  container-type: inline-size;
+  container-name: doc-folder;
+  /* Dark — lavande mate opaque ; contraste dos/rabat doux (pas de faux liseré) */
+  --folder-back-hi: color-mix(in srgb, var(--brand) 40%, #3a3348);
+  --folder-back-lo: color-mix(in srgb, var(--brand) 28%, #2a2438);
+  --folder-front-hi: color-mix(in srgb, var(--brand) 52%, #5a4e6c);
+  --folder-front-lo: color-mix(in srgb, var(--brand) 40%, #453a56);
+  /* Feuille type icône 3D (gris doux, pas blanc cru) */
+  --folder-paper: #ece8f0;
+  --folder-paper-lo: #ddd6e6;
+  --folder-contact: rgba(0, 0, 0, 0.4);
+  --folder-contact-hover: color-mix(in srgb, var(--brand) 16%, rgba(0, 0, 0, 0.45));
+}
+[data-theme='light'] .doc-folder-real {
+  --folder-back-hi: color-mix(in srgb, var(--brand) 30%, #ddd0ea);
+  --folder-back-lo: color-mix(in srgb, var(--brand) 22%, #c9b8de);
+  --folder-front-hi: color-mix(in srgb, var(--brand) 12%, #ffffff);
+  --folder-front-lo: color-mix(in srgb, var(--brand) 22%, #ebe2f4);
+  --folder-paper: #f3f0f6;
+  --folder-paper-lo: #e5e0ec;
+  --folder-contact: rgba(40, 24, 56, 0.16);
+  --folder-contact-hover: color-mix(in srgb, var(--brand) 20%, rgba(40, 24, 56, 0.18));
+}
+.doc-folder-real--system {
+  --folder-front-hi: color-mix(in srgb, var(--brand) 64%, #746888);
+  --folder-front-lo: color-mix(in srgb, var(--brand) 44%, #4a3e5c);
+}
+[data-theme='light'] .doc-folder-real--system {
+  --folder-front-hi: color-mix(in srgb, var(--brand) 16%, #ffffff);
+  --folder-front-lo: color-mix(in srgb, var(--brand) 24%, #ebe2f4);
+}
+
+/* Menus Drive (déplacer / partager / archiver) : ne pas clipper les panels. */
+.doc-folder-real:has([data-drive-panel-open]) .doc-folder-real__stage,
+.doc-folder-real:has([data-drive-panel-open]) .doc-folder-real__content {
+  overflow: visible;
+  z-index: 50;
+}
+
+.doc-folder-real__stage {
+  position: relative;
+  /* display géré par Tailwind (hidden sm:block) — ne pas forcer block ici */
+  width: 100%;
+  aspect-ratio: 320 / 220;
+  /* Pas de min-height forcée : évite le stretch SVG qui décale le texte hors rabat */
+  transition: transform 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+  transform-origin: 50% 92%;
+  overflow: hidden;
+}
+.doc-folder-real__contact {
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  bottom: 1%;
+  height: 12%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, var(--folder-contact) 0%, transparent 70%);
+  z-index: 0;
+  pointer-events: none;
+  transition: transform 0.38s ease, opacity 0.38s ease;
+}
+.doc-folder-real__back,
+.doc-folder-real__front {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+.doc-folder-real__back {
+  z-index: 1;
+}
+.doc-folder-real__front {
+  z-index: 3;
+}
+
+/* Feuille remontée avec le rabat — même écart peek / lèvre */
+.doc-folder-real__papers {
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  top: 24%;
+  height: 36%;
+  z-index: 2;
+  pointer-events: none;
+}
+.doc-folder-real__sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 100%;
+  border-radius: 12px;
+  background: linear-gradient(180deg, var(--folder-paper) 0%, var(--folder-paper-lo) 100%);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.18);
+  transform-origin: 50% 100%;
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.doc-folder-real__sheet--a {
+  transform: translate3d(0, 28%, 0) scale(0.985);
+  opacity: 0.88;
+}
+.doc-folder-real__sheet--b {
+  transform: translate3d(0, 30%, 0) scale(0.992);
+  opacity: 0.94;
+  transition-delay: 0.03s;
+}
+.doc-folder-real__sheet--c {
+  transform: translate3d(0, 32%, 0);
+  transition-delay: 0.06s;
+}
+
+/*
+ * Zone texte calée dans le rabat SVG (path ~ x24–296 / y78–214 sur 320×220).
+ * Marges % + overflow:hidden pour ne jamais sortir de la pochette.
+ */
+.doc-folder-real__content {
+  position: absolute;
+  z-index: 4;
+  /* top ≈ rabat ; left/right/bottom = coins arrondis du path */
+  inset: 40% 12% 10% 12%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.doc-folder-real__text {
+  min-width: 0;
+  overflow: hidden;
+}
+.doc-folder-real__eyebrow {
+  font-size: 9px;
+}
+.doc-folder-real__title {
+  font-size: clamp(0.95rem, 4.2cqi, 1.2rem);
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.doc-folder-real__sub {
+  font-size: clamp(0.625rem, 2.8cqi, 0.75rem);
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  word-break: break-word;
+}
+.doc-folder-real__footer {
+  min-width: 0;
+}
+
+/* Cartes étroites (2 col sous ~1100px viewport avec sidebar) */
+@container doc-folder (max-width: 300px) {
+  .doc-folder-real__content {
+    inset: 41% 13% 11% 13%;
+  }
+  .doc-folder-real__sub {
+    -webkit-line-clamp: 1;
+  }
+  .doc-folder-real__footer {
+    padding-top: 0.25rem;
+  }
+}
+@container doc-folder (min-width: 340px) {
+  .doc-folder-real__content {
+    inset: 42% 11% 10% 11%;
+  }
+}
+
+.doc-folder-real:hover .doc-folder-real__stage {
+  transform: translateY(-3px);
+}
+.doc-folder-real:hover .doc-folder-real__contact {
+  transform: scaleX(1.05) translateY(2px);
+  background: radial-gradient(ellipse at center, var(--folder-contact-hover) 0%, transparent 70%);
+}
+.doc-folder-real:hover .doc-folder-real__sheet--a {
+  transform: translate3d(-1%, 18%, 0) rotate(-1.2deg) scale(0.985);
+}
+.doc-folder-real:hover .doc-folder-real__sheet--b {
+  transform: translate3d(0, 16%, 0) rotate(0.3deg) scale(0.992);
+}
+.doc-folder-real:hover .doc-folder-real__sheet--c {
+  transform: translate3d(1%, 14%, 0) rotate(1.2deg);
+}
+.doc-folder-real:active .doc-folder-real__stage {
+  transform: translateY(-1px);
+}
+
+.doc-media-card {
+  animation: doc-media-in 0.45s ease both;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.doc-media-card:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--brand) 45%, var(--border));
+  box-shadow: var(--shadow-md);
+}
+.doc-media-card__icon {
+  transition: transform 0.3s ease;
+}
+.doc-media-card:hover .doc-media-card__icon {
+  transform: scale(1.06) rotate(-2deg);
+}
+@keyframes doc-media-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 /* Reset minimal */
@@ -357,6 +816,45 @@ html, body {
 
 body {
   margin: 0;
+}
+
+:root {
+  --vv-height: 100dvh;
+  --vv-offset-top: 0px;
+  --keyboard-inset: 0px;
+}
+
+/*
+ * iOS Safari zoome les champs < 16px au focus — forcer 16px tablette/téléphone.
+ * (text-sm = 14px, text-xs = 12px)
+ */
+@media (max-width: 1099px) {
+  input:not([type='checkbox']):not([type='radio']):not([type='hidden']):not([type='range']):not([type='file']):not([type='button']):not([type='submit']):not([type='reset']),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  /* Scroll jour builder : place pour le clavier + champ recherche bas de séance */
+  [data-builder-day-focus] > .da-scrollbar {
+    padding-bottom: var(--keyboard-inset, 0px);
+    scroll-padding-bottom: calc(var(--keyboard-inset, 0px) + 1.5rem);
+  }
+}
+
+/* Overlay modal aligné sur visualViewport (pas le layout viewport sous le clavier) */
+.da-vv-overlay {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: var(--vv-offset-top, 0px);
+  height: var(--vv-height, 100dvh);
+}
+
+.da-vv-dialog {
+  max-height: min(900px, calc(var(--vv-height, 100dvh) * 0.92));
+  /* Chaîne flex : corps scrollable sur mobile (CreateBlockDialog, etc.) */
+  min-height: 0;
 }
 
 input.no-native-spin::-webkit-outer-spin-button,
@@ -386,6 +884,42 @@ input.no-native-spin {
 
 .no-scrollbar::-webkit-scrollbar-track {
   background: transparent;
+}
+
+/**
+ * Scrollbar fine DA — override la barre native Windows (track clair / thumb gris).
+ * Prefer solid mixes on --fg so light/dark stay readable.
+ */
+.da-scrollbar {
+  scrollbar-width: thin !important;
+  scrollbar-color: color-mix(in srgb, var(--fg) 22%, transparent) transparent !important;
+}
+
+.da-scrollbar::-webkit-scrollbar {
+  width: 4px !important;
+  height: 4px !important;
+  background: transparent !important;
+}
+
+.da-scrollbar::-webkit-scrollbar-corner {
+  background: transparent !important;
+}
+
+.da-scrollbar::-webkit-scrollbar-track {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.da-scrollbar::-webkit-scrollbar-thumb {
+  border: none !important;
+  border-radius: 999px !important;
+  background-color: color-mix(in srgb, var(--fg) 22%, transparent) !important;
+  box-shadow: none !important;
+}
+
+.da-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in srgb, var(--fg) 38%, transparent) !important;
 }
 
 .dash-float {
@@ -644,5 +1178,1188 @@ input.no-native-spin {
   }
   100% {
     transform: translate3d(0, -8px, 0);
+  }
+}
+
+/* —— Coach calendar : objet réel (spirale) + DA Trainly —— */
+@keyframes coach-cal-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.coach-cal-object {
+  /* Tuiles : lavande lisible, distincte du corps carbone */
+  --cal-tile: color-mix(in srgb, var(--brand) 58%, var(--accent) 42%);
+  --cal-tile-hi: color-mix(in srgb, var(--brand) 48%, #ffffff 18%);
+  --cal-tile-lo: color-mix(in srgb, var(--brand) 52%, #0c0c0e 28%);
+  --cal-tile-busy: color-mix(in srgb, var(--brand) 78%, var(--accent) 22%);
+  --cal-tile-busy-hi: color-mix(in srgb, var(--brand) 70%, #ffffff 16%);
+  --cal-tile-busy-lo: color-mix(in srgb, var(--brand) 72%, #0c0c0e 22%);
+  --cal-body: #121216;
+  --cal-body-hi: #1a1a20;
+  perspective: 1400px;
+  animation: coach-cal-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+html[data-theme='light'] .coach-cal-object {
+  --cal-tile: color-mix(in srgb, var(--brand) 22%, #f0ebf5);
+  --cal-tile-hi: #faf7fc;
+  --cal-tile-lo: color-mix(in srgb, var(--brand) 28%, #e4dcec);
+  --cal-tile-busy: color-mix(in srgb, var(--brand) 42%, #efe6f6);
+  --cal-tile-busy-hi: color-mix(in srgb, var(--brand) 28%, #fff);
+  --cal-tile-busy-lo: color-mix(in srgb, var(--brand) 48%, #e6d8f0);
+  --cal-body: #2c2733;
+  --cal-body-hi: #3a3344;
+}
+
+.coach-cal-rings {
+  display: flex;
+  justify-content: space-between;
+  width: min(72%, 22rem);
+  margin-left: auto;
+  margin-right: auto;
+  position: relative;
+  z-index: 2;
+  margin-bottom: -0.65rem;
+  pointer-events: none;
+  padding-inline: 0.25rem;
+}
+
+.coach-cal-ring {
+  width: 0.95rem;
+  height: 1.7rem;
+  border-radius: 9999px;
+  background:
+    linear-gradient(
+      105deg,
+      #5a5a62 0%,
+      #c8c8d0 28%,
+      #7a7a84 52%,
+      #e8e8ee 72%,
+      #4a4a52 100%
+    );
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.28),
+    inset 2px 0 3px rgba(0, 0, 0, 0.25),
+    0 6px 12px rgba(0, 0, 0, 0.4);
+}
+
+html[data-theme='light'] .coach-cal-ring {
+  background:
+    linear-gradient(
+      105deg,
+      #8a8490 0%,
+      #f2f0f5 30%,
+      #a9a3b0 55%,
+      #ffffff 75%,
+      #6e6878 100%
+    );
+}
+
+.coach-cal-pad {
+  position: relative;
+  border-radius: calc(var(--radius-lg) + 2px);
+  overflow: hidden;
+  transform-style: preserve-3d;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.07) inset,
+    0 2px 4px rgba(0, 0, 0, 0.2),
+    0 18px 36px rgba(0, 0, 0, 0.42),
+    0 40px 64px rgba(0, 0, 0, 0.28);
+}
+
+.coach-cal-pad::after {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--border) 55%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  z-index: 4;
+}
+
+.coach-cal-header {
+  position: relative;
+  z-index: 1;
+  padding: 1.05rem 1.05rem 1rem;
+  /* Bandeau 2 tons comme l’icône, en brand */
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--brand) 72%, #ffffff) 0%,
+      color-mix(in srgb, var(--brand) 88%, #ffffff) 38%,
+      var(--brand) 39%,
+      color-mix(in srgb, var(--brand) 82%, #2a1e34) 100%
+    );
+  color: var(--brand-fg);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.42),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.14);
+}
+
+html[data-theme='light'] .coach-cal-header {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--brand) 55%, #ffffff) 0%,
+      color-mix(in srgb, var(--brand) 78%, #ffffff) 38%,
+      var(--brand) 39%,
+      color-mix(in srgb, var(--brand) 90%, #5a3a6e) 100%
+    );
+}
+
+.coach-cal-body {
+  position: relative;
+  z-index: 1;
+  padding: 0.85rem 0.8rem 0.95rem;
+  background:
+    linear-gradient(180deg, var(--cal-body-hi) 0%, var(--cal-body) 55%, #0e0e12 100%);
+  box-shadow: inset 0 12px 28px rgba(0, 0, 0, 0.35);
+}
+
+html[data-theme='light'] .coach-cal-body {
+  box-shadow: inset 0 10px 22px rgba(0, 0, 0, 0.22);
+}
+
+.coach-cal-well {
+  position: relative;
+  border-radius: calc(var(--radius-md) - 2px);
+  padding: 0.25rem;
+}
+
+.coach-cal-dow {
+  color: color-mix(in srgb, #f4f4f5 58%, transparent);
+  letter-spacing: 0.14em;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.45);
+}
+
+.coach-cal-cell {
+  position: relative;
+  isolation: isolate;
+  border: none;
+  border-radius: 11px;
+  background:
+    linear-gradient(160deg, var(--cal-tile-hi) 0%, var(--cal-tile) 46%, var(--cal-tile-lo) 100%);
+  color: var(--brand-fg);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.28) inset,
+    0 -2px 0 rgba(0, 0, 0, 0.18) inset,
+    0 4px 10px rgba(0, 0, 0, 0.32);
+  transform: translateZ(0);
+  transition:
+    transform 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 0.2s ease;
+}
+
+html[data-theme='light'] .coach-cal-cell {
+  color: color-mix(in srgb, var(--brand) 55%, #1a1a1e);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.95) inset,
+    0 -1px 0 rgba(80, 50, 100, 0.08) inset,
+    0 4px 12px rgba(40, 24, 56, 0.12);
+}
+
+.coach-cal-cell:hover {
+  z-index: 2;
+  transform: translate3d(0, -2px, 0) scale(1.03);
+  filter: brightness(1.06);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.32) inset,
+    0 12px 22px rgba(0, 0, 0, 0.38),
+    var(--shadow-brand);
+}
+
+.coach-cal-cell:active {
+  transform: translate3d(0, 0, 0) scale(0.98);
+  box-shadow: var(--shadow-sm);
+}
+
+.coach-cal-cell--busy {
+  background:
+    linear-gradient(
+      160deg,
+      var(--cal-tile-busy-hi) 0%,
+      var(--cal-tile-busy) 48%,
+      var(--cal-tile-busy-lo) 100%
+    );
+}
+
+.coach-cal-cell--today {
+  background:
+    linear-gradient(
+      160deg,
+      color-mix(in srgb, var(--brand) 70%, #ffffff) 0%,
+      var(--brand) 48%,
+      color-mix(in srgb, var(--brand) 78%, #1a1a1e) 100%
+    );
+  color: var(--brand-fg);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--brand) 65%, #fff),
+    0 1px 0 rgba(255, 255, 255, 0.35) inset,
+    var(--shadow-brand),
+    0 10px 24px color-mix(in srgb, var(--brand) 28%, transparent);
+}
+
+.coach-cal-cell--muted {
+  background: color-mix(in srgb, var(--cal-body) 88%, #2a2a32);
+  color: color-mix(in srgb, #f4f4f5 32%, transparent);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+  filter: none;
+  opacity: 0.55;
+}
+
+.coach-cal-cell--muted:hover {
+  opacity: 0.72;
+  filter: brightness(1.05);
+}
+
+.coach-cal-cell__num {
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+html[data-theme='light'] .coach-cal-cell__num {
+  text-shadow: none;
+}
+
+.coach-cal-cell--muted .coach-cal-cell__num {
+  text-shadow: none;
+}
+
+/* Pastilles enrichies (heure + qui) — sans animation */
+.coach-cal-pill {
+  display: flex;
+  width: 100%;
+  max-width: 100%;
+  align-items: center;
+  gap: 0.3rem;
+  min-height: 1.1rem;
+  padding: 0.14rem 0.3rem 0.14rem 0.22rem;
+  border-radius: 7px;
+  background: rgba(12, 12, 14, 0.42);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.1) inset,
+    0 2px 5px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+}
+
+.coach-cal-cell--today .coach-cal-pill,
+.coach-cal-cell--busy .coach-cal-pill {
+  background: rgba(26, 26, 30, 0.28);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+html[data-theme='light'] .coach-cal-pill {
+  background: rgba(255, 255, 255, 0.72);
+  border-color: rgba(80, 50, 110, 0.12);
+  box-shadow: 0 1px 3px rgba(40, 24, 56, 0.1);
+}
+
+html[data-theme='light'] .coach-cal-cell--today .coach-cal-pill,
+html[data-theme='light'] .coach-cal-cell--busy .coach-cal-pill {
+  background: rgba(255, 255, 255, 0.55);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.coach-cal-cell--muted .coach-cal-pill {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.coach-cal-pill__pip {
+  flex-shrink: 0;
+  width: 0.38rem;
+  height: 0.38rem;
+  border-radius: 9999px;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.25),
+    0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+.coach-cal-pill__time {
+  flex-shrink: 0;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  color: inherit;
+  opacity: 1;
+}
+
+.coach-cal-pill__label {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 1.1;
+  opacity: 0.88;
+  text-align: left;
+}
+
+.coach-cal-pill__meta {
+  flex-shrink: 0;
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  opacity: 0.75;
+  line-height: 1;
+}
+
+@media (min-width: 640px) {
+  .coach-cal-pill {
+    min-height: 1.25rem;
+    gap: 0.35rem;
+    padding: 0.2rem 0.38rem 0.2rem 0.3rem;
+    border-radius: 8px;
+  }
+  .coach-cal-pill__pip {
+    width: 0.42rem;
+    height: 0.42rem;
+  }
+  .coach-cal-pill__time {
+    font-size: 9px;
+  }
+  .coach-cal-pill__label {
+    font-size: 9px;
+  }
+  .coach-cal-pill__meta {
+    font-size: 8px;
+  }
+}
+
+.coach-cal-chip {
+  display: inline-flex;
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  border: 1px solid color-mix(in srgb, var(--brand-fg) 30%, transparent);
+  background: color-mix(in srgb, var(--brand-fg) 14%, transparent);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.coach-cal-chip button {
+  color: color-mix(in srgb, var(--brand-fg) 88%, transparent);
+  border-color: color-mix(in srgb, var(--brand-fg) 24%, transparent);
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.15s ease;
+}
+
+.coach-cal-chip button + button {
+  border-left-width: 1px;
+  border-left-style: solid;
+}
+
+.coach-cal-chip button:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--brand-fg) 18%, transparent);
+  color: var(--brand-fg);
+}
+
+.coach-cal-chip button:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.coach-cal-chip button:disabled {
+  opacity: 0.4;
+}
+
+.coach-cal-chip__active {
+  background: color-mix(in srgb, var(--brand-fg) 94%, transparent) !important;
+  color: var(--brand) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+
+.coach-cal-hint {
+  color: color-mix(in srgb, #f4f4f5 45%, transparent);
+}
+
+/* —— Vue semaine : planning horaire construit —— */
+.coach-cal-week {
+  display: grid;
+  grid-template-columns: 2rem 1fr;
+  gap: 0.35rem;
+  min-height: 22rem;
+}
+
+@media (min-width: 640px) {
+  .coach-cal-week {
+    grid-template-columns: 2.75rem 1fr;
+    gap: 0.5rem;
+    min-height: 28rem;
+  }
+}
+
+@media (min-width: 900px) {
+  .coach-cal-week {
+    min-height: 32rem;
+  }
+}
+
+.coach-cal-week__gutter {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.coach-cal-week__gutter-head {
+  height: 2.65rem;
+  flex-shrink: 0;
+}
+
+@media (min-width: 640px) {
+  .coach-cal-week__gutter-head {
+    height: 3.1rem;
+  }
+}
+
+.coach-cal-week__days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+@media (min-width: 640px) {
+  .coach-cal-week__days {
+    gap: 0.45rem;
+  }
+}
+
+.coach-cal-week__day {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  border: none;
+  border-radius: 12px;
+  padding: 0;
+  text-align: left;
+  overflow: hidden;
+  background:
+    linear-gradient(160deg, var(--cal-tile-hi) 0%, var(--cal-tile) 46%, var(--cal-tile-lo) 100%);
+  color: var(--brand-fg);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.28) inset,
+    0 -2px 0 rgba(0, 0, 0, 0.18) inset,
+    0 4px 10px rgba(0, 0, 0, 0.32);
+  transition:
+    transform 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.2s ease,
+    filter 0.2s ease;
+}
+
+html[data-theme='light'] .coach-cal-week__day {
+  color: color-mix(in srgb, var(--brand) 55%, #1a1a1e);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.95) inset,
+    0 -1px 0 rgba(80, 50, 100, 0.08) inset,
+    0 4px 12px rgba(40, 24, 56, 0.12);
+}
+
+.coach-cal-week__day:hover {
+  z-index: 2;
+  transform: translate3d(0, -2px, 0);
+  filter: brightness(1.05);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.3) inset,
+    0 12px 22px rgba(0, 0, 0, 0.36),
+    var(--shadow-brand);
+}
+
+.coach-cal-week__day--busy {
+  background:
+    linear-gradient(
+      160deg,
+      var(--cal-tile-busy-hi) 0%,
+      var(--cal-tile-busy) 48%,
+      var(--cal-tile-busy-lo) 100%
+    );
+}
+
+.coach-cal-week__day--today {
+  background:
+    linear-gradient(
+      160deg,
+      color-mix(in srgb, var(--brand) 70%, #ffffff) 0%,
+      var(--brand) 48%,
+      color-mix(in srgb, var(--brand) 78%, #1a1a1e) 100%
+    );
+  color: var(--brand-fg);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--brand) 65%, #fff),
+    0 1px 0 rgba(255, 255, 255, 0.35) inset,
+    var(--shadow-brand);
+}
+
+.coach-cal-week__day-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1rem;
+  height: 2.65rem;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+  background: color-mix(in srgb, var(--page-bg) 18%, transparent);
+}
+
+@media (min-width: 640px) {
+  .coach-cal-week__day-head {
+    height: 3.1rem;
+    gap: 0.15rem;
+  }
+}
+
+.coach-cal-week__dow {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.78;
+}
+
+@media (min-width: 640px) {
+  .coach-cal-week__dow {
+    font-size: 10px;
+  }
+}
+
+.coach-cal-week__dom {
+  font-size: 0.95rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+@media (min-width: 640px) {
+  .coach-cal-week__dom {
+    font-size: 1.2rem;
+  }
+}
+
+.coach-cal-week__track {
+  position: relative;
+  flex: 1;
+  min-height: 18rem;
+}
+
+@media (min-width: 640px) {
+  .coach-cal-week__track {
+    min-height: 24rem;
+  }
+}
+
+@media (min-width: 900px) {
+  .coach-cal-week__track {
+    min-height: 28rem;
+  }
+}
+
+.coach-cal-week__gutter .coach-cal-week__track {
+  min-height: 18rem;
+}
+
+@media (min-width: 640px) {
+  .coach-cal-week__gutter .coach-cal-week__track {
+    min-height: 24rem;
+  }
+}
+
+@media (min-width: 900px) {
+  .coach-cal-week__gutter .coach-cal-week__track {
+    min-height: 28rem;
+  }
+}
+
+.coach-cal-week__hour-label {
+  position: absolute;
+  left: 0;
+  right: 0;
+  transform: translateY(-50%);
+  font-size: 8px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  color: color-mix(in srgb, #f4f4f5 55%, transparent);
+  text-align: right;
+  padding-right: 0.15rem;
+  line-height: 1;
+  pointer-events: none;
+}
+
+@media (min-width: 640px) {
+  .coach-cal-week__hour-label {
+    font-size: 10px;
+    padding-right: 0.25rem;
+  }
+}
+
+.coach-cal-week__hline {
+  position: absolute;
+  left: 0.2rem;
+  right: 0.2rem;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.12);
+  pointer-events: none;
+}
+
+html[data-theme='light'] .coach-cal-week__hline {
+  background: rgba(40, 24, 56, 0.12);
+}
+
+.coach-cal-week__day--today .coach-cal-week__hline {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.coach-cal-week__event {
+  position: absolute;
+  left: 0.15rem;
+  right: 0.15rem;
+  z-index: 1;
+  display: flex;
+  gap: 0.2rem;
+  align-items: flex-start;
+  min-height: 1.15rem;
+  padding: 0.18rem 0.22rem;
+  border-radius: 7px;
+  overflow: hidden;
+  background: rgba(12, 12, 14, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.1) inset,
+    0 3px 8px rgba(0, 0, 0, 0.28);
+  pointer-events: none;
+}
+
+html[data-theme='light'] .coach-cal-week__event {
+  background: rgba(255, 255, 255, 0.82);
+  border-color: rgba(80, 50, 110, 0.14);
+  box-shadow: 0 2px 6px rgba(40, 24, 56, 0.12);
+}
+
+.coach-cal-week__day--today .coach-cal-week__event {
+  background: rgba(26, 26, 30, 0.32);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.coach-cal-week__event-pip {
+  flex-shrink: 0;
+  width: 0.35rem;
+  height: 0.35rem;
+  margin-top: 0.12rem;
+  border-radius: 9999px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25);
+}
+
+.coach-cal-week__event-body {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.08rem;
+  overflow: hidden;
+}
+
+.coach-cal-week__event-time {
+  font-size: 8px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.coach-cal-week__event-label {
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 1.15;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0.9;
+}
+
+.coach-cal-week__event-meta {
+  display: none;
+  font-size: 7px;
+  font-weight: 800;
+  opacity: 0.7;
+  line-height: 1;
+}
+
+@media (min-width: 640px) {
+  .coach-cal-week__event {
+    left: 0.25rem;
+    right: 0.25rem;
+    padding: 0.25rem 0.3rem;
+    gap: 0.28rem;
+    border-radius: 8px;
+  }
+  .coach-cal-week__event-time {
+    font-size: 9px;
+  }
+  .coach-cal-week__event-label {
+    font-size: 9px;
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  .coach-cal-week__event-meta {
+    display: block;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .coach-cal-object {
+    animation: none !important;
+  }
+  .coach-cal-cell,
+  .coach-cal-week__day,
+  .coach-cal-chip button {
+    transition: none !important;
+  }
+}
+
+/* —— Coach chat : inbox 2 volets (style WhatsApp / DA Trainly) —— */
+/* Coquille surface : annule py-6 main + masque le carbon sous le chat */
+.coach-chat-shell {
+  height: calc(100dvh - 3.5rem);
+  min-height: calc(100dvh - 3.5rem);
+  max-height: calc(100dvh - 3.5rem);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.coach-chat {
+  display: grid;
+  grid-template-columns: minmax(16rem, 22rem) 1fr;
+  height: 100%;
+  min-height: 0;
+  max-height: 100%;
+  margin: 0;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .coach-chat {
+    border-radius: 0;
+  }
+}
+
+.coach-chat__aside {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border-right: 1px solid var(--border);
+  background: color-mix(in srgb, var(--page-bg) 55%, var(--surface));
+}
+
+.coach-chat__aside-head {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.9rem 0.9rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.coach-chat__search {
+  display: block;
+}
+
+.coach-chat__search-input {
+  width: 100%;
+  border-radius: 9999px;
+  border: 1px solid var(--border);
+  background: var(--accent);
+  padding: 0.55rem 0.9rem;
+  font-size: 0.8125rem;
+  color: var(--fg);
+  outline: none;
+}
+
+.coach-chat__search-input:focus {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--brand) 45%, transparent);
+}
+
+.coach-chat__chip {
+  border-radius: 9999px;
+  border: 1px solid var(--border);
+  background: transparent;
+  padding: 0.28rem 0.7rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--muted);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.coach-chat__chip--on {
+  background: color-mix(in srgb, var(--brand) 22%, transparent);
+  border-color: color-mix(in srgb, var(--brand) 45%, transparent);
+  color: var(--fg);
+}
+
+.coach-chat__new {
+  border-bottom: 1px solid var(--border);
+  padding: 0.5rem 0.65rem 0.65rem;
+  background: color-mix(in srgb, var(--brand) 6%, transparent);
+}
+
+.coach-chat__new-row {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.65rem;
+  border-radius: 10px;
+  padding: 0.4rem 0.35rem;
+  color: var(--fg);
+  transition: background 0.15s ease;
+}
+
+.coach-chat__new-row:hover {
+  background: var(--accent);
+}
+
+.coach-chat__list {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0.25rem 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+.coach-chat__row {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.7rem 0.85rem;
+  transition: background 0.15s ease;
+}
+
+.coach-chat__row:hover {
+  background: var(--accent);
+}
+
+.coach-chat__row--active {
+  background: color-mix(in srgb, var(--brand) 14%, var(--accent));
+}
+
+.coach-chat__row--unread {
+  font-weight: 700;
+}
+
+.coach-chat__row--unread .coach-chat__badge {
+  display: inline-block;
+}
+
+.coach-chat__avatar {
+  display: inline-flex;
+  height: 2.5rem;
+  width: 2.5rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--brand) 70%, #fff),
+    var(--brand)
+  );
+  color: var(--brand-fg);
+  font-size: 0.75rem;
+  font-weight: 800;
+  box-shadow: var(--shadow-sm);
+}
+
+.coach-chat__badge {
+  height: 0.5rem;
+  width: 0.5rem;
+  flex-shrink: 0;
+  border-radius: 9999px;
+  background: var(--brand);
+  box-shadow: 0 0 0 2px var(--surface);
+}
+
+.coach-chat__panel {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--page-bg);
+}
+
+.coach-chat__panel > * {
+  min-height: 0;
+}
+
+.coach-chat__empty {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background:
+    radial-gradient(ellipse at 30% 20%, color-mix(in srgb, var(--brand) 12%, transparent), transparent 50%),
+    var(--page-bg);
+}
+
+.coach-chat__empty-card {
+  text-align: center;
+  padding: 1.5rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+}
+
+.coach-chat__panel-head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.7rem 0.9rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  flex-shrink: 0;
+}
+
+/* Barre switch fil : collée sous le header conversation uniquement */
+.coach-chat__panel-head .shell-nav-progress-track {
+  left: 0;
+  right: 0;
+  z-index: 5;
+}
+
+.coach-chat__thread {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.coach-chat__thread-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  background:
+    radial-gradient(circle at 12% 8%, color-mix(in srgb, var(--brand) 7%, transparent) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 72% 40%, color-mix(in srgb, var(--fg) 5%, transparent) 0 1px, transparent 1.5px),
+    var(--page-bg);
+  background-size: 28px 28px, 36px 36px, auto;
+}
+
+.coach-chat__day-pill {
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  border: 1px solid var(--border);
+  padding: 0.2rem 0.65rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--muted);
+  box-shadow: var(--shadow-sm);
+  text-transform: capitalize;
+}
+
+.coach-chat__composer {
+  flex-shrink: 0;
+  background: var(--surface);
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.18);
+  /* Couvre toute fuite du motif pointillé du scroll */
+  position: relative;
+  z-index: 2;
+}
+
+.coach-chat__composer-attach {
+  display: inline-flex;
+  height: 2.5rem;
+  width: 2.5rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  border-radius: 9999px;
+  color: var(--fg);
+  line-height: 0;
+}
+
+.coach-chat__composer-attach:hover {
+  background: var(--accent);
+}
+
+.coach-chat__composer-attach svg {
+  display: block;
+}
+
+
+/* Input : hauteur stable + place pour extensions (Grammarly…) */
+.coach-chat__composer-input {
+  min-height: 2.5rem;
+  field-sizing: content;
+}
+
+.coach-chat__msg-flash > div > div:first-child {
+  outline: 2px solid color-mix(in srgb, var(--brand) 70%, transparent);
+  outline-offset: 2px;
+  animation: coach-chat-flash 1.4s ease;
+}
+
+@keyframes coach-chat-flash {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--brand) 45%, transparent);
+  }
+  40% {
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--brand) 18%, transparent);
+  }
+  100% {
+    box-shadow: none;
+  }
+}
+
+/* Mobile : liste OU fil (comme WhatsApp) */
+@media (max-width: 767px) {
+  .coach-chat-shell {
+    height: calc(100dvh - 3.5rem);
+    min-height: calc(100dvh - 3.5rem);
+    max-height: calc(100dvh - 3.5rem);
+  }
+
+  .coach-chat {
+    grid-template-columns: 1fr;
+  }
+
+  .coach-chat--list .coach-chat__panel {
+    display: none;
+  }
+
+  .coach-chat--thread .coach-chat__aside {
+    display: none;
+  }
+}
+
+/*
+ * Portail client messages : même chrome que coach-chat.
+ * Couleurs = tokens hérités du shell (data-theme mon-app).
+ * Avec chatLayout shell : remplit 100% de la main (plus de carbone autour).
+ */
+.client-chat {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  width: 100%;
+  /* Override .coach-chat height:100% — chaîne flex pour le wheel/trackpad */
+  height: auto !important;
+  max-height: none !important;
+  min-height: 0;
+  margin: 0 !important;
+  border-top: none;
+  border-radius: 0;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+/* Liste : réserve la tab bar dans le surface (pas de bande page-bg) */
+.client-chat.coach-chat--list {
+  padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+}
+
+/* Fil immersif : fill + scroll messages */
+.client-chat.client-chat--immersive {
+  min-height: 0;
+}
+
+.client-chat .coach-chat__aside {
+  border-right: none;
+  width: 100%;
+  min-height: 0;
+  flex: 1 1 auto;
+  background: var(--surface);
+}
+
+.client-chat .coach-chat__panel {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  flex-direction: column;
+  background: var(--surface);
+}
+
+.client-chat .coach-chat__thread-scroll,
+.client-chat .coach-chat__list {
+  touch-action: pan-y;
+  overscroll-behavior-y: contain;
+}
+
+.client-chat .coach-chat__badge {
+  background: var(--brand-secondary, var(--brand));
+}
+
+/* Auth split (signup/login) — CSS dédié (Tailwind md:w-[…] ne s’appliquait pas) */
+.auth-split {
+  display: grid;
+  height: 100vh;
+  min-height: 100vh;
+  width: 100%;
+  overflow: hidden;
+  background: #111113;
+  color: #fff;
+  grid-template-columns: 1fr;
+}
+
+.auth-split__form {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  background: #161618;
+  padding: 2rem 1.75rem;
+}
+
+.auth-split__marketing {
+  display: none;
+  position: relative;
+  min-width: 0;
+  flex-direction: column;
+  overflow: hidden;
+  background: #0b0b0c;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+@media (min-width: 900px) {
+  .auth-split {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .auth-split__form {
+    padding-left: 2.75rem;
+    padding-right: 2.75rem;
+  }
+
+  .auth-split__marketing {
+    display: flex;
   }
 }

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 
+import { Button } from '@/src/components/ui'
 import {
   durationMinutes,
   formatRdvDuration,
@@ -26,15 +27,15 @@ export type CoachCalendarEvent = CalendarEventRow & { clientName: string }
 function statusDot(status: CalendarEventRow['status']): string {
   switch (status) {
     case 'accepted':
-      return 'bg-emerald-500'
+      return 'bg-[var(--success)]'
     case 'requested':
-      return 'bg-amber-500'
+      return 'bg-[var(--warning)]'
     case 'pending':
-      return 'bg-sky-500'
+      return 'bg-[var(--brand)]'
     case 'refused':
-      return 'bg-red-500'
+      return 'bg-[var(--danger)]'
     default:
-      return 'bg-black/25'
+      return 'bg-[color:var(--muted)]'
   }
 }
 
@@ -47,9 +48,7 @@ export function CoachWeekCalendar({
 }) {
   const todayIso = toIsoDate(new Date())
   const [weekStart, setWeekStart] = useState(() =>
-    initialWeekStartIso
-      ? parseIsoDate(initialWeekStartIso)
-      : startOfWeekMonday(new Date())
+    initialWeekStartIso ? parseIsoDate(initialWeekStartIso) : startOfWeekMonday(new Date()),
   )
   const [selectedIso, setSelectedIso] = useState(todayIso)
 
@@ -65,9 +64,9 @@ export function CoachWeekCalendar({
           (e.status === 'accepted' ||
             e.status === 'requested' ||
             e.status === 'pending' ||
-            e.status === 'refused')
+            e.status === 'refused'),
       ),
-    [events]
+    [events],
   )
 
   const byDay = useMemo(() => {
@@ -93,19 +92,18 @@ export function CoachWeekCalendar({
   }
 
   return (
-    <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-da-sm">
+    <section className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] p-4 shadow-da-sm sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="text-xs font-extrabold uppercase tracking-wide text-[color:var(--muted)]">
-            Semaine
-          </h2>
+          <h2 className="text-xs font-extrabold uppercase tracking-wide text-[color:var(--muted)]">Semaine</h2>
           <p className="mt-0.5 text-sm font-semibold text-[color:var(--fg)]">{weekRangeLabel(weekStart)}</p>
         </div>
-        <div className="flex overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface)]">
+        <div className="flex overflow-hidden rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--page-bg)]">
           <button
             type="button"
             onClick={() => shiftWeek(-1)}
-            className="px-2.5 py-1.5 text-sm font-bold text-[color:var(--muted)] hover:bg-[var(--accent)]"
+            className="px-2.5 py-1.5 text-sm font-bold text-[color:var(--muted)] hover:bg-[var(--accent)] hover:text-[color:var(--fg)]"
+            aria-label="Semaine précédente"
           >
             ←
           </button>
@@ -115,14 +113,15 @@ export function CoachWeekCalendar({
               setWeekStart(startOfWeekMonday(new Date()))
               setSelectedIso(todayIso)
             }}
-            className="border-x border-[var(--border)] px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wide text-[color:var(--muted)] hover:bg-[var(--accent)]"
+            className="border-x border-[var(--border)] px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wide text-[color:var(--muted)] hover:bg-[var(--accent)] hover:text-[color:var(--fg)]"
           >
             Aujourd’hui
           </button>
           <button
             type="button"
             onClick={() => shiftWeek(1)}
-            className="px-2.5 py-1.5 text-sm font-bold text-[color:var(--muted)] hover:bg-[var(--accent)]"
+            className="px-2.5 py-1.5 text-sm font-bold text-[color:var(--muted)] hover:bg-[var(--accent)] hover:text-[color:var(--fg)]"
+            aria-label="Semaine suivante"
           >
             →
           </button>
@@ -138,8 +137,8 @@ export function CoachWeekCalendar({
               key={day.iso}
               type="button"
               onClick={() => setSelectedIso(day.iso)}
-              className={`flex flex-col items-center rounded-xl px-1 py-2 text-center transition ${
-                selectedDay ? 'ring-2 ring-[color:var(--brand)]' : 'hover:bg-[var(--accent)]'
+              className={`flex flex-col items-center rounded-[var(--radius-sm)] px-1 py-2 text-center transition ${
+                selectedDay ? 'ring-2 ring-[var(--brand)]' : 'hover:bg-[var(--accent)]'
               } ${day.isToday ? 'bg-[var(--accent)]' : ''}`}
             >
               <span className="text-[10px] font-bold uppercase tracking-wide text-[color:var(--muted)]">
@@ -166,7 +165,7 @@ export function CoachWeekCalendar({
         })}
       </div>
 
-      <div className="mt-3 border-t border-[var(--border)] bg-[var(--surface)] pt-3">
+      <div className="mt-3 border-t border-[var(--border)] pt-3">
         <p className="text-[10px] font-bold uppercase tracking-wide text-[color:var(--muted)]">
           {parseIsoDate(selectedIso).toLocaleDateString('fr-FR', {
             weekday: 'long',
@@ -194,13 +193,15 @@ function DayEventCard({ ev, weekIso }: { ev: CoachCalendarEvent; weekIso: string
 
   return (
     <li
-      className={`rounded-xl border p-3 ${
-        refused ? 'border-red-400 bg-red-50/50 ring-1 ring-red-200' : 'border-[var(--border)] bg-[var(--surface)]'
+      className={`rounded-[var(--radius-sm)] border p-3 ${
+        refused
+          ? 'border-[var(--danger-border)] bg-[var(--danger-bg)] ring-1 ring-[var(--danger-border)]'
+          : 'border-[var(--border)] bg-[var(--page-bg)]'
       }`}
     >
       <div className="flex items-start justify-between gap-2">
         <div>
-          <p className="text-sm font-extrabold text-[color:var(--brand)]">{ev.title}</p>
+          <p className="text-sm font-extrabold text-[color:var(--fg)]">{ev.title}</p>
           <p className="text-xs text-[color:var(--muted)]">{ev.clientName}</p>
           <p className="mt-1 text-xs font-semibold text-[color:var(--fg)]">
             {[
@@ -226,34 +227,28 @@ function DayEventCard({ ev, weekIso }: { ev: CoachCalendarEvent; weekIso: string
             <input type="hidden" name="event_id" value={ev.id} />
             <input type="hidden" name="decision" value="accepted" />
             <input type="hidden" name="week" value={weekIso} />
-            <button
-              type="submit"
-              className="w-full rounded-lg bg-emerald-700 px-2 py-2 text-xs font-bold text-white"
-            >
+            <Button type="submit" size="sm" className="w-full !rounded-[var(--radius-sm)]">
               Accepter
-            </button>
+            </Button>
           </form>
           <form action={respondCoachRdvAction} className="flex-1">
             <input type="hidden" name="event_id" value={ev.id} />
             <input type="hidden" name="decision" value="refused" />
             <input type="hidden" name="week" value={weekIso} />
-            <button
-              type="submit"
-              className="w-full rounded-lg border border-red-300 bg-[var(--surface)] px-2 py-2 text-xs font-bold text-red-800"
-            >
+            <Button type="submit" variant="secondary" size="sm" className="w-full !rounded-[var(--radius-sm)]">
               Refuser
-            </button>
+            </Button>
           </form>
         </div>
       ) : null}
 
-      {ev.status === 'accepted' || ev.status === 'pending' ? (
+      {ev.status === 'accepted' || ev.status === 'pending' || ev.status === 'refused' ? (
         <form action={cancelCoachRdvAction} className="mt-2">
           <input type="hidden" name="event_id" value={ev.id} />
           <input type="hidden" name="week" value={weekIso} />
-          <button type="submit" className="text-[11px] font-semibold text-red-700 hover:underline">
-            Annuler
-          </button>
+          <Button type="submit" variant="link" size="sm" className="!text-[var(--danger)]">
+            {ev.status === 'refused' ? 'Supprimer' : 'Annuler'}
+          </Button>
         </form>
       ) : null}
     </li>

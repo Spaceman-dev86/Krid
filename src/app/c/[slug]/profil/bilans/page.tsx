@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
 import { ClientPortalShell } from '../../../../../components/client-portal/ClientPortalShell'
-import { requireClientPortal } from '../../../../../lib/client-portal/context'
+import { portalShellProps, requireClientPortal } from '../../../../../lib/client-portal/context'
 import {
   countUnopenedForClient,
   listInstancesForClient,
@@ -37,11 +37,7 @@ export default async function ClientBilansPage({ params, searchParams }: Props) 
   }
 
   return (
-    <ClientPortalShell
-      slug={ctx.slug}
-      appName={ctx.appName}
-      primaryColor={ctx.primaryColor}
-      logoUrl={ctx.logoUrl}
+    <ClientPortalShell {...portalShellProps(ctx)}
       profilBadgeCount={unopened}
     >
       <div className="grid gap-5">

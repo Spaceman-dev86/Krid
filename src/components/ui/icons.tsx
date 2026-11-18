@@ -224,10 +224,44 @@ export function IconUsers(props: { size?: number; className?: string }) {
   )
 }
 
+/** Partage / export — boîte ouverte + flèche vers le haut. */
+export function IconShare(props: { size?: number; className?: string }) {
+  return (
+    <Icon size={props.size} className={props.className}>
+      <path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7" />
+      <path d="M12 3v13" />
+      <path d="M8 7l4-4 4 4" />
+    </Icon>
+  )
+}
+
+/** Déplacer / transfer — flèche courbe vers la droite (style share/forward). */
+export function IconMove(props: { size?: number; className?: string }) {
+  return (
+    <Icon size={props.size} className={props.className}>
+      <path
+        fill="currentColor"
+        stroke="none"
+        d="M15.5 5.5L21 11l-5.5 5.5V13H10a4 4 0 0 0-4 4v2H4v-2a6 6 0 0 1 6-6h5.5V5.5z"
+      />
+    </Icon>
+  )
+}
+
 export function IconChat(props: { size?: number; className?: string }) {
   return (
     <Icon size={props.size} className={props.className}>
       <path d="M5 5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H9l-4 3v-3H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z" />
+    </Icon>
+  )
+}
+
+/** Envoi message — avion papier. */
+export function IconSend(props: { size?: number; className?: string }) {
+  return (
+    <Icon size={props.size} className={props.className}>
+      <path d="M22 2L11 13" />
+      <path d="M22 2L15 22l-4-9-9-4 20-7z" />
     </Icon>
   )
 }
@@ -239,6 +273,24 @@ export function IconCalendar(props: { size?: number; className?: string }) {
       <path d="M8 3v4" />
       <path d="M16 3v4" />
       <path d="M4 10h16" />
+    </Icon>
+  )
+}
+
+export function IconClock(props: { size?: number; className?: string }) {
+  return (
+    <Icon size={props.size} className={props.className}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
+    </Icon>
+  )
+}
+
+export function IconBell(props: { size?: number; className?: string }) {
+  return (
+    <Icon size={props.size} className={props.className}>
+      <path d="M6 9a6 6 0 0 1 12 0c0 7 3 7 3 7H3s3 0 3-7" />
+      <path d="M10 19a2 2 0 0 0 4 0" />
     </Icon>
   )
 }
@@ -329,12 +381,56 @@ export function IconRest(props: { size?: number; className?: string }) {
   )
 }
 
+/** Poignée drag & drop (6 points). */
+export function IconGrip(props: { size?: number; className?: string }) {
+  const size = props.size ?? 16
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      aria-hidden
+      className={props.className}
+      style={{ display: 'block', overflow: 'visible' }}
+      fill="currentColor"
+    >
+      <circle cx="9" cy="6" r="1.5" />
+      <circle cx="15" cy="6" r="1.5" />
+      <circle cx="9" cy="12" r="1.5" />
+      <circle cx="15" cy="12" r="1.5" />
+      <circle cx="9" cy="18" r="1.5" />
+      <circle cx="15" cy="18" r="1.5" />
+    </svg>
+  )
+}
+
 export function IconClose(props: { size?: number; className?: string }) {
   return (
     <Icon size={props.size} className={props.className}>
       <path d="M6 6l12 12" />
       <path d="M18 6L6 18" />
     </Icon>
+  )
+}
+
+/** Triangle CSS (pas d’emoji coloré Windows) — up / down / left / right. */
+export function IconCaret(props: {
+  dir: 'up' | 'down' | 'left' | 'right'
+  className?: string
+}) {
+  const dirClass =
+    props.dir === 'up'
+      ? 'border-x-[3.5px] border-x-transparent border-b-[5px] border-b-current'
+      : props.dir === 'down'
+        ? 'border-x-[3.5px] border-x-transparent border-t-[5px] border-t-current'
+        : props.dir === 'left'
+          ? 'border-y-[3.5px] border-y-transparent border-r-[5px] border-r-current'
+          : 'border-y-[3.5px] border-y-transparent border-l-[5px] border-l-current'
+  return (
+    <span
+      aria-hidden
+      className={`inline-block h-0 w-0 ${dirClass} ${props.className ?? ''}`}
+    />
   )
 }
 

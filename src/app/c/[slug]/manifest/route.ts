@@ -4,6 +4,9 @@ import { createClient } from '@/src/lib/supabase/server'
 
 type Ctx = { params: Promise<{ slug: string }> | { slug: string } }
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 /** Manifest PWA dynamique par coach. */
 export async function GET(_req: Request, ctx: Ctx) {
   const { slug } = await Promise.resolve(ctx.params)
@@ -11,7 +14,7 @@ export async function GET(_req: Request, ctx: Ctx) {
 
   const { data: branding } = await supabase
     .from('coach_branding')
-    .select('slug, app_name, logo_url, primary_color')
+    .select('slug, app_name, logo_url, pwa_icon_url, primary_color, updated_at')
     .eq('slug', slug)
     .maybeSingle()
 
@@ -21,14 +24,16 @@ export async function GET(_req: Request, ctx: Ctx) {
 
   const name = branding.app_name?.trim() || 'Mon coach'
   const color = branding.primary_color?.trim() || '#341c44'
-  const logo = branding.logo_url?.trim()
-  const iconSvg = `/c/${slug}/pwa-icon`
+  const v = branding.updated_at ? encodeURIComponent(branding.updated_at) : String(Date.now())
+  const withBust = (url: string) => `${url}${url.includes('?') ? '&' : '?'}v=${v}`
+  const pwaIcon = branding.pwa_icon_url?.trim() || branding.logo_url?.trim()
+  const iconSvg = withBust(`/c/${slug}/pwa-icon`)
 
   const icons = [
-    ...(logo
+    ...(pwaIcon
       ? [
-          { src: logo, sizes: '192x192', type: 'image/png', purpose: 'any' },
-          { src: logo, sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: withBust(pwaIcon), sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: withBust(pwaIcon), sizes: '512x512', type: 'image/png', purpose: 'any' },
         ]
       : []),
     { src: iconSvg, sizes: '512x512', type: 'image/svg+xml', purpose: 'any maskable' },
@@ -51,7 +56,7 @@ export async function GET(_req: Request, ctx: Ctx) {
   return NextResponse.json(manifest, {
     headers: {
       'Content-Type': 'application/manifest+json; charset=utf-8',
-      'Cache-Control': 'public, max-age=300',
+      'Cache-Control': 'no-store, max-age=0, must-revalidate',
     },
   })
 }

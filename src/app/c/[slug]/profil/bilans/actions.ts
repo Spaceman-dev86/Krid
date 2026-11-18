@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation'
 import { getInstance, isClientEditable, parsePayload } from '../../../../../lib/bilans/bilans'
 import { chatDb } from '../../../../../lib/chat/chat'
 import { createClient } from '../../../../../lib/supabase/server'
+import { createServiceRoleClient } from '../../../../../lib/supabase/serviceRole'
 
 function storageSafeName(original: string): string {
   const trimmed = original.trim() || 'photo'
@@ -123,14 +124,21 @@ export async function submitBilanAction(formData: FormData) {
     await db.from('clients').update(patch).eq('id', instance.client_id)
   }
 
-  // Notif coach (table prête, UI cloche later)
-  await db.from('notifications').insert({
-    user_id: instance.coach_id,
-    type: 'bilan_submitted',
-    title: 'Bilan rempli',
-    body: instance.title,
-    payload: { instance_id: instanceId, client_id: instance.client_id },
-  })
+  // RLS notifications = user_id = auth.uid() : la notif coach passe par le service role.
+  const admin = createServiceRoleClient()
+  if (admin) {
+    await admin.from('notifications').insert({
+      user_id: instance.coach_id,
+      type: 'bilan_submitted',
+      title: 'Bilan rempli',
+      body: instance.title,
+      payload: {
+        instance_id: instanceId,
+        client_id: instance.client_id,
+        href: `/clients/bilans/${instanceId}`,
+      },
+    } as never)
+  }
 
   revalidatePath(`/c/${slug}/profil/bilans`)
   revalidatePath(`/c/${slug}/profil/bilans/${instanceId}`)

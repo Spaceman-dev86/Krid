@@ -2,7 +2,7 @@ import Link from 'next/link'
 
 import { ClientHistoryLandClient } from '../../../../../components/client-portal/ClientHistoryLandClient'
 import { ClientPortalShell } from '../../../../../components/client-portal/ClientPortalShell'
-import { requireClientPortal } from '../../../../../lib/client-portal/context'
+import { portalShellProps, requireClientPortal } from '../../../../../lib/client-portal/context'
 import {
   buildFavoriteSet,
   buildHistoryCalendarDays,
@@ -45,7 +45,7 @@ export default async function ClientHistoriqueFavorisPage({ params }: Props) {
   const calendarDays = buildHistoryCalendarDays(runs)
 
   return (
-    <ClientPortalShell slug={ctx.slug} appName={ctx.appName} primaryColor={ctx.primaryColor} logoUrl={ctx.logoUrl}>
+    <ClientPortalShell {...portalShellProps(ctx)}>
       <div className="mb-3">
         <Link
           href={`/c/${ctx.slug}/historique`}

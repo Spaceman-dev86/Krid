@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
 import { ClientPortalShell } from '../../../../../components/client-portal/ClientPortalShell'
-import { requireClientPortal } from '../../../../../lib/client-portal/context'
+import { portalShellProps, requireClientPortal } from '../../../../../lib/client-portal/context'
 import { selectFieldClass, selectFieldStyle } from '../../../../../lib/ui/selectField'
 import { createClient } from '../../../../../lib/supabase/server'
 import { updateClientProfilAction } from '../actions'
@@ -25,12 +25,12 @@ export default async function ClientProfilInfosPage({ params, searchParams }: Pr
 
   const { data: clientExtra } = await supabase
     .from('clients')
-    .select('sex, birth_date')
+    .select('sex, birth_date, weight_kg, height_cm')
     .eq('id', ctx.client.id)
     .maybeSingle()
 
   return (
-    <ClientPortalShell slug={ctx.slug} appName={ctx.appName} primaryColor={ctx.primaryColor} logoUrl={ctx.logoUrl}>
+    <ClientPortalShell {...portalShellProps(ctx)}>
       <div className="grid gap-5">
         <div>
           <Link
@@ -125,11 +125,37 @@ export default async function ClientProfilInfosPage({ params, searchParams }: Pr
           </form>
         </section>
 
-        <section className="rounded-2xl border border-dashed border-black/15 bg-white/70 p-4 text-sm text-black/50">
-          <p className="font-semibold text-black/70">Physique</p>
-          <p className="mt-1">
-            Poids, taille et mensurations seront à jour après ton prochain bilan soumis avec ton coach.
+        <section className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm">
+          <p className="text-sm font-semibold text-black/70">Physique</p>
+          {clientExtra?.weight_kg != null || clientExtra?.height_cm != null ? (
+            <ul className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
+              {clientExtra?.weight_kg != null ? (
+                <li className="rounded-lg bg-black/[0.04] px-3 py-2">
+                  <span className="font-semibold">Poids</span>
+                  <span className="ml-2 text-black/55">{clientExtra.weight_kg} kg</span>
+                </li>
+              ) : null}
+              {clientExtra?.height_cm != null ? (
+                <li className="rounded-lg bg-black/[0.04] px-3 py-2">
+                  <span className="font-semibold">Taille</span>
+                  <span className="ml-2 text-black/55">{clientExtra.height_cm} cm</span>
+                </li>
+              ) : null}
+            </ul>
+          ) : (
+            <p className="mt-2 text-sm text-black/50">Pas encore renseigné.</p>
+          )}
+          <p className="mt-3 text-xs text-black/45">
+            Mis à jour automatiquement quand tu soumets un bilan avec poids / taille. Les autres
+            mensurations restent dans l’historique des bilans.
           </p>
+          <Link
+            href={`/c/${ctx.slug}/profil/bilans`}
+            className="mt-2 inline-block text-xs font-semibold underline"
+            style={{ color: ctx.primaryColor }}
+          >
+            Voir mes bilans
+          </Link>
         </section>
       </div>
     </ClientPortalShell>

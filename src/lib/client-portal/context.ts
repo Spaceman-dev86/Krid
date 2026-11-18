@@ -6,6 +6,13 @@ import { createServiceRoleClient } from '../supabase/serviceRole'
 import { tryClaimClientForCoach, tryClaimClientRowsByEmail } from './claimClient'
 import { clientNeedsOnboarding } from './onboarding'
 import { pickClientCoachIdForAuthUser, pickClientForAuthUser } from './pickClientForAuth'
+import {
+  normalizeBgStyle,
+  normalizeThemeMode,
+  resolveClientBrandColors,
+  type ClientBgStyle,
+  type ClientThemeMode,
+} from '../coach/clientBrandTheme'
 import { parseModules, type PrestationModuleId } from '../prestations/modules'
 
 type Supabase = Awaited<ReturnType<typeof createClient>>
@@ -14,7 +21,12 @@ export type ClientPortalContext = {
   slug: string
   appName: string
   primaryColor: string
+  secondaryColor: string
+  themeMode: ClientThemeMode
+  bgStyle: ClientBgStyle
   logoUrl: string | null
+  /** Pour sync live (poll / refresh si le coach change mon-app). */
+  brandingUpdatedAt: string | null
   coachId: string
   /** Modules unionnés des grants actifs. */
   modules: string[]
@@ -26,6 +38,20 @@ export type ClientPortalContext = {
     phone: string | null
     status: string
     onboarding_completed_at: string | null
+  }
+}
+
+/** Props shell portail (branding white-label). */
+export function portalShellProps(ctx: ClientPortalContext) {
+  return {
+    slug: ctx.slug,
+    appName: ctx.appName,
+    primaryColor: ctx.primaryColor,
+    secondaryColor: ctx.secondaryColor,
+    themeMode: ctx.themeMode,
+    bgStyle: ctx.bgStyle,
+    logoUrl: ctx.logoUrl,
+    brandingUpdatedAt: ctx.brandingUpdatedAt,
   }
 }
 
@@ -88,7 +114,9 @@ export async function requireClientPortal(
 
   const { data: branding } = await supabase
     .from('coach_branding')
-    .select('coach_id, slug, app_name, primary_color, logo_url')
+    .select(
+      'coach_id, slug, app_name, primary_color, secondary_color, theme_mode, bg_style, logo_url, updated_at'
+    )
     .eq('slug', slug)
     .maybeSingle()
 
@@ -168,7 +196,11 @@ function buildPortalContext(
     slug: string
     app_name: string | null
     primary_color: string | null
+    secondary_color?: string | null
+    theme_mode?: string | null
+    bg_style?: string | null
     logo_url?: string | null
+    updated_at?: string | null
   },
   client: {
     id: string
@@ -181,11 +213,19 @@ function buildPortalContext(
   },
   modules: string[]
 ): ClientPortalContext {
+  const colors = resolveClientBrandColors({
+    primaryColor: branding.primary_color,
+    secondaryColor: branding.secondary_color,
+  })
   return {
     slug: branding.slug,
     appName: branding.app_name?.trim() || 'Mon coach',
-    primaryColor: branding.primary_color?.trim() || '#341c44',
+    primaryColor: colors.primary,
+    secondaryColor: colors.secondary,
+    themeMode: normalizeThemeMode(branding.theme_mode),
+    bgStyle: normalizeBgStyle(branding.bg_style),
     logoUrl: branding.logo_url?.trim() || null,
+    brandingUpdatedAt: branding.updated_at?.trim() || null,
     coachId: branding.coach_id,
     modules,
     client: {

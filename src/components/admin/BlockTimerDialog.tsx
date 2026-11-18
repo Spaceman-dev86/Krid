@@ -34,15 +34,25 @@ function TimeField({
   seconds: number
   onChangeSeconds: (s: number) => void
 }) {
+  // Brouillon local : sinon chaque frappe incomplète (« 1 ») reset à 00:00.
+  const [draft, setDraft] = useState(() => formatSecondsToMmSs(seconds))
+  useEffect(() => {
+    setDraft(formatSecondsToMmSs(seconds))
+  }, [seconds])
+
   return (
     <DaTimeStepper
       name={`timer_${label}`}
       label={label}
-      value={formatSecondsToMmSs(seconds)}
+      value={draft}
       stepSeconds={15}
       onChange={(mmss) => {
-        const sec = parseMmSsToSeconds(mmss)
-        onChangeSeconds(sec == null ? 0 : sec)
+        setDraft(mmss)
+        // Pendant la frappe : commit seulement si mm:ss explicite (évite 2→2:00→20).
+        if (mmss.includes(':')) {
+          const sec = parseMmSsToSeconds(mmss)
+          if (sec != null) onChangeSeconds(sec)
+        }
       }}
     />
   )
@@ -114,20 +124,23 @@ export function BlockTimerDialog({ open, initial, onClose, onSave }: Props) {
   }
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999]">
+    <div
+      className="da-vv-overlay z-[9999]"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="block-timer-title"
+      data-builder-chrome=""
+      onPointerDown={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
+    >
       <button
         type="button"
         className="absolute inset-0 bg-black/50"
         aria-label="Fermer"
         onClick={onClose}
       />
-      <div
-        className="absolute left-1/2 top-1/2 z-10 w-[min(420px,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="block-timer-title"
-      >
-        <div className="overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] shadow-da-md">
+      <div className="absolute left-1/2 top-1/2 z-10 w-[min(420px,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2">
+        <div className="da-vv-dialog overflow-y-auto rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] shadow-da-md">
           <div className="border-b border-[var(--border)] px-4 py-3">
             <h2 id="block-timer-title" className="text-sm font-bold text-[color:var(--fg)]">
               Minuteur du bloc

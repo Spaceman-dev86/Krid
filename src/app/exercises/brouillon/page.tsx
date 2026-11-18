@@ -1,17 +1,46 @@
+import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
 
-import { PageTitle, Muted } from '@/src/components/ui'
-import { CoachAppShell } from '../../../components/coach/CoachAppShell'
+import { CoachQueryFlash } from '../../../components/coach/CoachQueryFlash'
+import { ExercisesHubHeader } from '../../../components/exercises/ExercisesHubHeader'
 import { ExercisesList } from '../../../components/exercises/ExercisesList'
-import { ExercisesSubnav } from '../../../components/exercises/ExercisesSubnav'
+import { ExercisesZoneBar } from '../../../components/exercises/ExercisesZoneBar'
 import { canAccessCoachApp } from '../../../lib/auth/roles'
-import { loadCoachShellContext } from '../../../lib/coach/loadCoachShellContext'
-import { listCoachExercises } from '../../../lib/exercises/library'
+import {
+  collectExerciseFilterOptions,
+  filterExerciseRows,
+} from '../../../lib/exercises/filterExercises'
+import { listCoachExercises, withExerciseMediaUrls } from '../../../lib/exercises/library'
+import {
+  attachExerciseUsages,
+  loadExerciseTemplateUsages,
+} from '../../../lib/exercises/templateUsage'
 import { createClient } from '../../../lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
 
-export default async function ExercisesBrouillonPage() {
+type Props = {
+  searchParams?:
+    | Promise<{
+        error?: string
+        deleted?: string
+        forked?: string
+        q?: string
+        type?: string
+        sport?: string
+      }>
+    | {
+        error?: string
+        deleted?: string
+        forked?: string
+        q?: string
+        type?: string
+        sport?: string
+      }
+}
+
+export default async function ExercisesBrouillonPage({ searchParams }: Props) {
+  const params = await Promise.resolve(searchParams ?? {})
   const supabase = await createClient()
   const {
     data: { user },
@@ -21,8 +50,6 @@ export default async function ExercisesBrouillonPage() {
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
   if (!canAccessCoachApp(profile?.role)) redirect('/login')
 
-  const shell = await loadCoachShellContext(user.id)
-
   let items: Awaited<ReturnType<typeof listCoachExercises>> = []
   let loadError: string | null = null
   try {
@@ -31,28 +58,65 @@ export default async function ExercisesBrouillonPage() {
     loadError = e instanceof Error ? e.message : 'Erreur'
   }
 
+  const { typeOptions, sportOptions } = collectExerciseFilterOptions(items)
+  const filtered = await withExerciseMediaUrls(
+    supabase,
+    filterExerciseRows(items, {
+      q: params.q,
+      type: params.type,
+      sport: params.sport,
+    }),
+  )
+  const usages = await loadExerciseTemplateUsages(
+    supabase,
+    user.id,
+    filtered.map((ex) => ex.id),
+  )
+  const withUsage = attachExerciseUsages(filtered, usages)
+
   return (
-    <CoachAppShell appName={shell.branding?.app_name} trialLabel={shell.trialLabel} title="Brouillons" savUnread={shell.savUnread}>
-      <div className="mx-auto grid max-w-3xl gap-5">
-        <div>
-          <PageTitle className="text-2xl">Brouillons</PageTitle>
-          <Muted className="mt-1">Non publiés · absents du program builder</Muted>
-        </div>
-
-        <ExercisesSubnav pathname="/exercises/brouillon" />
-
-        {loadError ? (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
-            {loadError}
-          </div>
-        ) : null}
-
-        <ExercisesList
-          items={items}
-          mode="brouillon"
-          emptyHint="Aucun brouillon."
+    <div className="mx-auto grid max-w-5xl gap-5 sm:gap-6">
+      <Suspense fallback={null}>
+        <CoachQueryFlash
+          overrides={{
+            forked: { tone: 'success', message: 'Copié en brouillon depuis Krid' },
+            deleted: { tone: 'success', message: 'Exercice archivé' },
+          }}
         />
-      </div>
-    </CoachAppShell>
+      </Suspense>
+
+      <ExercisesHubHeader
+        title="Exercices"
+        subtitle={
+          <>
+            {filtered.length}
+            {filtered.length !== items.length ? ` / ${items.length}` : ''} brouillon
+            {filtered.length > 1 ? 's' : ''} · non visibles dans le builder
+          </>
+        }
+      />
+
+      <ExercisesZoneBar
+        kind="exercises"
+        basePath="/exercises/brouillon"
+        typeOptions={typeOptions}
+        sportOptions={sportOptions}
+      />
+
+      {loadError ? (
+        <p className="text-sm font-semibold text-[var(--danger)]">{loadError}</p>
+      ) : null}
+
+      <ExercisesList
+        items={withUsage}
+        mode="brouillon"
+        returnTo="/exercises/brouillon"
+        emptyHint={
+          items.length
+            ? 'Aucun brouillon ne correspond aux filtres.'
+            : 'Aucun brouillon.'
+        }
+      />
+    </div>
   )
 }

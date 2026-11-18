@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
+import { safeInternalPath } from '../../../../lib/navigation/safeReturnTo'
 import { createClient } from '../../../../lib/supabase/server'
 
 function clean(value: FormDataEntryValue | null) {
@@ -19,7 +20,7 @@ export async function updateClientProfilAction(formData: FormData) {
 
   const slug = clean(formData.get('slug'))
   const clientId = clean(formData.get('client_id'))
-  const returnTo = clean(formData.get('return_to')) ?? (slug ? `/c/${slug}/profil/infos` : '/')
+  const returnTo = safeInternalPath(formData.get('return_to'), slug ? `/c/${slug}/profil/infos` : '/')
   if (!slug || !clientId) redirect('/')
 
   const sex = clean(formData.get('sex'))

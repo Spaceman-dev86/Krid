@@ -1,9 +1,11 @@
+import { cache } from 'react'
 import { redirect } from 'next/navigation'
 
 import { isPlatformAdmin } from './roles'
 import { createClient } from '../supabase/server'
 
-export async function requirePlatformAdmin() {
+/** Une seule auth + profile par requête RSC (layout + page). */
+export const requirePlatformAdmin = cache(async () => {
   const supabase = await createClient()
   const {
     data: { user },
@@ -13,7 +15,11 @@ export async function requirePlatformAdmin() {
     redirect('/loginadmin')
   }
 
-  const { data: profile } = await supabase.from('profiles').select('role, email, full_name').eq('id', user.id).maybeSingle()
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role, email, full_name')
+    .eq('id', user.id)
+    .maybeSingle()
 
   if (!isPlatformAdmin(profile?.role)) {
     redirect('/home')
@@ -28,4 +34,4 @@ export async function requirePlatformAdmin() {
       full_name: profile?.full_name ?? null,
     },
   }
-}
+})

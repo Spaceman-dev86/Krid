@@ -54,9 +54,9 @@
       "kind": "menu"
     },
     {
-      "id": "formation",
-      "label": "Formation",
-      "route": "/formation",
+      "id": "documentation",
+      "label": "Documentation",
+      "route": "/documentation",
       "kind": "menu"
     },
     {
@@ -318,7 +318,7 @@
           "id": "f-cli-tab-groupes",
           "label": "Onglet Groupes",
           "route": "/clients/groupes",
-          "bodyHtml": "<p><code>/clients/groupes</code>.</p>\n<p><strong>Règles figées</strong> :</p>\n<ul>\n<li><strong>Groupe auto</strong> : tous les clients d’une même prestation (le programme de la prestation est le « lien » implicite — showroom / rejoindre une offre = ce groupe).</li>\n<li><strong>Groupe manuel</strong> (« Ajouter un groupe ») : sous-ensemble de clients pour chat et/ou Drive et/ou envoi de bilans. Le coach coche s’il veut un chat de groupe et/ou un partage Drive.</li>\n<li><strong>Interdit</strong> : assigner / partager un programme fitness ou nutrition via un groupe. Tout accès programme = prestation.</li>\n</ul>",
+          "bodyHtml": "<p><code>/clients/groupes</code>.</p>\n<p><strong>Règles FIGÉES</strong> (voir aussi <code>plans/product/presta-groupe-LOCKED.md</code>) :</p>\n<ul>\n<li><strong>Groupe lié</strong> (<code>type=linked</code>) : 0 ou 1 par presta · créé depuis la fiche presta · sync grants actifs (backfill + nouveaux) · chat/Drive opt-in · alumni = chat only à la fin de grant · retrait coach sticky jusqu’à repay.</li>\n<li><strong>Groupe libre</strong> (<code>type=manual</code>) : membres manuels · tag presta optionnel (pas de sync) · chat/Drive opt-in.</li>\n<li><strong>Programme</strong> = livrable presta (push possible via presta ou cockpit groupe lié) — jamais propriétaire du groupe.</li>\n<li><strong>DM 1:1</strong> toujours dès l’app · indépendant presta/groupe.</li>\n</ul>",
           "images": [],
           "children": [
             {
@@ -358,7 +358,7 @@
               "critiqueHtml": "<p><strong>✅</strong> Parité partielle : bilans oui · programmes non · notifs hors V1.</p>"
             }
           ],
-          "critiqueHtml": "<p><strong>✅</strong> Auto = prestation · Manuel = chat/drive/bilans · pas de programme via groupe.</p>"
+          "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Lié = sync presta (0..1) · Libre = manuel · programme sur presta · alumni chat · kit Drive presta ≠ Drive groupe.</p>"
         },
         {
           "id": "f-cli-tab-bilans",
@@ -500,6 +500,15 @@
         "images": []
       },
       "features": [
+        {
+          "id": "f-chat-qa-v1",
+          "label": "QA Chat V1 — rapport",
+          "route": "/chat",
+          "bodyHtml": "<p><strong>Dernier rapport QA Chat V1</strong> — 2026-10-24-2218 · note <strong>9.7 / 10</strong></p><p><a href=\"/qa/chat-v1-2026-10-24-2218.html\" target=\"_blank\" rel=\"noopener\">Ouvrir le rapport HTML</a></p><p>Vidéo : <a href=\"/qa/qa-chat-v1-2026-10-24-2218.webm\" target=\"_blank\" rel=\"noopener\">/qa/qa-chat-v1-2026-10-24-2218.webm</a></p><iframe src=\"/qa/chat-v1-2026-10-24-2218.html\" style=\"width:100%;min-height:70vh;border:1px solid #333;border-radius:12px;background:#0c0c0e\" title=\"QA Chat V1\"></iframe>",
+          "critiqueHtml": "<p><strong>✅</strong> Run headed chrome/firefox/webkit · switch ~169ms · send ~162ms · ticks OK · <strong>lien coach↔client OK</strong> (2026-10-24-2238 : realtime 3–5s, Lu ticks, Edge client auth sauvé).</p><p>Lien live : <a href=\"/qa/chat-link-2026-10-24-2238.html\" target=\"_blank\" rel=\"noopener\">/qa/chat-link-2026-10-24-2238.html</a></p>",
+          "images": [],
+          "children": []
+        },
         {
           "id": "f-chat-inbox",
           "label": "Inbox (liste conversations)",
@@ -666,8 +675,8 @@
                   "id": "f-prog-builder-header",
                   "label": "Header (dépliable)",
                   "route": "/programs/new",
-                  "bodyHtml": "<p><strong>Compact</strong> : nom · Voir le rendu · Enregistrer comme template · Envoyer · Fermer.</p>\n<p><strong>Déplié</strong> : infos générales (nom, description, objectif, <strong>niveau</strong> débutant|intermédiaire|avancé, durée) · case <strong>Suivre un calendrier</strong> · <strong>date de début</strong> optionnelle (si calendrier).</p>\n<p><strong>Cocher calendrier</strong> (programme déjà commencé) → confirm → séances existantes 1…n réparties Lun→Sam dans l’ordre.</p>\n<p><strong>Décocher calendrier</strong> → pop-up : explique le mode slots (max 6 séances/semaine) · si &gt;6 séances déjà créées, celles au-delà seront <strong>supprimées</strong>. Si OK : aplatir Lun→Dim (ordre dans le jour conservé) → les <strong>6 premières</strong> deviennent séances 1…6 du mode slots · le reste est supprimé. Ex. 2 séances le lundi → elles deviennent séance 1 puis séance 2 du mode général.</p>",
-                  "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Niveau fermé · toggle calendrier bidirectionnel avec règles de redistribution / purge &gt;6.</p>",
+                  "bodyHtml": "<p><strong>Compact</strong> : nom · Voir le rendu · Enregistrer comme template · Envoyer · Fermer.</p>\n<p><strong>Déplié</strong> : infos générales (nom, description, objectif, <strong>niveau</strong> débutant|intermédiaire|avancé, durée) · case <strong>Suivre un calendrier</strong> · <strong>date de début</strong> optionnelle (si calendrier).</p>\n<p><strong>Cocher calendrier</strong> → pop-up : choisir le jour de départ (Jour 1 = Lun…Dim) puis enchaîner ; multi-séances / journée conservées.</p>\n<p><strong>Décocher calendrier / Passer en journées</strong> → pop-up courte : jours remplis lun.–sam. → journées · Dimanche supprimé · multi-séances conservées.</p>",
+                  "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Convert bidirectionnel admin · calendrier↔journées · Dimanche purgé à la descente · choix start day à la montée.</p>",
                   "images": [],
                   "children": []
                 },
@@ -700,10 +709,10 @@
                 },
                 {
                   "id": "f-prog-mode-slots",
-                  "label": "Mode hors calendrier (max 6 séances)",
+                  "label": "Mode hors calendrier (max 6 journées)",
                   "route": "/programs/new",
-                  "bodyHtml": "<p>Si calendrier OFF : max <strong>6 séances / semaine</strong>.</p>\n<ul>\n<li>Au départ : <strong>3 colonnes</strong> avec boutons pour créer des séances</li>\n<li>Bouton <strong>+</strong> à droite pour ajouter une 4ᵉ, 5ᵉ, 6ᵉ colonne/séance</li>\n<li>DnD séances <strong>dans la même semaine</strong> (réordonner les slots)</li>\n</ul>",
-                  "critiqueHtml": "<p><strong>✅</strong> Max 6 · conversion depuis calendrier = 6 premières après aplati Lun→Dim.</p>\n<p><strong>⚠️</strong> Asymétrie volontaire : hors calendrier ≤6 séances/semaine · calendrier = N séances/jour possibles.</p>",
+                  "bodyHtml": "<p>Si calendrier OFF : max <strong>6 journées / semaine</strong>. Une journée = multi-séances possibles (comme un jour calendrier). Le client choisit quand faire chaque journée.</p>\n<ul>\n<li>Au départ : <strong>3 colonnes</strong> avec boutons pour créer des séances</li>\n<li>Bouton <strong>+</strong> à droite pour ajouter une 4ᵉ, 5ᵉ, 6ᵉ colonne/journée</li>\n<li>Multi-séances / journée · DnD séances entre journées (même semaine)</li>\n<li>Vue journée ouverte = même layout / catalogue qu’un jour calendrier ouvert</li>\n</ul>",
+                  "critiqueHtml": "<p><strong>✅</strong> Max 6 journées · multi-séances · convert calendrier↔journées (start day au retour calendrier).</p>",
                   "images": [],
                   "children": []
                 },
@@ -943,8 +952,8 @@
           "id": "f-ex-trainly",
           "label": "Onglet Librairie Trainly",
           "route": "/exercises?tab=trainly",
-          "bodyHtml": "<p><strong>Biblio Drive Trainly</strong> (Admin publié) : section « Trainly » du Drive coach · hors quota.</p>\n<p>Actions selon flags : ouvrir · dupliquer (récupérer) · télécharger. Dépublier = plus de récup depuis partage ; copies déjà récupérées restent.</p>",
-          "critiqueHtml": "<p><strong>✅ FIGÉ 2026-03-13</strong> aligné Drive/catalogue.</p>",
+          "bodyHtml": "<p><strong>Exos Trainly</strong> (Admin publié) : onglet Librairie · hors quota consultation.</p>\n<p>Actions : ouvrir · <strong>Transférer</strong> (copie détachée dans Ma biblio). Les <em>documents</em> plateforme (PDF/vidéos Formation & KRID) sont dans <code>/documentation</code>, pas ici.</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ 2026-10-20</strong> · docs plateforme → /documentation.</p>",
           "images": [],
           "children": [
             {
@@ -1038,25 +1047,34 @@
     "drive": {
       "route": "/drive",
       "arrival": {
-        "bodyHtml": "",
-        "critiqueHtml": "<p><strong>✅ FIGÉ</strong> Drive V1 · quotas · section Trainly (biblio admin) · flags duplicable/téléchargeable (2026-03-13).</p>",
+        "bodyHtml": "<p><code>/drive</code> — espace perso du coach (dossiers, upload, partage client). Les docs plateforme admin sont dans <code>/documentation</code> (plus de section « Trainly » dans le Drive).</p>",
+        "critiqueHtml": "<p><strong>✅ FIGÉ + live 2026-10-21</strong> Drive perso · DA Doc · dates · quota · + dossier(+fichiers) · upload cellule · badges pop-up · rename · partage clients+groupes · recherche scope · galerie desktop · portail arbre + dédup. Gap restant : UI corbeille Settings.</p>",
         "images": []
       },
       "features": [
+        {
+          "id": "f-drive-qa",
+          "label": "QA — Coach Drive (rapports)",
+          "route": "/qa/coach-drive-2026-10-21-1447.html",
+          "bodyHtml": "<p><strong>Dernier rapport QA</strong> — 2026-10-21-1447 · note <strong>7.2 / 10</strong></p><p><a href=\"/qa/coach-drive-2026-10-21-1447.html\" target=\"_blank\" rel=\"noopener\">Ouvrir le rapport HTML</a></p><p>Vidéo : <a href=\"/qa/qa-coach-drive-2026-10-21-1447.webm\" target=\"_blank\" rel=\"noopener\">/qa/qa-coach-drive-2026-10-21-1447.webm</a> (aussi <code>recordings/</code>).</p><iframe src=\"/qa/coach-drive-2026-10-21-1447.html\" style=\"width:100%;min-height:70vh;border:1px solid #333;border-radius:12px;background:#0c0c0e\" title=\"QA Coach Drive\"></iframe>",
+          "critiqueHtml": "<p>playwright-cli headed · Chrome full · Firefox smoke OK · WebKit smoke · panels move/share/archive OK · rename optimistic OK · self-drop silencieux OK · cold /drive ~15s = P0 perf.</p>",
+          "images": [],
+          "children": []
+        },
         {
           "id": "f-drive-root",
           "label": "Racine Drive",
           "route": "/drive",
           "bodyHtml": "<p><code>/drive</code> — liste / galerie, badges compteurs dossiers, état vide.</p>",
-          "critiqueHtml": "<p><strong>✅</strong></p>",
+          "critiqueHtml": "<p><strong>✅ live 2026-10-21</strong> liste + galerie desktop · badges fichiers/partages cliquables · dates · filtres.</p>",
           "images": [],
           "children": [
             {
               "id": "f-drive-search",
               "label": "Recherche & filtres",
               "route": "/drive",
-              "bodyHtml": "<p>Recherche <strong>dans tout le Drive</strong> (nom fichier/dossier). Filtres par type (dossier, image, PDF, vidéo…).</p>",
-              "critiqueHtml": "<p><strong>✅</strong> Recherche globale.</p>",
+              "bodyHtml": "<p>Recherche <strong>dans tout le Drive</strong> à la racine ; <strong>dans le sous-arbre</strong> si on est dans un dossier. Filtres par type (dossier, image, PDF, vidéo…).</p>",
+              "critiqueHtml": "<p><strong>✅ live 2026-10-21</strong> recherche serveur scope racine vs dossier · filtre type · tri date.</p>",
               "images": [],
               "children": []
             },
@@ -1064,8 +1082,8 @@
               "id": "f-drive-views",
               "label": "Vue liste / galerie",
               "route": "/drive",
-              "bodyHtml": "<p>Bascule liste ↔ galerie.</p>",
-              "critiqueHtml": "<p><strong>✅</strong></p>",
+              "bodyHtml": "<p>Desktop : bascule liste ↔ galerie. Mobile : liste uniquement.</p>",
+              "critiqueHtml": "<p><strong>✅ live 2026-10-21</strong> toggle desktop · mobile forcé liste.</p>",
               "images": [],
               "children": []
             },
@@ -1074,18 +1092,18 @@
               "label": "Preview inline",
               "route": "/drive",
               "bodyHtml": "<p>Clic fichier → preview dans l’app : images, PDF, vidéos (lecteur intégré). Téléchargement toujours dispo.</p>",
-              "critiqueHtml": "<p><strong>✅</strong></p>",
+              "critiqueHtml": "<p><strong>✅ live partiel</strong> Ouvrir / Télécharger (nouvel onglet signed URL) · pas de lecteur inline in-app.</p>",
               "images": [],
               "children": []
             }
           ]
         },
         {
-          "id": "f-drive-templates",
-          "label": "Section Trainly (biblio Admin)",
-          "route": "/drive",
-          "bodyHtml": "<p><strong>Biblio Drive Trainly</strong> (Admin, PDF V1) : section « Trainly » dans <code>/drive</code> (même pattern que Trainly exos / nutrition / programmes).</p>\n<p><strong>Hors quota</strong> tant que consulté depuis la biblio partagée.</p>\n<p>Actions selon flags admin : <strong>ouvrir</strong> in-app · <strong>Dupliquer</strong> (récupérer dans Drive perso / envoyer clients) si <code>allow_duplicate</code> · <strong>Télécharger</strong> si <code>allow_download</code>.</p>\n<p><strong>Dépublier</strong> Admin → plus visible dans le partage ; copies déjà récupérées restent. Ré-upload perso = quota.</p>",
-          "critiqueHtml": "<p><strong>✅ FIGÉ 2026-03-13</strong> · plus de « download only only » · aligné catalogue.</p>",
+          "id": "f-drive-vs-documentation",
+          "label": "Docs plateforme → Documentation",
+          "route": "/documentation",
+          "bodyHtml": "<p>Plus de biblio Trainly dans le Drive. Contenu admin (Formation, Contenu KRID, custom) = <code>/documentation</code>. Récupérer y copie vers le Drive perso si autorisé.</p>",
+          "critiqueHtml": "<p><strong>✅ FIGÉ 2026-10-20</strong></p>",
           "images": [],
           "children": []
         },
@@ -1093,8 +1111,8 @@
           "id": "f-drive-folder-new",
           "label": "Nouveau dossier",
           "route": "/drive?popup=nouveau-dossier",
-          "bodyHtml": "<p>Pop-up nom → crée dans le dossier courant. Imbrication OK.</p>",
-          "critiqueHtml": "<p><strong>✅</strong></p>",
+          "bodyHtml": "<p>Bouton <strong>+</strong> → pop-up : nom du dossier + fichiers optionnels à y placer. Imbrication OK. Upload direct = autre cellule (zone DnD).</p>",
+          "critiqueHtml": "<p><strong>✅ live 2026-10-21</strong> + = dossier(+fichiers) · cellule upload séparée.</p>",
           "images": [],
           "children": []
         },
@@ -1110,8 +1128,8 @@
               "id": "f-drive-folder-rename",
               "label": "Renommer",
               "route": "/drive/[folderId]",
-              "bodyHtml": "<p>Renommer fichier ou dossier (unicité dans le parent).</p>",
-              "critiqueHtml": "<p><strong>✅</strong></p>",
+              "bodyHtml": "<p>Renommer fichier ou dossier (unicité dans le parent). Aussi rename dossier Documentation admin.</p>",
+              "critiqueHtml": "<p><strong>✅ live 2026-10-21</strong> rename Drive + Doc admin.</p>",
               "images": [],
               "children": []
             },
@@ -1120,7 +1138,7 @@
               "label": "Supprimer → corbeille J30",
               "route": "/drive/[folderId]",
               "bodyHtml": "<p>Suppression = <strong>corbeille 30 jours</strong> (restauration possible), puis purge. Règle <strong>plateforme</strong> : même corbeille J30 pour exercices, programmes, nutrition, docs Drive, etc.</p>\n<p>UI corbeille / restauration : accessible depuis <code>/settings</code> (ou hub « Corbeille » global) — pas seulement Drive.</p>",
-              "critiqueHtml": "<p><strong>✅</strong> Soft-delete J30 transversal plateforme.</p>",
+              "critiqueHtml": "<p><strong>✅ live partiel</strong> soft-delete (archiver) cascade dossiers · pas d’UI corbeille / restore Settings encore.</p>",
               "images": [],
               "children": []
             }
@@ -1131,7 +1149,7 @@
           "label": "Ajouter des fichiers (+)",
           "route": "/drive?popup=upload",
           "bodyHtml": "<p>Pop-up DnD multi + file d’attente. Types : png/jpeg/webp/gif · PDF · mp4/webm.</p>\n<p><strong>Limites fichier V1</strong> : 25 Mo (image/PDF) · 200 Mo (vidéo). Compte dans le <strong>quota global</strong> coach.</p>",
-          "critiqueHtml": "<p><strong>✅</strong> 25 Mo / 200 Mo + quota global settings.</p>",
+          "critiqueHtml": "<p><strong>✅ live</strong> zone DnD multi · max 200 Mo · garde-fou quota plan. Limites 25 Mo image/PDF Spec non séparées (200 Mo global).</p>",
           "images": [],
           "children": [
             {
@@ -1139,7 +1157,7 @@
               "label": "Télécharger",
               "route": "/drive",
               "bodyHtml": "<p>Téléchargement unitaire d’un fichier (pas de zip multi V1).</p>",
-              "critiqueHtml": "<p><strong>✅</strong> Pas de zip.</p>",
+              "critiqueHtml": "<p><strong>✅ live</strong></p>",
               "images": [],
               "children": []
             }
@@ -1149,8 +1167,8 @@
           "id": "f-drive-share",
           "label": "Partager (fichier ou dossier)",
           "route": "/drive?popup=partager",
-          "bodyHtml": "<p>Partage d’<strong>un</strong> fichier <em>ou</em> d’<strong>un</strong> dossier (pas de sélection multiple à partager). Pour N fichiers → dossier puis partage dossier.</p>\n<p>Destinataires : clients + groupes. Dossier = accès lecture seule aux contenus actuels et futurs. Fichier = lui seul.</p>\n<p>Portail <code>/c/[slug]/drive</code> : lecture seule (preview + télécharger). Pas d’upload client. Pas de lien public temporaire.</p>",
-          "critiqueHtml": "<p><strong>✅</strong> Share unitaire · client lecture seule · pas de lien public.</p>",
+          "bodyHtml": "<p>Partage d’<strong>un</strong> fichier <em>ou</em> d’<strong>un</strong> dossier (pas de sélection multiple à partager). Pour N fichiers → dossier puis partage dossier.</p>\n<p>Destinataires : clients + groupes. Dossier = accès lecture seule aux contenus actuels et futurs. Fichier = lui seul.</p>\n<p><strong>Anti-doublon client</strong> : pas de blocage coach ; le portail déduplique par id fichier (share fichier + dossier/groupe = 1 affichage).</p>\n<p>Portail <code>/c/[slug]/drive</code> : arborescence lecture seule (preview + télécharger). Pas d’upload client. Pas de lien public temporaire.</p>",
+          "critiqueHtml": "<p><strong>✅ live 2026-10-21</strong> clients + groupes · dédup affichage · slice 63 uidx groupe.</p>",
           "images": [],
           "children": []
         },
@@ -1158,8 +1176,8 @@
           "id": "f-drive-portal",
           "label": "Vue portail client",
           "route": "/c/[slug]/drive",
-          "bodyHtml": "<p>Arborescence filtrée aux partages · preview · téléchargement · pas d’écriture.</p>",
-          "critiqueHtml": "<p><strong>✅</strong></p>",
+          "bodyHtml": "<p>Arborescence filtrée aux partages · preview · téléchargement · pas d’écriture. Dédup fichier si multi-chemins d’accès.</p>",
+          "critiqueHtml": "<p><strong>✅ live 2026-10-21</strong> arborescence + dédup + shares groupe.</p>",
           "images": [],
           "children": []
         },
@@ -1168,7 +1186,7 @@
           "label": "Quota global (Settings)",
           "route": "/settings/storage",
           "bodyHtml": "<p>Quota <strong>global</strong> coach (Drive + chat + médias exos + covers…).</p>\n<p><strong>Plafonds validés V1</strong> :</p>\n<ul>\n<li>Starter : <strong>5 Go</strong></li>\n<li>Business : <strong>25 Go</strong></li>\n<li>Scale : <strong>100 Go</strong></li>\n<li>Studio : <strong>sur devis / 500 Go+</strong></li>\n</ul>\n<p><code>/settings/storage</code> : barre d’usage, détail par catégorie, alerte 80 %, blocage write à 100 %. Accès corbeille J30.</p>",
-          "critiqueHtml": "<p><strong>✅</strong> Quotas 5 / 25 / 100 Go validés · ajustables plus tard si la réalité terrain le demande.</p>",
+          "critiqueHtml": "<p><strong>✅ live</strong> Settings storage + blocage upload/recover à 100 %.</p>",
           "images": [],
           "children": []
         },
@@ -1653,25 +1671,6 @@
         }
       ]
     },
-    "formation": {
-      "route": "/formation",
-      "arrival": {
-        "bodyHtml": "<p><code>/formation</code> — contenus Formation publiés par Admin (PDF · vidéo · image).</p>\n<p><strong>Lecture seule</strong> : ouvrir in-app. Pas de duplication métier dans le Drive coach.</p>\n<p>Séparé de la section Trainly du Drive (docs métier / packs).</p>",
-        "images": [],
-        "critiqueHtml": "<p><strong>✅ FIGÉ 2026-03-13</strong> · sidebar coach · RO · admin /admin/formation.</p>"
-      },
-      "features": [
-        {
-          "id": "f-formation-list",
-          "label": "Liste Formation",
-          "route": "/formation",
-          "bodyHtml": "<p>Liste des contenus publiés · preview PDF/vidéo/image.</p>",
-          "critiqueHtml": "<p><strong>⏳ à brancher</strong></p>",
-          "images": [],
-          "children": []
-        }
-      ]
-    },
     "settings": {
       "route": "/settings",
       "arrival": {
@@ -1686,6 +1685,34 @@
           "route": "/settings/billing",
           "bodyHtml": "<p><strong>FIGÉ intention — impl plus tard</strong></p>\n<ol>\n<li><strong>Essai depuis le site</strong> : marketing → CTA « Essayer » → signup (email+MDP) → 1ʳᵉ connexion app démarre l’essai 15 j calendaires · sandbox (clients fictifs) · même e-mail que prod future.</li>\n<li><strong>Pendant l’essai</strong> : badge Essai · accès produit (limites sandbox) · Settings montre jours restants + CTA passer payant.</li>\n<li><strong>Essai expiré sans pay</strong> : login OK · dashboard réduit aux <strong>offres abo</strong> seulement · Settings/Billing = seul chemin pour payer.</li>\n<li><strong>Paiement Stripe</strong> : Checkout plan Starter/Business/Scale/Studio → webhook active abo · même URL app · données démo non migrées.</li>\n<li><strong>Upgrade / downgrade / résiliation</strong> : via Settings → Billing → Customer Portal Stripe (ou Checkout change plan).</li>\n<li><strong>Past due</strong> : statut past_due · relance · éventuel soft-lock métier (à préciser) · Settings Billing en alerte.</li>\n</ol>\n<p><strong>Stripe</strong> : compte gratuit à créer ; pas d’abo Stripe obligatoire pour démarrer. Frais au succès du paiement (ex. carte EU ~1,5 %+fixe). Mode test gratuit.</p>",
           "critiqueHtml": "<p><strong>✅ FIGÉ 2026-03-13</strong> parcours documentés · code plus tard.</p>",
+          "images": [],
+          "children": []
+        }
+      ]
+    },
+    "documentation": {
+      "route": "/documentation",
+      "arrival": {
+        "bodyHtml": "<p><code>/documentation</code> — hub unifié des contenus admin publiés (dossiers <strong>Formation</strong>, <strong>Contenu KRID</strong>, dossiers custom).</p>\n<p><strong>Coach</strong> : voir les dossiers avec docs publiés · ouvrir en nouvel onglet (PDF / vidéo / image) · rechercher / filtrer / trier · <strong>Récupérer</strong> dans le Drive perso si <code>allow_duplicate</code> · <strong>pas de téléchargement</strong> depuis Documentation.</p>\n<p>Consultation hors quota. Une récupération crée une copie dans le Drive coach (compte dans le quota).</p>\n<p>Anciennes routes <code>/formation</code> → redirect vers <code>/documentation?folder=formation</code>.</p>",
+        "images": [],
+        "critiqueHtml": "<p><strong>✅ FIGÉ 2026-10-20</strong> · remplace Formation + biblio Drive Trainly · slice 61 · live /documentation.</p>"
+      },
+      "features": [
+        {
+          "id": "f-doc-folders",
+          "label": "Dossiers",
+          "route": "/documentation",
+          "bodyHtml": "<p>Cartes dossier (desktop) / liste (téléphone). Badge = nb de docs <strong>publiés</strong>. Dossiers vides (0 publié) masqués côté coach.</p>\n<p>URL <code>?folder=slug</code> · retour navigateur synchronisé.</p>",
+          "critiqueHtml": "<p><strong>✅ live</strong></p>",
+          "images": [],
+          "children": []
+        },
+        {
+          "id": "f-doc-items",
+          "label": "Documents dans un dossier",
+          "route": "/documentation?folder=",
+          "bodyHtml": "<p>Liste filtrable (type · date · recherche). Actions : <strong>Lire</strong> (signed URL, nouvel onglet) · <strong>Récupérer</strong> si duplicable · sinon « Lecture seule ».</p>",
+          "critiqueHtml": "<p><strong>✅ live</strong> · pas de viewer in-app V1 · pas de allow_download.</p>",
           "images": [],
           "children": []
         }

@@ -14,12 +14,23 @@ export function buildTrackedDestinationPath(opts: {
   code: string
   targetKind: 'showroom' | 'prestation'
   prestationId?: string | null
+  /** Code promo attaché à la campagne — prérempli sur la fiche */
+  promoCode?: string | null
 }) {
   const base =
     opts.targetKind === 'prestation' && opts.prestationId
       ? `/c/${opts.slug}/showroom/${opts.prestationId}`
       : `/c/${opts.slug}/showroom`
-  return withRef(base, opts.code)
+  const withPromo = (() => {
+    const promo = opts.promoCode?.trim()
+    if (!promo) return base
+    const [pathname, query = ''] = base.split('?')
+    const params = new URLSearchParams(query)
+    if (!params.has('promo')) params.set('promo', promo)
+    const q = params.toString()
+    return q ? `${pathname}?${q}` : pathname
+  })()
+  return withRef(withPromo, opts.code)
 }
 
 export const TRACKED_REF_COOKIE = 'tl_ref'

@@ -60,8 +60,8 @@ export function SpecShell({ children }: { children: React.ReactNode }) {
             : 'Sauvegarder'
 
   return (
-    <div className="min-h-screen bg-[var(--bg)] text-[color:var(--fg)]">
-      <header className="sticky top-0 z-40 border-b border-[var(--border)] bg-[var(--bg)]/95 backdrop-blur">
+    <div className="bg-da-canvas min-h-screen text-[color:var(--fg)]">
+      <header className="sticky top-0 z-40 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-4 py-3 md:px-6">
           <Link
             href="/admin"
@@ -70,7 +70,7 @@ export function SpecShell({ children }: { children: React.ReactNode }) {
             ← Admin
           </Link>
           <div className="hidden h-5 w-px bg-[var(--border)] sm:block" aria-hidden />
-          <h1 className="shrink-0 text-sm font-extrabold tracking-tight text-[var(--brand)]">Spec Trainly</h1>
+          <h1 className="shrink-0 text-sm font-extrabold tracking-tight text-[var(--brand)]">Spec Krid</h1>
           <nav className="flex min-w-0 flex-1 flex-wrap gap-1.5 sm:justify-end" aria-label="Sections spec">
             {SPEC_SECTIONS.map((section) => {
               const active =
@@ -93,9 +93,9 @@ export function SpecShell({ children }: { children: React.ReactNode }) {
             })}
           </nav>
         </div>
-        <div className="border-t border-[var(--border)] bg-[var(--brand)] text-white">
+        <div className="border-t border-[var(--border)] bg-[var(--brand)] text-[var(--brand-fg)]">
           <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-2.5 md:px-6">
-            <p className="text-xs font-medium text-white/90">
+            <p className="text-xs font-medium text-[var(--brand-fg)]/85">
               {dirtyCount > 0
                 ? `${dirtyCount} zone${dirtyCount > 1 ? 's' : ''} modifiée${dirtyCount > 1 ? 's' : ''} — pas d’auto-save`
                 : 'Aucune modification en attente — pas d’auto-save'}
@@ -104,7 +104,7 @@ export function SpecShell({ children }: { children: React.ReactNode }) {
               type="button"
               onClick={saveAll}
               disabled={pending || (dirtyCount === 0 && saveStatus !== 'error')}
-              className="rounded-full bg-white px-5 py-2 text-sm font-extrabold text-[var(--brand)] shadow disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-full bg-[var(--surface)] px-5 py-2 text-sm font-extrabold text-[var(--brand)] shadow-da-sm ring-1 ring-[var(--border)] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {saveLabel}
             </button>

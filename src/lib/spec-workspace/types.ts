@@ -67,6 +67,7 @@ export const SPEC_SECTIONS = [
   { id: 'gating', label: 'Gating', href: '/admin/spec/gating' },
   { id: 'roadmap', label: 'Roadmap', href: '/admin/spec/roadmap' },
   { id: 'integrations', label: 'Intégrations', href: '/admin/spec/integrations' },
+  { id: 'prompt', label: 'Prompt', href: '/admin/spec/prompt' },
 ] as const
 
 export type SpecSectionId = (typeof SPEC_SECTIONS)[number]['id']

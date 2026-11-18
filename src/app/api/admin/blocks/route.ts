@@ -81,6 +81,26 @@ export async function POST(req: Request) {
     }
   }
 
+  if (status === 'published') {
+    const nameKey = name.toLowerCase()
+    const { data: existingRaw } = await supabase
+      .from('block_library' as never)
+      .select('id,name,status')
+      .is('coach_id' as never, null)
+      .is('deleted_at' as never, null)
+      .eq('status' as never, 'published')
+      .limit(300)
+    const dup = (
+      (existingRaw ?? []) as { id: string; name: string | null; status: string }[]
+    ).find((r) => (r.name ?? '').trim().toLowerCase() === nameKey)
+    if (dup) {
+      return NextResponse.json(
+        { error: 'Un bloc publié porte déjà ce nom' },
+        { status: 409 },
+      )
+    }
+  }
+
   const { data: created, error } = await supabase
     .from('block_library' as never)
     .insert({

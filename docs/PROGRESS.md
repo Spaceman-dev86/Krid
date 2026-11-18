@@ -22,11 +22,10 @@
 
 ## Now
 - Code d’accès coach admin + garde signup (étape suivante)
-- Env Vercel `krid-site` (Supabase + SITE/APP URLs) + 1er deploy site
-- Aligner remote git `origin` → `Spaceman-dev86/Krid`
 
 ## Done (récent)
-- Séparation site/app Krid : Vercel projet `krid` (ex-trainly) + `krid-site` · page `/signup` · CTAs site « Démarrer l’essai gratuit » / Connexion · bucket `home_page` OK
+- Auth `/signup` split 50/50 DA Krid + legal CGU/privacy · copy Trainly → Krid (UI visible) · publish site/app
+- Séparation site/app Krid : Vercel projet `krid` (ex-trainly) + `krid-site` · CTAs site « Essai gratuit » / Connexion → `/signup` · bucket `home_page` OK
 - Catalogue programmes Krid : RLS SELECT coach (slice 107) · publié admin = preview lecture seule · édition = fork → brouillon (catalogue immuable)
 - Catalogue Krid : preview `/programs/catalogue/[id]` = builder lecture seule + CTA → Brouillon · clic nom / Voir depuis la liste
 - Suite audit : `/dashboard/*` → redirects app actuelle · preview share invalid · grant errors checkés · facture anti-doublon · notifHref shells · chat mark-read par thread · bilan notif lue · message modèle bilan · admin pe sans colonne prescriptions · templatemuscu sans `is_trainly_catalog`

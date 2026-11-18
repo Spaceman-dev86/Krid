@@ -1,0 +1,17 @@
+file 'qa-chat-search-desktop.png'
+duration 2
+file 'qa-chat-thread-desktop.png'
+duration 2.5
+file 'qa-chat-phone.png'
+duration 2
+file 'qa-chat-tablet.png'
+duration 2
+file 'qa-chat-desktop.png'
+duration 2
+file 'qa-chat-firefox.png'
+duration 2
+file 'qa-chat-webkit.png'
+duration 2
+file 'qa-chat-client-unauth.png'
+duration 2.5
+file 'qa-chat-client-unauth.png'

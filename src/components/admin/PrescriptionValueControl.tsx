@@ -2,14 +2,15 @@
 
 import {
   formatSecondsToMmSs,
+  parseFlexibleTimeToSeconds,
   parseMmSsToSeconds,
 } from '@/src/components/program-editor-v2/utils/prescriptionHelpers'
 
 const shell =
-  'flex h-9 w-full min-w-0 overflow-hidden rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--page-bg)] focus-within:ring-2 focus-within:ring-inset focus-within:ring-[var(--brand)]'
+  'box-border flex h-9 w-full min-w-0 overflow-hidden rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--page-bg)] focus-within:border-[var(--brand)] max-[1099px]:h-12'
 
 const stepBtn =
-  'flex flex-1 items-center justify-center text-[9px] font-semibold leading-none text-[color:var(--muted)] hover:bg-[var(--accent)] hover:text-[color:var(--fg)]'
+  'flex min-h-0 flex-1 items-center justify-center text-[9px] font-semibold leading-none text-[color:var(--muted)] transition hover:bg-[var(--accent)] hover:text-[color:var(--fg)] max-[1099px]:text-[15px]'
 
 export type PrescriptionValueMode = 'hybrid' | 'time' | 'text'
 
@@ -46,7 +47,7 @@ export function PrescriptionValueControl({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onBlur={() => {
-            const sec = parseMmSsToSeconds(value)
+            const sec = parseFlexibleTimeToSeconds(value)
             if (sec == null) {
               if (!value.trim()) return
               onChange('00:00')
@@ -54,20 +55,31 @@ export function PrescriptionValueControl({
             }
             onChange(formatSecondsToMmSs(sec))
           }}
+          onKeyDown={(e) => {
+            if (e.key !== 'Enter') return
+            e.preventDefault()
+            const sec = parseFlexibleTimeToSeconds(value)
+            if (sec == null) {
+              if (value.trim()) onChange('00:00')
+            } else {
+              onChange(formatSecondsToMmSs(sec))
+            }
+            ;(e.currentTarget as HTMLInputElement).blur()
+          }}
           placeholder={ph}
-          className="min-w-0 flex-1 border-0 bg-transparent px-2 text-sm tabular-nums text-[color:var(--fg)] outline-none"
+          className="min-w-0 flex-1 border-0 bg-transparent px-2 text-sm tabular-nums text-[color:var(--fg)] outline-none max-[767px]:text-center"
         />
       ) : (
         <input
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="min-w-0 flex-1 border-0 bg-transparent px-2 text-sm text-[color:var(--fg)] outline-none"
+          className="min-w-0 flex-1 border-0 bg-transparent px-2 text-sm text-[color:var(--fg)] outline-none max-[767px]:text-center"
           placeholder={ph}
         />
       )}
 
       {showSteppers ? (
-        <div className="flex w-5 shrink-0 flex-col border-l border-[var(--border)]">
+        <div className="flex h-full w-5 shrink-0 flex-col self-stretch border-l border-[var(--border)] bg-transparent max-[1099px]:w-11">
           <button
             type="button"
             className={stepBtn}
@@ -126,7 +138,7 @@ export function PrescriptionListSelect({
     <select
       value={selected}
       onChange={(e) => onChange(e.target.value)}
-      className={`${shell} appearance-none px-2 text-sm text-[color:var(--fg)] outline-none`}
+      className={`${shell} appearance-none px-2 text-sm text-[color:var(--fg)] outline-none max-[767px]:text-center`}
       aria-label={ariaLabel}
     >
       <option value="">—</option>

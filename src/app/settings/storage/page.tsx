@@ -9,20 +9,14 @@ import {
 } from '@/src/components/ui'
 import { CoachAppShell } from '../../../components/coach/CoachAppShell'
 import { SettingsSubnav } from '../../../components/coach/SettingsSubnav'
-import { canAccessCoachApp } from '../../../lib/auth/roles'
+import { canAccessCoachApp, isPlatformAdmin } from '../../../lib/auth/roles'
 import { chatDb } from '../../../lib/chat/chat'
 import { loadCoachShellContext } from '../../../lib/coach/loadCoachShellContext'
 import { formatBytes } from '../../../lib/drive/drive'
+import { getCoachDriveQuota } from '../../../lib/drive/quota'
 import { createClient } from '../../../lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
-
-const QUOTA_BY_PLAN: Record<string, number> = {
-  starter: 5,
-  business: 25,
-  scale: 100,
-  studio: 500,
-}
 
 type BucketKey = 'docs' | 'images' | 'video' | 'other'
 
@@ -58,13 +52,17 @@ export default async function SettingsStoragePage() {
 
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
   if (!canAccessCoachApp(profile?.role)) redirect('/login')
+  const adminGateway = isPlatformAdmin(profile?.role)
 
   const shell = await loadCoachShellContext(user.id)
-  const tier = (shell.subscription?.plan_tier || 'business').toLowerCase()
-  const quotaGo = QUOTA_BY_PLAN[tier] ?? 25
-  const quotaBytes = quotaGo * 1024 * 1024 * 1024
+  const quotaSnap = await getCoachDriveQuota(supabase, user.id)
+  const tier = quotaSnap.planTier
+  const quotaGo = quotaSnap.quotaGo
+  const usedBytes = quotaSnap.usedBytes
+  const pct = quotaSnap.pct
+  const warn = pct >= 80
+  const full = quotaSnap.full
 
-  let usedBytes = 0
   let fileCount = 0
   const byBucket: Record<BucketKey, number> = { docs: 0, images: 0, video: 0, other: 0 }
 
@@ -78,21 +76,18 @@ export default async function SettingsStoragePage() {
 
   for (const f of files ?? []) {
     const size = Number(f.size_bytes ?? 0)
-    usedBytes += size
     fileCount += 1
     byBucket[bucketForMime(f.mime_type)] += size
   }
-
-  const pct = quotaBytes > 0 ? Math.min(100, Math.round((usedBytes / quotaBytes) * 1000) / 10) : 0
-  const warn = pct >= 80
-  const full = pct >= 100
 
   return (
     <CoachAppShell
       appName={shell.branding?.app_name}
       trialLabel={shell.trialLabel}
       title="Stockage"
-      savUnread={shell.savUnread}
+      savUnread={shell.savUnread} chatUnread={shell.chatUnread}
+      notifUnread={shell.notifUnread}
+      notifHref={shell.notifHref}
     >
       <div className="mx-auto grid max-w-xl gap-6">
         <div className="flex flex-wrap items-end justify-between gap-3">
@@ -103,11 +98,13 @@ export default async function SettingsStoragePage() {
               Quota global coach · plan <span className="capitalize">{tier}</span>
             </Muted>
           </div>
-          <SettingsSubnav savUnread={shell.savUnread} />
+          <SettingsSubnav savUnread={shell.savUnread} showAdminGateway={adminGateway} />
         </div>
 
         {full ? (
-          <DaBanner tone="danger">Quota atteint — les nouveaux uploads Drive seront bloqués une fois le garde-fou branché.</DaBanner>
+          <DaBanner tone="danger">
+            Quota atteint — nouveaux uploads Drive et récupérations Documentation sont bloqués.
+          </DaBanner>
         ) : warn ? (
           <DaBanner tone="warning">Tu approches de la limite ({pct} %). Archive ou passe sur un plan supérieur.</DaBanner>
         ) : null}

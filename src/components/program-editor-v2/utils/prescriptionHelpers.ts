@@ -10,6 +10,29 @@ export function parseMmSsToSeconds(value: string): number | null {
   return mm * 60 + ss
 }
 
+/**
+ * Saisie libre minuteur :
+ * - "20" → 20:00 · "200" → 200:00 (minutes)
+ * - "2000" → 20:00 (4 chiffres = mmss)
+ * - "1:30" / "01:30" → mm:ss
+ */
+export function parseFlexibleTimeToSeconds(value: string): number | null {
+  const raw = String(value ?? '').trim()
+  if (!raw) return null
+  if (raw.includes(':')) return parseMmSsToSeconds(raw)
+  const digits = raw.replace(/\D/g, '')
+  if (!digits) return null
+  if (digits.length === 4) {
+    const mm = Number.parseInt(digits.slice(0, 2), 10)
+    const ss = Number.parseInt(digits.slice(2, 4), 10)
+    if (!Number.isFinite(mm) || !Number.isFinite(ss) || ss > 59) return null
+    return mm * 60 + ss
+  }
+  const mm = Number.parseInt(digits, 10)
+  if (!Number.isFinite(mm) || mm < 0) return null
+  return mm * 60
+}
+
 export function formatSecondsToMmSs(totalSeconds: number): string {
   const clamped = Math.max(0, Math.floor(totalSeconds))
   const mm = Math.floor(clamped / 60)

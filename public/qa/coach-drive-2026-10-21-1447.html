@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>QA Coach Drive — 2026-10-21-1447</title>
+<style>
+  :root { --bg:#0c0c0e; --fg:#ececf0; --muted:#a8a8b3; --brand:#d6c4e8; --surface:#16161a; --border:#2a2a30; --ok:#3d9a6a; --warn:#c9a227; --bad:#c44; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: ui-sans-serif, system-ui, Segoe UI, sans-serif; background:var(--bg); color:var(--fg); line-height:1.45; }
+  header { padding:28px 24px; border-bottom:1px solid var(--border); background:linear-gradient(180deg,#16161a,#0c0c0e); }
+  h1 { margin:0 0 8px; font-size:1.5rem; color:var(--brand); }
+  .meta { color:var(--muted); font-size:.9rem; }
+  .score { display:inline-flex; align-items:baseline; gap:10px; margin-top:14px; }
+  .score b { font-size:2.4rem; color:var(--brand); line-height:1; }
+  .score span { color:var(--muted); font-size:.85rem; }
+  main { max-width:1100px; margin:0 auto; padding:24px; }
+  .metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin:20px 0; }
+  .metric { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:14px; }
+  .metric b { display:block; font-size:1.6rem; color:var(--brand); }
+  .metric span { color:var(--muted); font-size:.75rem; text-transform:uppercase; letter-spacing:.06em; }
+  section { margin:28px 0; }
+  h2 { font-size:1.1rem; margin:0 0 12px; }
+  table { width:100%; border-collapse:collapse; font-size:.9rem; }
+  th, td { border:1px solid var(--border); padding:8px 10px; text-align:left; vertical-align:top; }
+  th { background:var(--surface); color:var(--muted); }
+  .badge { display:inline-block; padding:2px 8px; border-radius:999px; font-size:.72rem; font-weight:700; }
+  .ok { background:rgba(61,154,106,.2); color:#7ddea8; }
+  .warn { background:rgba(201,162,39,.2); color:#f0d56a; }
+  .bad { background:rgba(204,68,68,.2); color:#f09999; }
+  .info { background:rgba(214,196,232,.15); color:var(--brand); }
+  ul { padding-left:1.2rem; }
+  .shots { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .shot { margin:0; background:var(--surface); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+  .shot img { width:100%; display:block; }
+  .shot figcaption { padding:8px 10px; font-size:.75rem; color:var(--muted); }
+  video { width:100%; max-height:480px; background:#000; border-radius:12px; border:1px solid var(--border); }
+  footer { margin-top:40px; padding:20px 0; border-top:1px solid var(--border); color:var(--muted); font-size:.8rem; }
+  code { background:#222; padding:1px 6px; border-radius:6px; font-size:.85em; }
+  .ms { font-variant-numeric: tabular-nums; white-space:nowrap; }
+  .slow { color:#f0d56a; font-weight:700; }
+  .fast { color:#7ddea8; }
+  @media (max-width:720px) { .metrics,.shots { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>QA — Coach Drive</h1>
+  <p class="meta">URL: <code>http://localhost:3000/drive</code><br/>
+  Stamp: <code>2026-10-21-1447</code> · Env: local dev · Headed · playwright-cli 0.1.22</p>
+  <div class="score"><b>7.2</b><span>/ 10 — fluide sur mutations UI, lent sur hops SSR / cold load</span></div>
+</header>
+<main>
+  <div class="metrics">
+    <div class="metric"><b>12</b><span>Scénarios Chrome</span></div>
+    <div class="metric"><b>11</b><span>OK</span></div>
+    <div class="metric"><b>3</b><span>Anomalies</span></div>
+    <div class="metric"><b>1</b><span>SKIP partiel</span></div>
+  </div>
+
+  <section>
+    <h2>Vidéo</h2>
+    <video controls playsinline src="/qa/qa-coach-drive-2026-10-21-1447.webm">
+      Vidéo non supportée — fichier aussi en <code>recordings/qa-coach-drive-2026-10-21-1447.webm</code>
+    </video>
+    <ol>
+      <li>Drive coach — listing</li>
+      <li>Recherche</li>
+      <li>Liste / Galerie</li>
+      <li>Hop dossier (partiel — hit-test titre)</li>
+      <li>Actions dossier</li>
+      <li>Phone 390×844</li>
+      <li>Tablet 900×1200</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Note &amp; verdict</h2>
+    <p><strong>7.2 / 10</strong> — Les head cases UX récents (panels déplacer/partager/archiver, rename optimistic, self-drop silencieux) passent. Le goulot reste la latence perçue des navigations SSR (<code>/drive</code> cold ~15&nbsp;s dans ce run, hop dossier ~0.8&nbsp;s, retour fil d’Ariane ~2.6&nbsp;s).</p>
+  </section>
+
+  <section>
+    <h2>Timings Chrome desktop (1440×900)</h2>
+    <table>
+      <tr><th>Scénario</th><th>Résultat</th><th>Durée</th><th>Détail</th></tr>
+      <tr><td>goto /drive</td><td><span class="badge ok">OK</span></td><td class="ms slow">14 720 ms</td><td>ready heading — cold / SSR lourd</td></tr>
+      <tr><td>search + filtre type</td><td><span class="badge ok">OK</span></td><td class="ms">5 662 ms</td><td>incl. sleeps UI</td></tr>
+      <tr><td>toggle liste/galerie</td><td><span class="badge ok">OK</span></td><td class="ms fast">2 495 ms</td><td>toggled</td></tr>
+      <tr><td>créer dossier</td><td><span class="badge ok">OK</span></td><td class="ms">8 565 ms</td><td>QA Drive 2026-10-21-1447 — URL hop ensuite <code>?error=Fichier vide</code></td></tr>
+      <tr><td>open folder hop</td><td><span class="badge ok">OK</span></td><td class="ms fast">829 ms</td><td>hop URL ok</td></tr>
+      <tr><td>breadcrumb → racine</td><td><span class="badge ok">OK</span></td><td class="ms slow">2 589 ms</td><td>retour</td></tr>
+      <tr><td>panels move/share/archive</td><td><span class="badge ok">OK</span></td><td class="ms">11 498 ms</td><td>move visible @1 439 ms · share ✓ · archive ✓</td></tr>
+      <tr><td>rename optimistic</td><td><span class="badge ok">OK</span></td><td class="ms fast">1 717 ms</td><td>optimisticClose=true</td></tr>
+      <tr><td>DnD self silent</td><td><span class="badge ok">OK</span></td><td class="ms">3 787 ms</td><td>pas de message « lui-même »</td></tr>
+      <tr><td>viewport phone</td><td><span class="badge ok">OK</span></td><td class="ms">2 112 ms</td><td>galerie masquée ✓</td></tr>
+      <tr><td>viewport tablet</td><td><span class="badge ok">OK</span></td><td class="ms">2 379 ms</td><td>ok</td></tr>
+      <tr><td>archive cancel</td><td><span class="badge warn">SKIP</span></td><td class="ms">1 673 ms</td><td>folder not found après viewport cycle</td></tr>
+    </table>
+  </section>
+
+  <section>
+    <h2>Matrice Browser × Viewport</h2>
+    <table>
+      <tr><th></th><th>Phone 390×844</th><th>Tablet 900×1200</th><th>Desktop 1440×900</th></tr>
+      <tr><th>Chrome</th><td><span class="badge ok">OK</span></td><td><span class="badge ok">OK</span></td><td><span class="badge ok">OK</span> (full)</td></tr>
+      <tr><th>Firefox</th><td><span class="badge ok">OK</span> smoke</td><td><span class="badge info">—</span></td><td><span class="badge ok">OK</span> /drive</td></tr>
+      <tr><th>WebKit</th><td><span class="badge info">—</span></td><td><span class="badge info">—</span></td><td><span class="badge ok">OK</span> smoke</td></tr>
+    </table>
+    <p class="meta">Firefox + WebKit : storageState Chrome OK → <code>/drive</code> (smoke open + screenshot). Full matrix features = Chrome only.</p>
+  </section>
+
+  <section>
+    <h2>Anomalies / améliorations prioritaires</h2>
+    <table>
+      <tr><th>Sévérité</th><th>Finding</th><th>Impact</th></tr>
+      <tr>
+        <td><span class="badge bad">P0 perf</span></td>
+        <td>Cold load <code>/drive</code> ~15&nbsp;s (heading prêt). Logs serveur <code>[drive-load] TOTAL</code> souvent &lt;500&nbsp;ms → coût perçu = proxy + RSC + client hydration.</td>
+        <td>Note fluidité plafonnée</td>
+      </tr>
+      <tr>
+        <td><span class="badge warn">P1 a11y</span></td>
+        <td>Hydration warning : <code>&lt;button&gt;</code> descendant de <code>&lt;button&gt;</code> dans <code>DocFolderCard</code> (rename / open).</td>
+        <td>Console errors · hit-testing fragile</td>
+      </tr>
+      <tr>
+        <td><span class="badge warn">P1 UX</span></td>
+        <td>Click « Ouvrir le dossier » parfois bloqué : le titre (<code>pointer-events-auto</code>) intercepte le bouton overlay <code>inset-0</code>.</td>
+        <td>Hop flaky en automation / desktop</td>
+      </tr>
+      <tr>
+        <td><span class="badge warn">P2</span></td>
+        <td>Création dossier peut naviguer avec <code>?error=Fichier vide</code> (upload optionnel vide traité comme erreur).</td>
+        <td>Bruit UX post-création</td>
+      </tr>
+      <tr>
+        <td><span class="badge ok">OK</span></td>
+        <td>Panels Déplacer / Partager / Archiver visibles et cliquables (fix overflow).</td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td><span class="badge ok">OK</span></td>
+        <td>Rename ferme l’édition immédiatement (optimistic).</td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td><span class="badge ok">OK</span></td>
+        <td>Self-drop dossier = no-op silencieux (plus de message « lui-même »).</td>
+        <td>—</td>
+      </tr>
+    </table>
+  </section>
+
+  <section>
+    <h2>Screenshots</h2>
+    <div class="shots">
+      <figure class="shot">
+        <img src="/qa/assets-2026-10-21-1447/qa-2026-10-21-1447-drive-root-desktop.png" alt="Drive root desktop" />
+        <figcaption>Root desktop 1440×900</figcaption>
+      </figure>
+      <figure class="shot">
+        <img src="/qa/assets-2026-10-21-1447/qa-2026-10-21-1447-folder-open-desktop.png" alt="Folder open" />
+        <figcaption>Hop dossier</figcaption>
+      </figure>
+      <figure class="shot">
+        <img src="/qa/assets-2026-10-21-1447/qa-2026-10-21-1447-folder-actions-desktop.png" alt="Folder actions" />
+        <figcaption>Actions dossier (panels)</figcaption>
+      </figure>
+      <figure class="shot">
+        <img src="/qa/assets-2026-10-21-1447/qa-2026-10-21-1447-drive-phone.png" alt="Phone" />
+        <figcaption>Phone 390×844</figcaption>
+      </figure>
+      <figure class="shot">
+        <img src="/qa/assets-2026-10-21-1447/qa-2026-10-21-1447-drive-tablet.png" alt="Tablet" />
+        <figcaption>Tablet 900×1200</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <footer>
+    Généré par playwright-cli headed · skill playwright-cli · stamp 2026-10-21-1447<br/>
+    Spec : <code>/admin/spec/coach</code> → Drive → QA rapport · URL directe <code>/qa/coach-drive-2026-10-21-1447.html</code>
+  </footer>
+</main>
+</body>
+</html>

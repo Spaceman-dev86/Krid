@@ -2,7 +2,7 @@ import Link from 'next/link'
 
 import { ClientPortalShell } from '../../../../components/client-portal/ClientPortalShell'
 import { countUnopenedForClient } from '../../../../lib/bilans/bilans'
-import { requireClientPortal } from '../../../../lib/client-portal/context'
+import { portalShellProps, requireClientPortal } from '../../../../lib/client-portal/context'
 import { createClient } from '../../../../lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
@@ -50,11 +50,7 @@ export default async function ClientProfilPage({ params }: Props) {
   ]
 
   return (
-    <ClientPortalShell
-      slug={ctx.slug}
-      appName={ctx.appName}
-      primaryColor={ctx.primaryColor}
-      logoUrl={ctx.logoUrl}
+    <ClientPortalShell {...portalShellProps(ctx)}
       profilBadgeCount={unopened}
     >
       <div className="grid gap-5">

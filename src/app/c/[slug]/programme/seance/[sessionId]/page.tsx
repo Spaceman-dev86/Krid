@@ -5,7 +5,7 @@ import { ClientPortalShell } from '../../../../../../components/client-portal/Cl
 import { ClientSessionPlayerClient } from '../../../../../../components/client-portal/ClientSessionPlayerClient'
 import { ClientSessionPreviewClient } from '../../../../../../components/client-portal/ClientSessionPreviewClient'
 import { startSessionRunAction } from '../../../session-run-actions'
-import { requireClientPortal } from '../../../../../../lib/client-portal/context'
+import { portalShellProps, requireClientPortal } from '../../../../../../lib/client-portal/context'
 import {
   isActivePlanStatus,
   type ClientFitnessPlanRow,
@@ -108,7 +108,7 @@ export default async function ClientProgramSessionPage({ params, searchParams }:
     (snapshot ? emptyRealized(snapshot) : null)
 
   return (
-    <ClientPortalShell slug={ctx.slug} appName={ctx.appName} primaryColor={ctx.primaryColor} logoUrl={ctx.logoUrl}>
+    <ClientPortalShell {...portalShellProps(ctx)}>
       <div className="grid gap-4">
         <div>
           <Link

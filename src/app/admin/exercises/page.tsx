@@ -12,6 +12,7 @@ import {
 import { CatalogBackLink } from '@/src/components/admin/CatalogScopeToggle'
 import { CatalogLiveSearch } from '@/src/components/admin/CatalogLiveSearch'
 import { AddCatalogUnitSection } from '@/src/components/admin/AddCatalogUnitSection'
+import { formatUnitLabel } from '@/src/lib/tags/formatUnitLabel'
 import { coachDisplayName, type CoachProfileEmbed } from '../../../lib/catalog/coachScope'
 import { listCatalogCoachOwners } from '../../../lib/catalog/coachOwners'
 import { requirePlatformAdmin } from '../../../lib/auth/requirePlatformAdmin'
@@ -255,7 +256,7 @@ export default async function AdminExercisesPage({ searchParams }: Props) {
       : params.ok === 'published'
         ? kind === 'blocks'
           ? 'Bloc publié.'
-          : 'Exercice publié — visible dans la palette Trainly coaches.'
+          : 'Exercice publié — visible dans le catalogue Krid coaches.'
         : params.ok === 'draft'
           ? 'Repassé en brouillon.'
           : params.ok === 'rights'
@@ -497,12 +498,7 @@ export default async function AdminExercisesPage({ searchParams }: Props) {
                   <li key={u.id} className="flex flex-wrap items-center justify-between gap-2 py-2.5">
                     <div>
                       <span className="text-sm font-semibold text-[color:var(--fg)]">
-                        {u.label}
-                        {u.short_label ? (
-                          <span className="ml-1.5 font-normal text-[color:var(--muted)]">
-                            ({u.short_label})
-                          </span>
-                        ) : null}
+                        {formatUnitLabel(u.label, u.short_label)}
                       </span>
                       <p className="text-[11px] text-[color:var(--muted)]">
                         {u.key} ·{' '}
@@ -722,7 +718,7 @@ export default async function AdminExercisesPage({ searchParams }: Props) {
                                   <input type="hidden" name="id" value={e.id} />
                                   <input type="hidden" name="status" value="published" />
                                   <input type="hidden" name="return_to" value={returnTo} />
-                                  <ConfirmSubmitButton confirmMessage="Publier cet exercice dans la palette Trainly ?">
+                                  <ConfirmSubmitButton confirmMessage="Publier cet exercice dans le catalogue Krid ?">
                                     Publier
                                   </ConfirmSubmitButton>
                                 </form>

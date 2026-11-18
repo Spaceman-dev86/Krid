@@ -3,9 +3,25 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
-import { modulesFromForm } from '../../lib/prestations/modules'
+import {
+  contentIdsFromForm,
+  singularFromIds,
+} from '../../lib/prestations/contentLinks'
+import {
+  modulesFromContentLinks,
+  showroomTagsFromForm,
+} from '../../lib/prestations/modules'
+import {
+  hiddenProgramTagsFromForm,
+  programShowroomTags,
+} from '../../lib/prestations/showroomPresentation'
+import { applyAlumniOnGrantEnd } from '../../lib/coach/linkedGroups'
+import { removeClientFromAutoGroupIfIdle } from '../../lib/coach/syncAutoGroups'
 import { deliverPrestationContentOnPaid } from '../../lib/prestations/deliverContent'
+import { mediaLibraryPublicUrl } from '../../lib/mediaLibrary'
+import { safeInternalPath } from '../../lib/navigation/safeReturnTo'
 import { createClient } from '../../lib/supabase/server'
+import { removePrestationPhoto, uploadPrestationPhoto } from '../../lib/uploadPrestationPhoto'
 
 function clean(value: FormDataEntryValue | null) {
   const s = String(value ?? '').trim()
@@ -19,7 +35,7 @@ export async function createPrestationAction(formData: FormData) {
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const returnTo = clean(formData.get('return_to')) ?? '/profile/prestations'
+  const returnTo = safeInternalPath(formData.get('return_to'), '/profile/prestations')
 
   const name = clean(formData.get('name'))
   if (!name) redirect(`${returnTo}?error=name`)
@@ -40,6 +56,7 @@ export async function createPrestationAction(formData: FormData) {
     redirect(`${returnTo}?error=status`)
   }
 
+  // Modules + contenu livré = réglés sur la fiche après création.
   const { data, error } = await supabase
     .from('prestations')
     .insert({
@@ -48,7 +65,7 @@ export async function createPrestationAction(formData: FormData) {
       description: clean(formData.get('description')),
       pricing_type,
       price_cents: Math.round(priceEuros * 100),
-      modules: modulesFromForm(formData),
+      modules: [],
       showroom_visible: formData.get('showroom_visible') === 'on',
       status,
     })
@@ -60,33 +77,188 @@ export async function createPrestationAction(formData: FormData) {
   revalidatePath('/payments')
   revalidatePath('/payments/prestations')
   revalidatePath('/profile/prestations')
-  redirect(`/payments/${data!.id}?created=1`)
+  redirect(`/profile/prestations/${data!.id}?created=1`)
 }
 
-export async function updatePrestationAction(formData: FormData) {
+export type PrestationSaveResult =
+  | { ok: true; id: string; photoUploaded: boolean }
+  | {
+      ok: false
+      error: string
+      code?: 'auth' | 'missing' | 'name' | 'price' | 'cover_conflict' | 'upload'
+      id?: string
+    }
+
+async function persistPrestationUpdate(formData: FormData): Promise<PrestationSaveResult> {
   const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  if (!user) return { ok: false, error: 'Non connecté', code: 'auth' }
 
   const id = clean(formData.get('id'))
-  if (!id) redirect('/payments')
+  if (!id) return { ok: false, error: 'Prestation introuvable', code: 'missing' }
 
   const name = clean(formData.get('name'))
-  if (!name) redirect(`/payments/${id}?error=name`)
+  if (!name) return { ok: false, error: 'Nom requis', code: 'name', id }
 
   const priceRaw = clean(formData.get('price_euros'))
   const priceEuros = priceRaw ? Number(priceRaw.replace(',', '.')) : 0
   if (!Number.isFinite(priceEuros) || priceEuros < 0) {
-    redirect(`/payments/${id}?error=price`)
+    return { ok: false, error: 'Prix invalide', code: 'price', id }
   }
 
   const pricing_type = clean(formData.get('pricing_type')) ?? 'unique'
   const status = clean(formData.get('status')) ?? 'draft'
-  const programTemplateId = clean(formData.get('program_template_id'))
-  const nutritionTemplateId = clean(formData.get('nutrition_template_id'))
-  const driveFolderId = clean(formData.get('drive_folder_id'))
+  const programTemplateIds = contentIdsFromForm(formData, 'program_template_ids')
+  const nutritionTemplateIds = contentIdsFromForm(formData, 'nutrition_template_ids')
+  const driveFolderIds = contentIdsFromForm(formData, 'drive_folder_ids')
+  const programTemplateId = singularFromIds(programTemplateIds)
+  const nutritionTemplateId = singularFromIds(nutritionTemplateIds)
+  const driveFolderId = singularFromIds(driveFolderIds)
+  const showroomTags = showroomTagsFromForm(formData, 'showroom_tags')
+  const showroomPopupTags = showroomTagsFromForm(formData, 'showroom_popup_tags')
+  const videoUrlRaw = clean(formData.get('video_url'))
+  const videoUrl =
+    videoUrlRaw && /^https?:\/\//i.test(videoUrlRaw) ? videoUrlRaw.slice(0, 500) : null
+  const videoRoleRaw = clean(formData.get('showroom_video_role'))
+  let videoRole: 'cover' | 'inline' | null = null
+  if (videoUrl) {
+    videoRole = videoRoleRaw === 'cover' ? 'cover' : 'inline'
+  }
+  let photoIsCover = formData.get('showroom_photo_is_cover') === 'on'
+  if (videoRole === 'cover' && photoIsCover) {
+    return {
+      ok: false,
+      error: 'Une seule couverture popup : photo ou vidéo',
+      code: 'cover_conflict',
+      id,
+    }
+  }
+  if (videoRole === 'cover') photoIsCover = false
+  const showroomDescriptionRaw = clean(formData.get('showroom_description'))
+  const showroomDescription = showroomDescriptionRaw
+    ? showroomDescriptionRaw.slice(0, 1200)
+    : null
+  let showroomWeekId = clean(formData.get('showroom_week_id'))
+  const showroomCtaLabelRaw = clean(formData.get('showroom_cta_label'))
+  const showroomCtaLabel = showroomCtaLabelRaw ? showroomCtaLabelRaw.slice(0, 40) : null
+  const showroomEyebrowRaw = clean(formData.get('showroom_eyebrow'))
+  const showroomEyebrow = showroomEyebrowRaw ? showroomEyebrowRaw.slice(0, 40) : null
+  if (showroomWeekId) {
+    if (!programTemplateIds.length) {
+      showroomWeekId = null
+    } else {
+      const { data: weekRow } = await supabase
+        .from('program_weeks')
+        .select('id, program_id')
+        .eq('id', showroomWeekId)
+        .maybeSingle()
+      if (!weekRow || !programTemplateIds.includes(weekRow.program_id)) {
+        showroomWeekId = null
+      }
+    }
+  }
+
+  const { data: existing } = await supabase
+    .from('prestations')
+    .select('photo_url')
+    .eq('id', id)
+    .eq('coach_id', user.id)
+    .maybeSingle()
+
+  let photoUrl: string | null = (existing as { photo_url?: string | null } | null)?.photo_url ?? null
+  let photoUploaded = false
+  const removePhoto = formData.get('remove_photo') === 'on'
+  const photoFile = formData.get('photo')
+  const photoLibraryId = clean(formData.get('photo_library_id'))
+  if (removePhoto) {
+    try {
+      await removePrestationPhoto(user.id, id)
+    } catch {
+      /* non-bloquant */
+    }
+    photoUrl = null
+  } else if (photoFile instanceof File && photoFile.size > 0) {
+    const uploaded = await uploadPrestationPhoto(user.id, id, photoFile)
+    if (!uploaded.ok) {
+      return { ok: false, error: uploaded.error, code: 'upload', id }
+    }
+    photoUrl = uploaded.imageUrl
+    photoUploaded = true
+  } else if (photoLibraryId) {
+    const { data: libRow, error: libError } = await supabase
+      .from('media_library')
+      .select('storage_path, active, kind')
+      .eq('id', photoLibraryId)
+      .maybeSingle()
+    if (libError && !/media_library|schema cache/i.test(libError.message)) {
+      return { ok: false, error: libError.message, code: 'upload', id }
+    }
+    const path = (libRow as { storage_path?: string; active?: boolean; kind?: string } | null)
+      ?.storage_path
+    const active = (libRow as { active?: boolean } | null)?.active
+    const kind = (libRow as { kind?: string } | null)?.kind
+    const libraryUrl = path && active && kind === 'cover' ? mediaLibraryPublicUrl(path) : ''
+    if (!libraryUrl) {
+      return { ok: false, error: 'Image catalogue introuvable.', code: 'upload', id }
+    }
+    try {
+      await removePrestationPhoto(user.id, id)
+    } catch {
+      /* non-bloquant */
+    }
+    photoUrl = libraryUrl
+    photoUploaded = true
+  }
+
+  const modules = modulesFromContentLinks({
+    programTemplateIds,
+    nutritionTemplateIds,
+    driveFolderIds,
+  })
+
+  let programTagLabels: string[] = []
+  if (programTemplateIds.length) {
+    const { data: progs } = await supabase
+      .from('programs')
+      .select('id, title, level, goal, duration')
+      .in('id', programTemplateIds)
+      .eq('coach_id', user.id)
+      .is('deleted_at', null)
+    for (const prog of progs ?? []) {
+      const { data: weeksRaw } = await supabase
+        .from('program_weeks')
+        .select('id')
+        .eq('program_id', prog.id)
+      const weeks = (weeksRaw ?? []) as { id: string }[]
+      let sessionsCount = 0
+      if (weeks.length) {
+        const { count } = await supabase
+          .from('sessions')
+          .select('id', { count: 'exact', head: true })
+          .in(
+            'week_id',
+            weeks.map((w) => w.id),
+          )
+        sessionsCount = count ?? 0
+      }
+      for (const tag of programShowroomTags({
+        id: prog.id,
+        title: prog.title,
+        level: prog.level,
+        goal: prog.goal,
+        duration: prog.duration,
+        weeksCount: weeks.length,
+        sessionsCount,
+      })) {
+        if (!programTagLabels.some((t) => t.toLowerCase() === tag.toLowerCase())) {
+          programTagLabels.push(tag)
+        }
+      }
+    }
+  }
+  const hiddenProgramTags = hiddenProgramTagsFromForm(formData, programTagLabels)
 
   const { error } = await supabase
     .from('prestations')
@@ -95,22 +267,62 @@ export async function updatePrestationAction(formData: FormData) {
       description: clean(formData.get('description')),
       pricing_type,
       price_cents: Math.round(priceEuros * 100),
-      modules: modulesFromForm(formData),
+      modules,
       showroom_visible: formData.get('showroom_visible') === 'on',
       status,
       program_template_id: programTemplateId,
       nutrition_template_id: nutritionTemplateId,
       drive_folder_id: driveFolderId,
+      program_template_ids: programTemplateIds,
+      nutrition_template_ids: nutritionTemplateIds,
+      drive_folder_ids: driveFolderIds,
+      photo_url: photoUrl,
+      showroom_tags: showroomTags,
+      showroom_popup_tags: showroomPopupTags,
+      video_url: videoUrl,
+      highlight_tag: null,
+      showroom_description: showroomDescription,
+      showroom_week_id: showroomWeekId,
+      showroom_cta_label: showroomCtaLabel,
+      showroom_eyebrow: showroomEyebrow,
+      show_program_tags: hiddenProgramTags.length < programTagLabels.length || !programTagLabels.length,
+      showroom_hidden_program_tags: hiddenProgramTags,
+      showroom_photo_is_cover: photoIsCover,
+      showroom_video_role: videoRole,
       updated_at: new Date().toISOString(),
-    })
+    } as never)
     .eq('id', id)
     .eq('coach_id', user.id)
 
-  if (error) redirect(`/payments/${id}?error=${encodeURIComponent(error.message)}`)
+  if (error) return { ok: false, error: error.message, id }
 
   revalidatePath('/payments')
-  revalidatePath(`/payments/${id}`)
-  redirect(`/payments/${id}?saved=1`)
+  revalidatePath('/profile/prestations')
+  revalidatePath(`/profile/prestations/${id}`)
+  revalidatePath('/c', 'layout')
+  return { ok: true, id, photoUploaded }
+}
+
+export async function updatePrestationAction(formData: FormData) {
+  const result = await persistPrestationUpdate(formData)
+  if (!result.ok) {
+    if (result.code === 'auth') redirect('/login')
+    if (result.code === 'missing') redirect('/profile/prestations')
+    const id = result.id ?? clean(formData.get('id'))
+    if (!id) redirect('/profile/prestations')
+    if (result.code === 'cover_conflict') {
+      redirect(`/profile/prestations/${id}?cover_conflict=1`)
+    }
+    if (result.code === 'name') redirect(`/profile/prestations/${id}?error=name`)
+    if (result.code === 'price') redirect(`/profile/prestations/${id}?error=price`)
+    redirect(`/profile/prestations/${id}?error=${encodeURIComponent(result.error)}`)
+  }
+  redirect(`/profile/prestations/${result.id}?saved=1`)
+}
+
+/** Autosave silencieux (pas de redirect) — debounce côté client. */
+export async function autosavePrestationAction(formData: FormData): Promise<PrestationSaveResult> {
+  return persistPrestationUpdate(formData)
 }
 
 export async function archivePrestationAction(formData: FormData) {
@@ -121,23 +333,48 @@ export async function archivePrestationAction(formData: FormData) {
   if (!user) redirect('/login')
 
   const id = clean(formData.get('id'))
-  if (!id) redirect('/payments/prestations')
+  if (!id) redirect('/profile/prestations')
 
+  const now = new Date().toISOString()
   const { error } = await supabase
     .from('prestations')
     .update({
       status: 'archived',
-      deleted_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+      deleted_at: now,
+      updated_at: now,
     })
     .eq('id', id)
     .eq('coach_id', user.id)
 
-  if (error) redirect(`/payments/${id}?error=${encodeURIComponent(error.message)}`)
+  if (error) redirect(`/profile/prestations/${id}?error=${encodeURIComponent(error.message)}`)
+
+  // Archive → alumni : termine grants actifs + coupe Drive/program
+  const { data: activeGrants } = await supabase
+    .from('client_grants')
+    .update({ status: 'ended', ends_at: now })
+    .eq('prestation_id', id)
+    .eq('coach_id', user.id)
+    .eq('status', 'active')
+    .select('client_id, prestation_id')
+
+  for (const g of activeGrants ?? []) {
+    if (!g.client_id || !g.prestation_id) continue
+    try {
+      await applyAlumniOnGrantEnd(supabase, {
+        coachId: user.id,
+        clientId: g.client_id,
+        prestationId: g.prestation_id,
+      })
+    } catch {
+      /* non-bloquant */
+    }
+  }
 
   revalidatePath('/payments')
   revalidatePath('/payments/prestations')
-  redirect('/payments/prestations?archived=1')
+  revalidatePath('/profile/prestations')
+  revalidatePath('/clients/groupes')
+  redirect('/profile/prestations?archived=1')
 }
 
 /** Grant manuel : ledger Payé + grant actif (achat ≠ démarrage plan). */
@@ -150,7 +387,7 @@ export async function grantPrestationToClientAction(formData: FormData) {
 
   const clientId = clean(formData.get('client_id'))
   const prestationId = clean(formData.get('prestation_id'))
-  const returnTo = clean(formData.get('return_to')) ?? `/clients/${clientId}`
+  const returnTo = safeInternalPath(formData.get('return_to'), `/clients/${clientId}`)
   const confirmPaid = clean(formData.get('confirm_paid'))
   const periodYm = clean(formData.get('period_ym'))
   const amountRaw = clean(formData.get('amount_cents'))
@@ -271,6 +508,7 @@ export async function grantPrestationToClientAction(formData: FormData) {
   })
 
   revalidatePath('/clients')
+  revalidatePath('/clients/groupes')
   revalidatePath(`/clients/${clientId}`)
   revalidatePath('/payments')
   revalidatePath('/payments/suivi-clients')
@@ -289,7 +527,15 @@ export async function endClientGrantAction(formData: FormData) {
 
   const grantId = clean(formData.get('grant_id'))
   const clientId = clean(formData.get('client_id'))
+  const returnTo = safeInternalPath(formData.get('return_to'), `/clients/${clientId}`)
   if (!grantId || !clientId) redirect('/clients')
+
+  const { data: grantRow } = await supabase
+    .from('client_grants')
+    .select('prestation_id')
+    .eq('id', grantId)
+    .eq('coach_id', user.id)
+    .maybeSingle()
 
   const { error } = await supabase
     .from('client_grants')
@@ -300,10 +546,33 @@ export async function endClientGrantAction(formData: FormData) {
     .eq('id', grantId)
     .eq('coach_id', user.id)
 
-  if (error) redirect(`/clients/${clientId}?error=${encodeURIComponent(error.message)}`)
+  if (error) redirect(`${returnTo}?error=${encodeURIComponent(error.message)}`)
+
+  if (grantRow?.prestation_id) {
+    try {
+      await applyAlumniOnGrantEnd(supabase, {
+        coachId: user.id,
+        clientId,
+        prestationId: grantRow.prestation_id,
+      })
+    } catch {
+      /* non-bloquant */
+    }
+    try {
+      await removeClientFromAutoGroupIfIdle(supabase, {
+        coachId: user.id,
+        clientId,
+        prestationId: grantRow.prestation_id,
+      })
+    } catch {
+      /* non-bloquant */
+    }
+  }
 
   revalidatePath(`/clients/${clientId}`)
-  redirect(`/clients/${clientId}?ended=1`)
+  revalidatePath('/clients/groupes')
+  revalidatePath(returnTo)
+  redirect(`${returnTo}?ended=1`)
 }
 
 export async function createManualPaymentAction(formData: FormData) {
@@ -406,7 +675,7 @@ export async function createManualPaymentAction(formData: FormData) {
   }
 
   if (status === 'paid') {
-    await supabase.from('client_grants').insert({
+    const { error: grantError } = await supabase.from('client_grants').insert({
       coach_id: user.id,
       client_id: clientId,
       prestation_id: prestationId,
@@ -415,6 +684,14 @@ export async function createManualPaymentAction(formData: FormData) {
       starts_at: now,
       payment_ledger_id: ledger.id,
     })
+    if (grantError) {
+      redirect(
+        '/payments?error=' +
+          encodeURIComponent(
+            `Paiement enregistré mais accès non créé : ${grantError.message}`,
+          ),
+      )
+    }
     await deliverPrestationContentOnPaid(supabase, {
       coachId: user.id,
       clientId,
@@ -496,7 +773,7 @@ export async function markPaymentPaidAction(formData: FormData) {
     .eq('coach_id', user.id)
     .maybeSingle()
 
-  await supabase.from('client_grants').insert({
+  const { error: grantError } = await supabase.from('client_grants').insert({
     coach_id: user.id,
     client_id: row.client_id,
     prestation_id: row.prestation_id,
@@ -505,6 +782,14 @@ export async function markPaymentPaidAction(formData: FormData) {
     starts_at: now,
     payment_ledger_id: id,
   })
+  if (grantError) {
+    redirect(
+      '/payments?error=' +
+        encodeURIComponent(
+          `Paiement marqué Payé mais accès non créé : ${grantError.message}`,
+        ),
+    )
+  }
 
   await deliverPrestationContentOnPaid(supabase, {
     coachId: user.id,
@@ -551,15 +836,35 @@ export async function refundPaymentAction(formData: FormData) {
 
   if (error) redirect('/payments?error=' + encodeURIComponent(error.message))
 
-  await supabase
+  const { data: endedGrants } = await supabase
     .from('client_grants')
     .update({ status: 'ended', ends_at: now })
     .eq('payment_ledger_id', id)
     .eq('coach_id', user.id)
     .eq('status', 'active')
+    .select('client_id, prestation_id')
+
+  for (const g of endedGrants ?? []) {
+    if (!g.prestation_id || !g.client_id) continue
+    try {
+      await applyAlumniOnGrantEnd(supabase, {
+        coachId: user.id,
+        clientId: g.client_id,
+        prestationId: g.prestation_id,
+      })
+      await removeClientFromAutoGroupIfIdle(supabase, {
+        coachId: user.id,
+        clientId: g.client_id,
+        prestationId: g.prestation_id,
+      })
+    } catch {
+      /* non-bloquant */
+    }
+  }
 
   revalidatePath('/payments')
   revalidatePath('/payments/suivi-clients')
+  revalidatePath('/clients/groupes')
   revalidatePath(`/clients/${row.client_id}`)
   redirect('/payments?refunded=1')
 }
@@ -586,12 +891,24 @@ export async function generateInvoiceAction(formData: FormData) {
     redirect('/payments/factures?error=' + encodeURIComponent('Facture = paiement Payé uniquement'))
   }
 
+  const { data: existingInvoice } = await supabase
+    .from('invoices')
+    .select('id')
+    .eq('coach_id', user.id)
+    .eq('payment_ledger_id', ledgerId)
+    .maybeSingle()
+  if (existingInvoice) {
+    redirect('/payments/factures?error=' + encodeURIComponent('Facture déjà générée pour ce paiement'))
+  }
+
+  const year = new Date().getFullYear()
+  const yearStart = `${year}-01-01T00:00:00.000Z`
   const { count } = await supabase
     .from('invoices')
     .select('id', { count: 'exact', head: true })
     .eq('coach_id', user.id)
+    .gte('created_at', yearStart)
 
-  const year = new Date().getFullYear()
   const seq = String((count ?? 0) + 1).padStart(4, '0')
   const number = `${year}-${seq}`
 
@@ -605,7 +922,10 @@ export async function generateInvoiceAction(formData: FormData) {
   })
 
   if (error) {
-    redirect('/payments/factures?error=' + encodeURIComponent(error.message))
+    const msg = /duplicate|unique/i.test(error.message)
+      ? 'Facture déjà générée pour ce paiement'
+      : error.message
+    redirect('/payments/factures?error=' + encodeURIComponent(msg))
   }
 
   if (requestId) {

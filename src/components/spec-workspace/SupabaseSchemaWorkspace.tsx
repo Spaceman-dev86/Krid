@@ -198,7 +198,7 @@ export function SupabaseSchemaWorkspace({
             onClick={() => setTab(t.id)}
             className={
               tab === t.id
-                ? 'rounded-lg bg-[var(--brand)] px-3 py-2 text-xs font-bold text-white'
+                ? 'rounded-lg bg-[var(--brand)] px-3 py-2 text-xs font-bold text-[var(--brand-fg)]'
                 : 'rounded-lg bg-[var(--accent)] px-3 py-2 text-xs font-semibold text-[var(--brand)]'
             }
           >
@@ -209,7 +209,7 @@ export function SupabaseSchemaWorkspace({
 
       {tab === 'sql' ? (
         <div className="grid gap-3">
-          <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-950 dark:text-amber-100">
+          <div className="rounded-lg border border-[var(--warning-border)] bg-[var(--warning-bg)] px-3 py-2 text-sm text-[var(--warning)]">
             <strong>Exécuter une tranche à la fois</strong> sur le nouveau projet seulement. Ordre : 01 → 02 → (plus
             tard) 03. Ne pas coller le monolithe entier.
           </div>
@@ -221,7 +221,7 @@ export function SupabaseSchemaWorkspace({
                 onClick={() => setActiveSlice(s.id)}
                 className={
                   activeSlice === s.id
-                    ? 'rounded-lg bg-[var(--brand)] px-3 py-2 text-xs font-bold text-white'
+                    ? 'rounded-lg bg-[var(--brand)] px-3 py-2 text-xs font-bold text-[var(--brand-fg)]'
                     : 'rounded-lg border border-[var(--border)] px-3 py-2 text-xs font-semibold'
                 }
               >
@@ -244,7 +244,7 @@ export function SupabaseSchemaWorkspace({
               </p>
               <button
                 type="button"
-                className="w-fit rounded-lg bg-[var(--brand)] px-3 py-2 text-xs font-bold text-white"
+                className="w-fit rounded-lg bg-[var(--brand)] px-3 py-2 text-xs font-bold text-[var(--brand-fg)]"
                 onClick={async () => {
                   await navigator.clipboard.writeText(currentSlice.sql)
                   setCopied(true)
@@ -328,7 +328,7 @@ export function SupabaseSchemaWorkspace({
               onClick={() => setDomain(d.id)}
               className={
                 domain === d.id
-                  ? 'rounded-full bg-[var(--brand)] px-3 py-1.5 text-xs font-semibold text-white'
+                  ? 'rounded-full bg-[var(--brand)] px-3 py-1.5 text-xs font-semibold text-[var(--brand-fg)]'
                   : 'rounded-full bg-[var(--accent)] px-3 py-1.5 text-xs font-semibold text-[var(--brand)]'
               }
             >
@@ -445,7 +445,7 @@ export function SupabaseSchemaWorkspace({
                 }}
               >
                 <div className="flex items-center justify-between gap-2 border-b border-slate-600 bg-[#151b28] px-2.5 py-2">
-                  <span className="truncate font-mono text-xs font-bold text-white">{t.name}</span>
+                  <span className="truncate font-mono text-xs font-bold text-slate-100">{t.name}</span>
                   <span className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold ${statusColor(t.status)}`}>
                     {STATUS_LABEL[t.status]}
                   </span>
@@ -460,7 +460,7 @@ export function SupabaseSchemaWorkspace({
                       <span className="w-3 shrink-0 text-center text-[11px]" aria-hidden>
                         {c.pk ? '🔑' : c.fk ? '🔗' : c.unique ? '⌁' : c.nullable === false ? '◆' : '◇'}
                       </span>
-                      <span className={`min-w-0 flex-1 truncate ${c.pk ? 'font-semibold text-white' : ''}`}>
+                      <span className={`min-w-0 flex-1 truncate ${c.pk ? 'font-semibold text-slate-100' : ''}`}>
                         {c.name}
                       </span>
                       <span className="shrink-0 text-slate-500">{c.type}</span>

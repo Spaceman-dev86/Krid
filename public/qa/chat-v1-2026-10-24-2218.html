@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>QA Chat V1 — 2026-10-24-2218</title>
+<style>
+  :root { --bg:#0c0c0e; --fg:#ececf0; --muted:#a8a8b3; --brand:#d6c4e8; --surface:#16161a; --border:#2a2a30; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: ui-sans-serif, system-ui, Segoe UI, sans-serif; background:var(--bg); color:var(--fg); line-height:1.45; }
+  header { padding:28px 24px; border-bottom:1px solid var(--border); background:linear-gradient(180deg,#16161a,#0c0c0e); }
+  h1 { margin:0 0 8px; font-size:1.5rem; color:var(--brand); }
+  .meta { color:var(--muted); font-size:.9rem; }
+  .score { display:inline-flex; align-items:baseline; gap:10px; margin-top:14px; }
+  .score b { font-size:2.4rem; color:var(--brand); line-height:1; }
+  .score span { color:var(--muted); font-size:.85rem; }
+  main { max-width:1100px; margin:0 auto; padding:24px; }
+  .metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin:20px 0; }
+  .metric { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:14px; }
+  .metric b { display:block; font-size:1.6rem; color:var(--brand); }
+  .metric span { color:var(--muted); font-size:.75rem; text-transform:uppercase; letter-spacing:.06em; }
+  section { margin:28px 0; }
+  h2 { font-size:1.1rem; margin:0 0 12px; }
+  table { width:100%; border-collapse:collapse; font-size:.9rem; }
+  th, td { border:1px solid var(--border); padding:8px 10px; text-align:left; vertical-align:top; }
+  th { background:var(--surface); color:var(--muted); }
+  .badge { display:inline-block; padding:2px 8px; border-radius:999px; font-size:.72rem; font-weight:700; }
+  .ok { background:rgba(61,154,106,.2); color:#7ddea8; }
+  .warn { background:rgba(201,162,39,.2); color:#f0d56a; }
+  .bad { background:rgba(204,68,68,.2); color:#f09999; }
+  .info { background:rgba(214,196,232,.15); color:var(--brand); }
+  .shots { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .shot { margin:0; background:var(--surface); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+  .shot img { width:100%; display:block; }
+  .shot figcaption { padding:8px 10px; font-size:.75rem; color:var(--muted); }
+  video { width:100%; max-height:480px; background:#000; border-radius:12px; border:1px solid var(--border); }
+  footer { margin-top:40px; padding:20px 0; border-top:1px solid var(--border); color:var(--muted); font-size:.8rem; }
+  code { background:#222; padding:1px 6px; border-radius:6px; font-size:.85em; }
+  .ms { font-variant-numeric: tabular-nums; white-space:nowrap; }
+  .fast { color:#7ddea8; }
+  @media (max-width:720px) { .metrics,.shots { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>QA — Chat V1 (coach ↔ client)</h1>
+  <p class="meta">URL: <code>http://localhost:3000/chat</code> · portal <code>/c/studio-remi/messages</code><br/>
+  Stamp: <code>2026-10-24-2218</code> · Env: local · Headed · playwright-cli + Playwright API</p>
+  <div class="score"><b>9.7</b><span>/ 10 — switch ~169ms · send 162ms</span></div>
+</header>
+<main>
+  <div class="metrics">
+    <div class="metric"><b>21</b><span>Scénarios</span></div>
+    <div class="metric"><b>19</b><span>OK</span></div>
+    <div class="metric"><b>0</b><span>WARN</span></div>
+    <div class="metric"><b>2</b><span>BAD/SKIP</span></div>
+  </div>
+
+  <section>
+    <h2>Vidéo</h2>
+    <video controls playsinline src="/qa/qa-chat-v1-2026-10-24-2218.webm">Vidéo QA</video>
+    <p class="meta" style="margin-top:8px">Enregistrement headed Chromium (recordVideo) · aussi <code>recordings/qa-chat-v1-2026-10-24-2218.webm</code></p>
+  </section>
+
+  <section>
+    <h2>Note &amp; verdict</h2>
+    <p><strong>9.7 / 10</strong> — Run headed multi-browser. Switch moyen <strong>~169 ms</strong>. Envoi message <strong>162 ms</strong>. Console errors capturés: <strong>0</strong>.</p>
+  </section>
+
+  <section>
+    <h2>Latence switch (Chrome desktop)</h2>
+    <table>
+      <thead><tr><th>Round</th><th>Fil</th><th>ms</th><th>Statut</th></tr></thead>
+      <tbody><tr><td>1</td><td>groupe matin sport</td><td class="ms fast">503</td><td><span class="badge ok">OK</span></td></tr>
+<tr><td>1</td><td>RS</td><td class="ms fast">252</td><td><span class="badge ok">OK</span></td></tr>
+<tr><td>1</td><td>HB</td><td class="ms fast">101</td><td><span class="badge ok">OK</span></td></tr>
+<tr><td>1</td><td>PS</td><td class="ms fast">111</td><td><span class="badge ok">OK</span></td></tr>
+<tr><td>2</td><td>groupe matin sport</td><td class="ms fast">77</td><td><span class="badge ok">OK</span></td></tr>
+<tr><td>2</td><td>RS</td><td class="ms fast">101</td><td><span class="badge ok">OK</span></td></tr>
+<tr><td>2</td><td>HB</td><td class="ms fast">97</td><td><span class="badge ok">OK</span></td></tr>
+<tr><td>2</td><td>PS</td><td class="ms fast">110</td><td><span class="badge ok">OK</span></td></tr></tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Matrice scénarios</h2>
+    <table>
+      <thead><tr><th>ID</th><th>Scénario</th><th>Résultat</th><th>Notes</th></tr></thead>
+      <tbody><tr><td>C1</td><td>Auth coach + /chat</td><td><span class="badge ok">OK</span></td><td>state-load coach.auth-state.json · <span class="ms">1855 ms</span></td></tr>
+<tr><td>C2</td><td>Inbox list / empty panel</td><td><span class="badge ok">OK</span></td><td>5 fils visibles</td></tr>
+<tr><td>C3</td><td>Filtres Toutes / Non lues / Groupe / Archivées</td><td><span class="badge ok">OK</span></td><td></td></tr>
+<tr><td>C4</td><td>Recherche inbox</td><td><span class="badge ok">OK</span></td><td>empty=1 match(groupe)=1</td></tr>
+<tr><td>C5</td><td>Switch multi-fils (href)</td><td><span class="badge ok">OK</span></td><td>moyenne ~169 ms</td></tr>
+<tr><td>C6</td><td>Rapid switch spam ×6</td><td><span class="badge ok">OK</span></td><td>stable</td></tr>
+<tr><td>C7</td><td>Envoi message Enter</td><td><span class="badge ok">OK</span></td><td>optimiste + persist · <span class="ms">162 ms</span></td></tr>
+<tr><td>C8</td><td>Menu ⋯ outils</td><td><span class="badge ok">OK</span></td><td>opened</td></tr>
+<tr><td>C9</td><td>Attach composer +</td><td><span class="badge ok">OK</span></td><td>🎬 Vidéo visible</td></tr>
+<tr><td>C10</td><td>Bouton RDV présent</td><td><span class="badge ok">OK</span></td><td>DM/header</td></tr>
+<tr><td>C11</td><td>Modal Nouveau chat</td><td><span class="badge ok">OK</span></td><td></td></tr>
+<tr><td>C19</td><td>Ticks delivery UI (✓ / ✓✓)</td><td><span class="badge ok">OK</span></td><td>10 marqueurs</td></tr>
+<tr><td>E1</td><td>Thread UUID invalide</td><td><span class="badge ok">OK</span></td><td>erreur claire</td></tr>
+<tr><td>C12</td><td>Viewport 390×844</td><td><span class="badge ok">OK</span></td><td>open 1208 ms · <span class="ms">1208 ms</span></td></tr>
+<tr><td>C13</td><td>Viewport 900×1200</td><td><span class="badge ok">OK</span></td><td>open 1038 ms · <span class="ms">1038 ms</span></td></tr>
+<tr><td>C14</td><td>Viewport 1440×900</td><td><span class="badge ok">OK</span></td><td>open 1100 ms · <span class="ms">1100 ms</span></td></tr>
+<tr><td>C15</td><td>C15 smoke</td><td><span class="badge ok">OK</span></td><td>open 1130 ms · <span class="ms">1130 ms</span></td></tr>
+<tr><td>C16</td><td>C16 smoke</td><td><span class="badge ok">OK</span></td><td>open 1288 ms · <span class="ms">1288 ms</span></td></tr>
+<tr><td>C17</td><td>Client /messages sans auth</td><td><span class="badge ok">OK</span></td><td>→ http://localhost:3000/login/client?redirectTo=%2Fc%2Fstudio-remi%2Fmessages</td></tr>
+<tr><td>C18</td><td>Client connecté messages + fil</td><td><span class="badge info">SKIP</span></td><td>pas de client.auth-state.json</td></tr>
+<tr><td>C20</td><td>Client scroll trackpad / ticks / no archive</td><td><span class="badge info">SKIP</span></td><td>auth client manquant</td></tr></tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Console</h2>
+    <ul>
+      <li><strong>0 errors</strong> capturés</li>
+      <li>Aucun error console applicatif majeur</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Screenshots</h2>
+    <div class="shots">
+      <figure class="shot"><img src="/qa/assets-2026-10-24-2218/qa-chat-search-desktop.png" alt="search" /><figcaption>Recherche desktop</figcaption></figure>
+      <figure class="shot"><img src="/qa/assets-2026-10-24-2218/qa-chat-thread-desktop.png" alt="thread" /><figcaption>Fil + outils</figcaption></figure>
+      <figure class="shot"><img src="/qa/assets-2026-10-24-2218/qa-chat-phone.png" alt="phone" /><figcaption>Phone 390×844</figcaption></figure>
+      <figure class="shot"><img src="/qa/assets-2026-10-24-2218/qa-chat-tablet.png" alt="tablet" /><figcaption>Tablet 900×1200</figcaption></figure>
+      <figure class="shot"><img src="/qa/assets-2026-10-24-2218/qa-chat-desktop.png" alt="desktop" /><figcaption>Desktop 1440×900</figcaption></figure>
+      <figure class="shot"><img src="/qa/assets-2026-10-24-2218/qa-chat-firefox.png" alt="firefox" /><figcaption>Firefox</figcaption></figure>
+      <figure class="shot"><img src="/qa/assets-2026-10-24-2218/qa-chat-webkit.png" alt="webkit" /><figcaption>WebKit</figcaption></figure>
+      <figure class="shot"><img src="/qa/assets-2026-10-24-2218/qa-chat-client-unauth.png" alt="client" /><figcaption>Client unauth → login</figcaption></figure>
+    </div>
+  </section>
+
+  <footer>
+    Généré 2026-10-24-2218 · Trainly QA Chat V1 · visible depuis <code>/admin/spec</code> → Coach → Chat
+  </footer>
+</main>
+</body>
+</html>

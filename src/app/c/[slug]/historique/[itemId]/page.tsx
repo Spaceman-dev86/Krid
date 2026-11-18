@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 
 import { ClientHistoryItemClient } from '../../../../../components/client-portal/ClientHistoryItemClient'
 import { ClientPortalShell } from '../../../../../components/client-portal/ClientPortalShell'
-import { requireClientPortal } from '../../../../../lib/client-portal/context'
+import { portalShellProps, requireClientPortal } from '../../../../../lib/client-portal/context'
 import {
   buildFavoriteSet,
   buildItemHistory,
@@ -97,7 +97,7 @@ export default async function ClientHistoriqueItemPage({ params }: Props) {
   }
 
   return (
-    <ClientPortalShell slug={ctx.slug} appName={ctx.appName} primaryColor={ctx.primaryColor} logoUrl={ctx.logoUrl}>
+    <ClientPortalShell {...portalShellProps(ctx)}>
       <ClientHistoryItemClient
         slug={ctx.slug}
         primaryColor={ctx.primaryColor}

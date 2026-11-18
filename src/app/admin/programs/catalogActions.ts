@@ -34,6 +34,15 @@ function revalidateCatalog(programId?: string) {
   }
 }
 
+/** Preserve ?week=&day= when setting ok/error on return_to. */
+function withQueryFlag(returnTo: string, key: 'ok' | 'error', value: string) {
+  const path = returnTo.startsWith('/') ? returnTo : `/${returnTo}`
+  const url = new URL(path, 'http://local.invalid')
+  url.searchParams.delete(key === 'ok' ? 'error' : 'ok')
+  url.searchParams.set(key, value)
+  return `${url.pathname}${url.search}`
+}
+
 /** Transitions Brouillon ↔ Review ↔ Publié (is_published syncé en SQL). */
 export async function setProgramCatalogStatusAction(formData: FormData) {
   const { supabase } = await requireAdmin()
@@ -53,13 +62,13 @@ export async function setProgramCatalogStatusAction(formData: FormData) {
     .eq('id', id)
 
   if (error) {
-    redirect(`${returnTo}?error=` + encodeURIComponent(error.message))
+    redirect(withQueryFlag(returnTo, 'error', error.message))
   }
 
   revalidateCatalog(id)
   const ok =
     status === 'published' ? 'published' : status === 'review' ? 'review' : 'draft'
-  redirect(`${returnTo.split('?')[0]}?ok=${ok}`)
+  redirect(withQueryFlag(returnTo, 'ok', ok))
 }
 
 export async function updateProgramCatalogRightsAction(formData: FormData) {
@@ -81,11 +90,11 @@ export async function updateProgramCatalogRightsAction(formData: FormData) {
     .eq('id', id)
 
   if (error) {
-    redirect(`${returnTo}?error=` + encodeURIComponent(error.message))
+    redirect(withQueryFlag(returnTo, 'error', error.message))
   }
 
   revalidateCatalog(id)
-  redirect(`${returnTo.split('?')[0]}?ok=rights`)
+  redirect(withQueryFlag(returnTo, 'ok', 'rights'))
 }
 
 /** Déplacer un programme entre catalogue Trainly et biblio coach. */
@@ -109,15 +118,17 @@ export async function setProgramTrainlyFlagAction(formData: FormData) {
 
   const { error } = await supabase.from('programs').update(patch as never).eq('id', id)
   if (error) {
-    redirect(`${returnTo}?error=` + encodeURIComponent(error.message))
+    redirect(withQueryFlag(returnTo, 'error', error.message))
   }
 
   revalidateCatalog(id)
-  const base = returnTo.split('?')[0] || '/admin/programs'
   if (trainly) {
-    redirect(`${base}?ok=to_trainly`)
+    redirect(withQueryFlag(returnTo, 'ok', 'to_trainly'))
   }
-  redirect(`${base}?view=coach&ok=to_coach`)
+  const coachTo = withQueryFlag(returnTo, 'ok', 'to_coach')
+  const coachUrl = new URL(coachTo, 'http://local.invalid')
+  coachUrl.searchParams.set('view', 'coach')
+  redirect(`${coachUrl.pathname}${coachUrl.search}`)
 }
 
 /** Soft-delete programme catalogue Trainly (corbeille). */
@@ -137,9 +148,9 @@ export async function deleteTrainlyProgramAction(formData: FormData) {
     .eq('is_trainly_catalog', true)
 
   if (error) {
-    redirect(`${returnTo}${returnTo.includes('?') ? '&' : '?'}error=` + encodeURIComponent(error.message))
+    redirect(withQueryFlag(returnTo, 'error', error.message))
   }
 
   revalidateCatalog(id)
-  redirect(`${returnTo}${returnTo.includes('?') ? '&' : '?'}ok=deleted`)
+  redirect(withQueryFlag(returnTo, 'ok', 'deleted'))
 }

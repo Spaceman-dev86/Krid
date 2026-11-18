@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
+import { safeInternalPath } from '../../../lib/navigation/safeReturnTo'
 import { createClient } from '../../../lib/supabase/server'
 
 function portalBase(slug: string) {
@@ -40,7 +41,7 @@ async function requireClientForPortal(slug: string) {
 export async function startFitnessPlanAction(formData: FormData) {
   const slug = String(formData.get('slug') ?? '').trim()
   const planId = String(formData.get('plan_id') ?? '').trim()
-  const returnTo = String(formData.get('return_to') ?? '').trim() || `${portalBase(slug)}/home`
+  const returnTo = safeInternalPath(formData.get('return_to'), `${portalBase(slug)}/home`)
 
   if (!slug || !planId) redirect(returnTo)
 
@@ -90,7 +91,7 @@ export async function startFitnessPlanAction(formData: FormData) {
 export async function pauseFitnessPlanAction(formData: FormData) {
   const slug = String(formData.get('slug') ?? '').trim()
   const planId = String(formData.get('plan_id') ?? '').trim()
-  const returnTo = String(formData.get('return_to') ?? '').trim() || `${portalBase(slug)}/home`
+  const returnTo = safeInternalPath(formData.get('return_to'), `${portalBase(slug)}/home`)
 
   if (!slug || !planId) redirect(returnTo)
 
@@ -113,7 +114,7 @@ export async function pauseFitnessPlanAction(formData: FormData) {
 export async function resumeFitnessPlanAction(formData: FormData) {
   const slug = String(formData.get('slug') ?? '').trim()
   const planId = String(formData.get('plan_id') ?? '').trim()
-  const returnTo = String(formData.get('return_to') ?? '').trim() || `${portalBase(slug)}/home`
+  const returnTo = safeInternalPath(formData.get('return_to'), `${portalBase(slug)}/home`)
 
   if (!slug || !planId) redirect(returnTo)
 
@@ -148,7 +149,7 @@ export async function resumeFitnessPlanAction(formData: FormData) {
 export async function startNutritionPlanAction(formData: FormData) {
   const slug = String(formData.get('slug') ?? '').trim()
   const planId = String(formData.get('plan_id') ?? '').trim()
-  const returnTo = String(formData.get('return_to') ?? '').trim() || `${portalBase(slug)}/home`
+  const returnTo = safeInternalPath(formData.get('return_to'), `${portalBase(slug)}/home`)
 
   if (!slug || !planId) redirect(returnTo)
 
@@ -198,7 +199,7 @@ export async function startNutritionPlanAction(formData: FormData) {
 export async function pauseNutritionPlanAction(formData: FormData) {
   const slug = String(formData.get('slug') ?? '').trim()
   const planId = String(formData.get('plan_id') ?? '').trim()
-  const returnTo = String(formData.get('return_to') ?? '').trim() || `${portalBase(slug)}/home`
+  const returnTo = safeInternalPath(formData.get('return_to'), `${portalBase(slug)}/home`)
 
   if (!slug || !planId) redirect(returnTo)
 
@@ -222,7 +223,7 @@ export async function pauseNutritionPlanAction(formData: FormData) {
 export async function resumeNutritionPlanAction(formData: FormData) {
   const slug = String(formData.get('slug') ?? '').trim()
   const planId = String(formData.get('plan_id') ?? '').trim()
-  const returnTo = String(formData.get('return_to') ?? '').trim() || `${portalBase(slug)}/home`
+  const returnTo = safeInternalPath(formData.get('return_to'), `${portalBase(slug)}/home`)
 
   if (!slug || !planId) redirect(returnTo)
 

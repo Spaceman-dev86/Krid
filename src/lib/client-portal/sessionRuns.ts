@@ -1,9 +1,17 @@
+import { UNIT_SHORT_FALLBACK } from '@/src/lib/catalog/rxPresets'
+import {
+  formatFilledPrescriptionLines,
+} from '@/src/lib/sessions/blockDetail'
+import { mapFlatRx } from '@/src/lib/sessions/materializeProgramSessionSlots'
+
 import type {
   PreviewBlockExerciseRow,
   PreviewProgramExerciseRow,
+  PreviewRxRow,
   PreviewSessionBlockRow,
   PreviewSessionItemRow,
   PreviewSessionRow,
+  PreviewUnitRow,
   ProgramPreviewStructure,
 } from '../fetchProgramPreviewStructure'
 
@@ -42,6 +50,8 @@ export type SnapshotExercise = {
   load: string | null
   tempo: string | null
   notes: string | null
+  /** Lignes Rx multi-paliers (S1 · …) — source prescriptions jsonb. */
+  rx_lines?: string[]
   demo_media_url?: string | null
 }
 
@@ -54,6 +64,7 @@ export type SnapshotBlockExercise = {
   load_text: string | null
   rest_seconds: number | null
   notes: string | null
+  rx_lines?: string[]
   demo_media_url?: string | null
 }
 
@@ -199,27 +210,97 @@ function isExerciseKind(kind: string | null | undefined): boolean {
   return k === 'exercise' || k === 'program_exercise'
 }
 
-function toSnapshotExercise(pe: PreviewProgramExerciseRow): SnapshotExercise {
+function buildUnitMaps(units: PreviewUnitRow[] | undefined) {
+  const list = units ?? []
+  const unitKeyById = new Map(list.map((u) => [u.id, u.key] as const))
+  const unitById = new Map(
+    list.map((u) => [
+      u.id,
+      { key: u.key, label: u.label, short_label: u.short_label },
+    ] as const),
+  )
+  return { unitKeyById, unitById }
+}
+
+function rxLinesFromPrescriptions(
+  prescriptions: PreviewRxRow[] | null | undefined,
+  unitById: Map<string, { key: string; label: string; short_label?: string | null }>,
+): string[] {
+  if (!prescriptions?.length || unitById.size === 0) return []
+  const lines = formatFilledPrescriptionLines(prescriptions, unitById, UNIT_SHORT_FALLBACK)
+  if (lines.length <= 1) return lines
+  return lines.map((line, i) => `S${i + 1} · ${line}`)
+}
+
+function hydratePeFromRx(
+  pe: PreviewProgramExerciseRow,
+  prescriptions: PreviewRxRow[] | null | undefined,
+  unitKeyById: Map<string, string>,
+): PreviewProgramExerciseRow {
+  const hasFlat =
+    pe.sets != null ||
+    (pe.reps != null && String(pe.reps).trim() !== '') ||
+    pe.rpe != null ||
+    Boolean(pe.load) ||
+    Boolean(pe.rest_time)
+  if (hasFlat || !prescriptions?.length || unitKeyById.size === 0) return pe
+  const flat = mapFlatRx(prescriptions, unitKeyById)
   return {
-    id: pe.id,
+    ...pe,
+    sets: flat.sets,
+    reps: flat.reps,
+    rest_time: flat.rest_time,
+    rpe: flat.rpe,
+    tempo: flat.tempo,
+    load: flat.load,
+    notes: pe.notes ?? flat.notes,
+  }
+}
+
+function toSnapshotExercise(
+  pe: PreviewProgramExerciseRow,
+  opts?: {
+    prescriptions?: PreviewRxRow[] | null
+    unitKeyById?: Map<string, string>
+    unitById?: Map<string, { key: string; label: string; short_label?: string | null }>
+  },
+): SnapshotExercise {
+  const hydrated = hydratePeFromRx(
+    pe,
+    opts?.prescriptions,
+    opts?.unitKeyById ?? new Map(),
+  )
+  const rx_lines = rxLinesFromPrescriptions(
+    opts?.prescriptions,
+    opts?.unitById ?? new Map(),
+  )
+  return {
+    id: hydrated.id,
     kind: 'exercise',
-    name: pe.exercise_library?.name ?? pe.name ?? 'Exercice',
-    exercise_id: pe.exercise_id,
-    sets: pe.sets,
-    reps: pe.reps,
-    rest_time: pe.rest_time,
-    rpe: pe.rpe,
-    load: pe.load,
-    tempo: pe.tempo,
-    notes: pe.notes,
-    demo_media_url: pe.demo_media_url ?? null,
+    name: hydrated.exercise_library?.name ?? hydrated.name ?? 'Exercice',
+    exercise_id: hydrated.exercise_id,
+    sets: hydrated.sets,
+    reps: hydrated.reps,
+    rest_time: hydrated.rest_time,
+    rpe: hydrated.rpe,
+    load: hydrated.load,
+    tempo: hydrated.tempo,
+    notes: hydrated.notes,
+    ...(rx_lines.length ? { rx_lines } : {}),
+    demo_media_url: hydrated.demo_media_url ?? null,
   }
 }
 
 function toSnapshotBlock(
   block: PreviewSessionBlockRow,
-  exercises: PreviewBlockExerciseRow[]
+  exercises: PreviewBlockExerciseRow[],
+  opts?: {
+    unitKeyById?: Map<string, string>
+    unitById?: Map<string, { key: string; label: string; short_label?: string | null }>
+  },
 ): SnapshotBlock {
+  const unitKeyById = opts?.unitKeyById ?? new Map()
+  const unitById = opts?.unitById ?? new Map()
   return {
     id: block.id,
     kind: 'block',
@@ -227,17 +308,39 @@ function toSnapshotBlock(
     type: block.type,
     notes: block.notes,
     objective: block.objective ?? null,
-    exercises: exercises.map((be) => ({
-      id: be.id,
-      name: be.exercise_library?.name ?? be.exercise_name ?? 'Exercice',
-      exercise_id: be.exercise_id,
-      sets: be.sets,
-      reps: be.reps,
-      load_text: be.load_text,
-      rest_seconds: be.rest_seconds,
-      notes: be.notes,
-      demo_media_url: be.demo_media_url ?? null,
-    })),
+    exercises: exercises.map((be) => {
+      const rx = be.prescriptions ?? []
+      const hasFlat =
+        be.sets != null ||
+        (be.reps != null && String(be.reps).trim() !== '') ||
+        be.rest_seconds != null ||
+        Boolean(be.load_text)
+      let sets = be.sets
+      let reps = be.reps
+      let load_text = be.load_text
+      let rest_seconds = be.rest_seconds
+      if (!hasFlat && rx.length && unitKeyById.size) {
+        const flat = mapFlatRx(rx, unitKeyById)
+        sets = flat.sets
+        reps = flat.reps
+        load_text = flat.load
+        const restN = flat.rest_time ? Number.parseInt(flat.rest_time, 10) : NaN
+        rest_seconds = Number.isFinite(restN) ? restN : null
+      }
+      const rx_lines = rxLinesFromPrescriptions(rx, unitById)
+      return {
+        id: be.id,
+        name: be.exercise_library?.name ?? be.exercise_name ?? 'Exercice',
+        exercise_id: be.exercise_id,
+        sets,
+        reps,
+        load_text,
+        rest_seconds,
+        notes: be.notes,
+        ...(rx_lines.length ? { rx_lines } : {}),
+        demo_media_url: be.demo_media_url ?? null,
+      }
+    }),
   }
 }
 
@@ -245,15 +348,16 @@ export function buildSessionSnapshot(
   session: PreviewSessionRow,
   structure: Pick<
     ProgramPreviewStructure,
-    'sessionItems' | 'sessionBlocks' | 'blockExercises' | 'programExercises'
-  >
+    'sessionItems' | 'sessionBlocks' | 'blockExercises' | 'programExercises' | 'units'
+  >,
 ): SessionRunSnapshot {
   const sessionItems = (structure.sessionItems as PreviewSessionItemRow[])
     .filter((i) => i.session_id === session.id)
     .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
 
+  const { unitKeyById, unitById } = buildUnitMaps(structure.units)
   const programExerciseById = new Map(
-    structure.programExercises.map((pe) => [pe.id, pe] as const)
+    structure.programExercises.map((pe) => [pe.id, pe] as const),
   )
   const blockById = new Map(structure.sessionBlocks.map((b) => [b.id, b] as const))
   const blockExercisesByBlockId = new Map<string, PreviewBlockExerciseRow[]>()
@@ -269,21 +373,29 @@ export function buildSessionSnapshot(
     const exercises = structure.programExercises
       .filter((pe) => pe.session_id === session.id)
       .sort((a, b) => (a.exercise_order ?? 0) - (b.exercise_order ?? 0))
-    for (const pe of exercises) items.push(toSnapshotExercise(pe))
+    for (const pe of exercises) items.push(toSnapshotExercise(pe, { unitKeyById, unitById }))
   } else {
     for (const item of sessionItems) {
       if (isExerciseKind(item.kind) && item.program_exercise_id) {
         const pe = programExerciseById.get(item.program_exercise_id)
-        if (pe) items.push(toSnapshotExercise(pe))
+        if (pe) {
+          items.push(
+            toSnapshotExercise(pe, {
+              prescriptions: item.prescriptions,
+              unitKeyById,
+              unitById,
+            }),
+          )
+        }
         continue
       }
       if (isBlockKind(item.kind) && item.session_block_id) {
         const block = blockById.get(item.session_block_id)
         if (block) {
-          const exos = (blockExercisesByBlockId.get(block.id) ?? []).slice().sort(
-            (a, b) => (a.position ?? 0) - (b.position ?? 0)
-          )
-          items.push(toSnapshotBlock(block, exos))
+          const exos = (blockExercisesByBlockId.get(block.id) ?? [])
+            .slice()
+            .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+          items.push(toSnapshotBlock(block, exos, { unitKeyById, unitById }))
         }
       }
     }

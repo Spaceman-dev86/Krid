@@ -7,7 +7,7 @@ import { cn } from '../../lib/cn'
  * Pastille icône ronde — DA /admin/design
  * soft = claire / charcoal · solid = fill brand
  */
-export type IconButtonTone = 'soft' | 'solid'
+export type IconButtonTone = 'soft' | 'solid' | 'ghost'
 
 type CommonProps = {
   children: ReactNode
@@ -31,6 +31,7 @@ const SIZE = {
 const TONE: Record<IconButtonTone, string> = {
   soft: 'bg-[var(--icon-soft-bg)] text-[var(--icon-soft-fg)] ring-1 ring-[var(--icon-soft-ring)]',
   solid: 'bg-[var(--icon-solid-bg)] text-[var(--icon-solid-fg)]',
+  ghost: 'bg-transparent text-[color:var(--muted)] hover:bg-[var(--accent)] hover:text-[color:var(--fg)]',
 }
 
 export default function IconButton(props: Props) {

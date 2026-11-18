@@ -3,6 +3,13 @@ import { createServerClient } from '@supabase/ssr'
 
 import { canAccessCoachApp, isPlatformAdmin } from './src/lib/auth/roles'
 
+/**
+ * Gate auth stable :
+ * - Session cookie d’abord (0 réseau) — évite faux logout si Supabase timeout
+ * - getUser() seulement si pas de session
+ * - Rôle : ne kick que si le profil a bien répondu avec un rôle non autorisé
+ *   (erreur réseau / timeout profil ≠ déconnexion)
+ */
 export async function proxy(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -30,14 +37,12 @@ export async function proxy(request: NextRequest) {
     },
   })
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
   const pathname = request.nextUrl.pathname
 
   const isClientPortalPath =
-    /^\/c\/[^/]+\/(home|profil|coach|historique|seance|programme|messages|calendrier|drive)(\/|$)/.test(pathname)
+    /^\/c\/[^/]+\/(home|profil|coach|historique|seance|programme|messages|calendrier|drive)(\/|$)/.test(
+      pathname
+    )
 
   const isCoachProgramEditor =
     pathname === '/programs/new' || /^\/programs\/[^/]+(\/|$)/.test(pathname)
@@ -47,6 +52,29 @@ export async function proxy(request: NextRequest) {
   const isCoachNutrition = pathname === '/nutrition' || pathname.startsWith('/nutrition/')
   const isCoachExercises = pathname === '/exercises' || pathname.startsWith('/exercises/')
   const isCoachDrive = pathname === '/drive' || pathname.startsWith('/drive/')
+
+  // 1) Cookie session locale (pas d’aller-retour Auth API)
+  let user: { id: string } | null = null
+  try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+    user = session?.user ?? null
+  } catch {
+    user = null
+  }
+
+  // 2) Fallback getUser seulement si cookie absent
+  if (!user) {
+    try {
+      const {
+        data: { user: u },
+      } = await supabase.auth.getUser()
+      user = u
+    } catch {
+      user = null
+    }
+  }
 
   if (!user) {
     const redirectUrl = request.nextUrl.clone()
@@ -59,13 +87,22 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(redirectUrl)
   }
 
-  const { data: profile, error } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .maybeSingle()
-
-  const role = !error ? profile?.role : null
+  // 3) Rôle — best-effort. Timeout / erreur ≠ kick.
+  let role: string | null = null
+  let profileOk = false
+  try {
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle()
+    if (!error) {
+      profileOk = true
+      role = profile?.role ?? null
+    }
+  } catch {
+    profileOk = false
+  }
 
   if (isClientPortalPath) {
     return response
@@ -86,7 +123,8 @@ export async function proxy(request: NextRequest) {
     isCoachExercises ||
     isCoachDrive
 
-  if (isCoachArea && !canAccessCoachApp(role)) {
+  // Kick coach area seulement si on a lu un rôle et qu’il est refusé
+  if (isCoachArea && profileOk && role != null && !canAccessCoachApp(role)) {
     const redirectUrl = request.nextUrl.clone()
     redirectUrl.pathname = '/login'
     redirectUrl.search = ''
@@ -100,11 +138,10 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(redirectUrl)
   }
 
-  if (pathname.startsWith('/admin') && !isPlatformAdmin(role)) {
+  if (pathname.startsWith('/admin') && profileOk && role != null && !isPlatformAdmin(role)) {
     const redirectUrl = request.nextUrl.clone()
-    redirectUrl.pathname = role ? '/home' : '/loginadmin'
-    if (!role) redirectUrl.searchParams.set('redirectTo', pathname)
-    else redirectUrl.search = ''
+    redirectUrl.pathname = '/home'
+    redirectUrl.search = ''
     return NextResponse.redirect(redirectUrl)
   }
 

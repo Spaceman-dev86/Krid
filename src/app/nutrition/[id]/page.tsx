@@ -77,7 +77,9 @@ export default async function NutritionPlanEditPage({ params, searchParams }: Pr
   const status = plan.status === 'template' ? 'template' : 'draft'
 
   return (
-    <CoachAppShell appName={shell.branding?.app_name} trialLabel={shell.trialLabel} title="Éditer plan" savUnread={shell.savUnread}>
+    <CoachAppShell appName={shell.branding?.app_name} trialLabel={shell.trialLabel} title="Éditer plan" savUnread={shell.savUnread} chatUnread={shell.chatUnread}
+      notifUnread={shell.notifUnread}
+      notifHref={shell.notifHref}>
       <div className="mx-auto grid max-w-3xl gap-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <Link href="/nutrition" className="text-sm font-semibold text-[color:var(--brand)] underline">

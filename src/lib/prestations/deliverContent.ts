@@ -1,4 +1,10 @@
-import { parseStructure } from '../nutrition/plans'
+import { ensureClientInLinkedGroup, pushNutritionToClients } from '../coach/linkedGroups'
+import { assignProgramTemplateToClient } from '../programs/createClientProgramInstance'
+import {
+  resolveDriveIds,
+  resolveNutritionIds,
+  resolveProgramIds,
+} from './contentLinks'
 
 type SupabaseLike = {
   from: (table: string) => any
@@ -32,7 +38,9 @@ export async function deliverPrestationContentOnPaid(
 
   const { data: presta } = await supabase
     .from('prestations')
-    .select('id, program_template_id, nutrition_template_id, drive_folder_id, modules')
+    .select(
+      'id, program_template_id, nutrition_template_id, drive_folder_id, program_template_ids, nutrition_template_ids, drive_folder_ids, modules',
+    )
     .eq('id', opts.prestationId)
     .eq('coach_id', opts.coachId)
     .is('deleted_at', null)
@@ -40,93 +48,56 @@ export async function deliverPrestationContentOnPaid(
 
   if (!presta) return result
 
-  if (presta.program_template_id) {
-    const { data: existing } = await supabase
-      .from('client_fitness_plans')
-      .select('id')
-      .eq('client_id', opts.clientId)
-      .eq('coach_id', opts.coachId)
-      .eq('source_program_id', presta.program_template_id)
-      .in('status', ['waiting', 'started', 'paused'])
-      .limit(1)
-      .maybeSingle()
-
-    if (!existing) {
-      const { data: program } = await supabase
-        .from('programs')
-        .select('id, is_calendar, start_date')
-        .eq('id', presta.program_template_id)
-        .eq('coach_id', opts.coachId)
-        .is('deleted_at', null)
-        .maybeSingle()
-
-      if (program) {
-        const { error } = await supabase.from('client_fitness_plans').insert({
-          client_id: opts.clientId,
-          coach_id: opts.coachId,
-          source_program_id: program.id,
-          status: 'waiting',
-          is_calendar: program.is_calendar ?? false,
-          start_date: program.start_date ?? null,
-        })
-        if (!error) result.fitnessPlanCreated = true
-      }
-    }
+  const programIds = resolveProgramIds(presta)
+  for (const programId of programIds) {
+    const assigned = await assignProgramTemplateToClient(supabase as never, {
+      coachId: opts.coachId,
+      clientId: opts.clientId,
+      templateId: programId,
+    })
+    if (assigned.ok) result.fitnessPlanCreated = true
   }
 
-  if (presta.nutrition_template_id) {
-    const { data: existing } = await supabase
-      .from('client_nutrition_plans')
-      .select('id')
-      .eq('client_id', opts.clientId)
-      .eq('coach_id', opts.coachId)
-      .eq('source_plan_id', presta.nutrition_template_id)
-      .in('status', ['waiting', 'started', 'paused'])
-      .limit(1)
-      .maybeSingle()
-
-    if (!existing) {
-      const { data: plan } = await supabase
-        .from('nutrition_plans')
-        .select('id, title, structure')
-        .eq('id', presta.nutrition_template_id)
-        .eq('coach_id', opts.coachId)
-        .is('deleted_at', null)
-        .maybeSingle()
-
-      if (plan) {
-        const { error } = await supabase.from('client_nutrition_plans').insert({
-          client_id: opts.clientId,
-          coach_id: opts.coachId,
-          source_plan_id: plan.id,
-          title: plan.title,
-          status: 'waiting',
-          snapshot: parseStructure(plan.structure),
-        })
-        if (!error) result.nutritionPlanCreated = true
-      }
-    }
+  const nutritionIds = resolveNutritionIds(presta)
+  for (const planId of nutritionIds) {
+    const { pushed } = await pushNutritionToClients(supabase, {
+      coachId: opts.coachId,
+      clientIds: [opts.clientId],
+      nutritionPlanId: planId,
+    })
+    if (pushed > 0) result.nutritionPlanCreated = true
   }
 
-  if (presta.drive_folder_id) {
+  const driveIds = resolveDriveIds(presta)
+  for (const folderId of driveIds) {
     const { data: folder } = await supabase
       .from('drive_folders')
       .select('id')
-      .eq('id', presta.drive_folder_id)
+      .eq('id', folderId)
       .eq('coach_id', opts.coachId)
       .is('deleted_at', null)
       .maybeSingle()
 
-    if (folder) {
-      const { error } = await supabase.from('drive_shares').insert({
-        coach_id: opts.coachId,
-        folder_id: folder.id,
-        client_id: opts.clientId,
-      })
-      if (!error || /duplicate|unique/i.test(error.message)) {
-        result.driveShared = true
-      }
+    if (!folder) continue
+
+    const { error } = await supabase.from('drive_shares').insert({
+      coach_id: opts.coachId,
+      folder_id: folder.id,
+      client_id: opts.clientId,
+    })
+    if (!error || /duplicate|unique/i.test(error.message)) {
+      result.driveShared = true
     }
+  }
+
+  try {
+    await ensureClientInLinkedGroup(supabase, {
+      coachId: opts.coachId,
+      clientId: opts.clientId,
+      prestationId: opts.prestationId,
+    })
+  } catch {
+    /* non-bloquant */
   }
 
   return result

@@ -1,8 +1,12 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
-import { SessionLibraryPreviewModal } from '@/src/components/admin/SessionLibraryPreviewModal'
+import {
+  prefetchCatalogPreview,
+  prefetchCatalogPreviewBatch,
+  SessionLibraryPreviewModal,
+} from '@/src/components/admin/SessionLibraryPreviewModal'
 import { IconPlus, IconSearch } from '@/src/components/ui'
 
 export type CatalogSessionPaletteItem = {
@@ -35,6 +39,7 @@ export function ProgramSessionPalette({
   const [sportId, setSportId] = useState('')
   const [typeId, setTypeId] = useState('')
   const [previewId, setPreviewId] = useState<string | null>(null)
+  const [previewNameHint, setPreviewNameHint] = useState<string | null>(null)
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase()
@@ -47,6 +52,13 @@ export function ProgramSessionPalette({
       return name.includes(needle) || notes.includes(needle)
     })
   }, [items, q, sportId, typeId])
+
+  useEffect(() => {
+    prefetchCatalogPreviewBatch(
+      'session',
+      filtered.map((it) => it.id),
+    )
+  }, [filtered])
 
   const selectClass =
     'h-7 w-full rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--page-bg)] px-1.5 text-[10px] font-semibold text-[color:var(--fg)]'
@@ -131,7 +143,13 @@ export function ProgramSessionPalette({
                     className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded text-[10px] font-bold text-[color:var(--muted)] hover:bg-[var(--accent)] hover:text-[color:var(--fg)]"
                     aria-label="Aperçu séance"
                     title="Aperçu client"
-                    onClick={() => setPreviewId(it.id)}
+                    onPointerEnter={() => prefetchCatalogPreview('session', it.id)}
+                    onFocus={() => prefetchCatalogPreview('session', it.id)}
+                    onPointerDown={() => prefetchCatalogPreview('session', it.id)}
+                    onClick={() => {
+                      setPreviewNameHint(it.name?.trim() || 'Sans titre')
+                      setPreviewId(it.id)
+                    }}
                   >
                     i
                   </button>
@@ -160,7 +178,11 @@ export function ProgramSessionPalette({
 
       <SessionLibraryPreviewModal
         sessionId={previewId}
-        onClose={() => setPreviewId(null)}
+        nameHint={previewNameHint}
+        onClose={() => {
+          setPreviewId(null)
+          setPreviewNameHint(null)
+        }}
         insertLabel={selectedTargetLabel}
         insertDisabled={addDisabled}
         onInsert={

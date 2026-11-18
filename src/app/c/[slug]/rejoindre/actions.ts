@@ -1,5 +1,7 @@
 'use server'
 
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+
 import { createServiceRoleClient } from '../../../../lib/supabase/serviceRole'
 
 type ProvisionInput = {
@@ -98,49 +100,50 @@ export async function provisionConfirmedClientUser(input: ProvisionInput): Promi
     return { ok: false, error: msg }
   }
 
-  const existing = await findAuthUserByEmail(admin, email)
-  if (!existing?.id) {
-    return { ok: false, code: 'already_exists', error: 'Un compte existe déjà pour cet email.' }
-  }
-
-  const { error: updateError } = await admin.auth.admin.updateUserById(existing.id, {
-    email_confirm: true,
-    password: input.password,
-    user_metadata: {
-      role: 'client',
-      password_set: true,
-      full_name: fullName || undefined,
-    },
-  })
-
-  if (updateError) {
-    return { ok: false, code: 'already_exists', error: updateError.message }
-  }
-
-  const now = new Date().toISOString()
-  await admin
-    .from('profiles')
-    .update({
-      role: 'client',
-      email,
-      password_set_at: now,
-      full_name: fullName || null,
-      updated_at: now,
-    } as never)
-    .eq('id', existing.id)
-
-  return { ok: true, userId: existing.id }
+  // Action publique : ne jamais modifier un compte existant (mdp / rôle) sans preuve de possession.
+  return { ok: false, code: 'already_exists', error: 'Un compte existe déjà pour cet email.' }
 }
 
-/** Confirme un compte bloqué sur « Email not confirmed » (même email + mdp saisis). */
+/**
+ * Confirme un compte bloqué sur « Email not confirmed ».
+ * GoTrue ne renvoie cette erreur qu’après validation du mot de passe : c’est la preuve de possession.
+ */
 export async function confirmClientEmailForLogin(input: {
   email: string
   password: string
 }): Promise<ProvisionResult> {
-  return provisionConfirmedClientUser({
-    email: input.email,
+  const admin = createServiceRoleClient()
+  const url = String(process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL ?? '').trim()
+  const anonKey = String(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '').trim()
+  if (!admin || !url || !anonKey) {
+    return {
+      ok: false,
+      code: 'config',
+      error: 'Configuration serveur incomplète (SUPABASE_SERVICE_ROLE_KEY).',
+    }
+  }
+
+  const email = input.email.trim().toLowerCase()
+  const anon = createSupabaseClient(url, anonKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  })
+  const { error: signInError } = await anon.auth.signInWithPassword({
+    email,
     password: input.password,
   })
+  if (!signInError || !/not confirmed/i.test(signInError.message)) {
+    return { ok: false, error: 'Email ou mot de passe incorrect.' }
+  }
+
+  const existing = await findAuthUserByEmail(admin, email)
+  if (!existing?.id) return { ok: false, error: 'Email ou mot de passe incorrect.' }
+
+  const { error: updateError } = await admin.auth.admin.updateUserById(existing.id, {
+    email_confirm: true,
+  })
+  if (updateError) return { ok: false, error: updateError.message }
+
+  return { ok: true, userId: existing.id }
 }
 
 function ageToBirthDate(age: number): string {

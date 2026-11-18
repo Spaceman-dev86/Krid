@@ -9,7 +9,7 @@ import {
 } from '@/src/components/ui'
 import { CoachAppShell } from '../../../components/coach/CoachAppShell'
 import { SettingsSubnav } from '../../../components/coach/SettingsSubnav'
-import { canAccessCoachApp } from '../../../lib/auth/roles'
+import { canAccessCoachApp, isPlatformAdmin } from '../../../lib/auth/roles'
 import { loadCoachShellContext } from '../../../lib/coach/loadCoachShellContext'
 import { createClient } from '../../../lib/supabase/server'
 import { isTrialExpired, trialDaysRemaining, TRIAL_DAYS } from '../../../lib/tenancy/ensureCoachTrial'
@@ -54,16 +54,21 @@ export default async function SettingsBillingPage() {
       appName={shell.branding?.app_name}
       trialLabel={shell.trialLabel}
       title="Abonnement"
-      savUnread={shell.savUnread}
+      savUnread={shell.savUnread} chatUnread={shell.chatUnread}
+      notifUnread={shell.notifUnread}
+      notifHref={shell.notifHref}
     >
       <div className="mx-auto grid max-w-xl gap-6">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <Eyebrow>Plateforme</Eyebrow>
-            <PageTitle className="mt-2 text-2xl">Abonnement Trainly</PageTitle>
+            <PageTitle className="mt-2 text-2xl">Abonnement Krid</PageTitle>
             <Muted className="mt-1">SaaS plateforme · ≠ paiements de tes clients</Muted>
           </div>
-          <SettingsSubnav savUnread={shell.savUnread} />
+          <SettingsSubnav
+            savUnread={shell.savUnread}
+            showAdminGateway={isPlatformAdmin(profile?.role)}
+          />
         </div>
 
         {expired ? (

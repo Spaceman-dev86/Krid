@@ -1,19 +1,7 @@
-import { redirect } from 'next/navigation'
-
-import { PageTitle, Muted, DaBanner } from '@/src/components/ui'
-import { CoachAppShell } from '../../components/coach/CoachAppShell'
+import { DaBanner, Eyebrow, Muted, PageTitle } from '@/src/components/ui'
 import { DriveBrowser } from '../../components/drive/DriveBrowser'
-import { TrainlyDriveSection } from '../../components/drive/TrainlyDriveSection'
-import { canAccessCoachApp } from '../../lib/auth/roles'
-import { clientDisplayName } from '../../lib/chat/chat'
-import { loadCoachShellContext } from '../../lib/coach/loadCoachShellContext'
-import {
-  listAllFoldersForMove,
-  listFiles,
-  listFolders,
-  listSharesForCoach,
-} from '../../lib/drive/drive'
-import { createClient } from '../../lib/supabase/server'
+import { requireCoachAppUser } from '../../lib/auth/requireCoachAppUser'
+import { loadCoachDrivePageData } from '../../lib/drive/loadCoachDrivePageData'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,118 +9,74 @@ type Props = {
   searchParams?:
     | Promise<{
         error?: string
-        created?: string
-        uploaded?: string
-        shared?: string
-        deleted?: string
-        moved?: string
-        unshared?: string
+        ok?: string
+        name?: string
+        q?: string
       }>
     | {
         error?: string
-        created?: string
-        uploaded?: string
-        shared?: string
-        deleted?: string
-        moved?: string
-        unshared?: string
+        ok?: string
+        name?: string
+        q?: string
       }
 }
 
 export default async function DriveRootPage({ searchParams }: Props) {
   const q = await Promise.resolve(searchParams ?? {})
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  const { supabase, userId } = await requireCoachAppUser()
 
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
-  if (!canAccessCoachApp(profile?.role)) redirect('/login')
-
-  const shell = await loadCoachShellContext(user.id)
-
-  let folders: Awaited<ReturnType<typeof listFolders>> = []
-  let files: Awaited<ReturnType<typeof listFiles>> = []
-  let moveTargets: Awaited<ReturnType<typeof listAllFoldersForMove>> = []
-  let sharesByFile: Awaited<ReturnType<typeof listSharesForCoach>>['byFile'] = {}
-  let sharesByFolder: Awaited<ReturnType<typeof listSharesForCoach>>['byFolder'] = {}
+  const searchNeedle = (q.q ?? '').trim()
+  let data: Awaited<ReturnType<typeof loadCoachDrivePageData>> | null = null
   let loadError: string | null = null
-
-  const { data: clients } = await supabase
-    .from('clients')
-    .select('id, first_name, last_name, email')
-    .eq('coach_id', user.id)
-    .is('deleted_at', null)
-    .neq('status', 'archived')
-    .order('first_name', { ascending: true })
-
-  const clientOpts = (clients ?? []).map((c) => ({
-    id: c.id,
-    label: clientDisplayName({
-      first_name: c.first_name,
-      last_name: c.last_name,
-      email: c.email,
-    }),
-  }))
-  const clientLabelById = new Map(clientOpts.map((c) => [c.id, c.label]))
-
   try {
-    folders = await listFolders(supabase, user.id, null)
-    files = await listFiles(supabase, user.id, null)
-    moveTargets = await listAllFoldersForMove(supabase, user.id)
-    const shares = await listSharesForCoach(supabase, user.id, clientLabelById)
-    sharesByFile = shares.byFile
-    sharesByFolder = shares.byFolder
+    data = await loadCoachDrivePageData(supabase, userId, null, searchNeedle)
   } catch (e) {
     loadError = e instanceof Error ? e.message : 'Erreur'
   }
 
-  const { data: trainlyPacks } = await supabase
-    .from('trainly_drive_library')
-    .select('id, title, description, allow_duplicate, allow_download, original_name, size_bytes')
-    .eq('published', true)
-    .order('created_at', { ascending: false })
-    .limit(50)
-
   return (
-    <CoachAppShell appName={shell.branding?.app_name} trialLabel={shell.trialLabel} title="Drive" savUnread={shell.savUnread}>
-      <div className="mx-auto grid max-w-3xl gap-5">
-        <div>
-          <PageTitle className="text-2xl">Drive</PageTitle>
-          <Muted className="mt-1">Trainly · dossiers · upload · partage client</Muted>
-        </div>
+    <div className="mx-auto grid min-w-0 max-w-4xl gap-4 pb-4 sm:gap-5 sm:pb-6">
+      <div>
+        <Eyebrow>Espace perso</Eyebrow>
+        <PageTitle className="mt-2 text-xl sm:text-2xl md:text-3xl">Drive</PageTitle>
+        <Muted className="mt-2 max-w-2xl text-[12px] leading-relaxed sm:text-[13px] md:text-sm">
+          Dossiers · upload · partage client/groupe · docs plateforme dans Documentation
+        </Muted>
+      </div>
 
-        <TrainlyDriveSection packs={trainlyPacks ?? []} />
+      {q.error || loadError ? <DaBanner tone="danger">{q.error || loadError}</DaBanner> : null}
+      {q.ok === 'recovered' ? (
+        <DaBanner tone="success">
+          Document récupéré depuis Documentation
+          {q.name ? (
+            <>
+              {' '}
+              : <span className="font-bold">{q.name}</span>
+            </>
+          ) : null}
+          . Il est à la racine du Drive (ci-dessous).
+        </DaBanner>
+      ) : null}
 
-        {q.error || loadError ? <DaBanner tone="danger">{q.error || loadError}</DaBanner> : null}
-        {q.uploaded || q.created || q.shared || q.deleted || q.moved || q.unshared ? (
-          <DaBanner tone="success">
-            {q.shared
-              ? 'Partagé avec le client.'
-              : q.unshared
-                ? 'Partage retiré.'
-                : q.uploaded
-                  ? 'Fichier(s) ajouté(s).'
-                  : q.created
-                    ? 'Dossier créé.'
-                    : q.moved
-                      ? 'Déplacé.'
-                      : 'Élément archivé.'}
-          </DaBanner>
-        ) : null}
-
+      {data ? (
         <DriveBrowser
-          folders={folders}
-          files={files}
+          folders={data.folders}
+          files={data.files}
           folderId={null}
           parentId={null}
-          clients={clientOpts}
-          moveTargets={moveTargets}
-          sharesByFile={sharesByFile}
-          sharesByFolder={sharesByFolder}
+          clients={data.clients}
+          groups={data.groups}
+          moveTargets={data.moveTargets}
+          sharesByFile={data.sharesByFile}
+          sharesByFolder={data.sharesByFolder}
+          fileCountsByFolder={data.fileCountsByFolder}
+          sizeBytesByFolder={data.sizeBytesByFolder}
+          fileNamesByFolder={data.fileNamesByFolder}
+          searchActive={false}
+          initialQuery={searchNeedle}
+          breadcrumb={data.breadcrumb}
         />
-      </div>
-    </CoachAppShell>
+      ) : null}
+    </div>
   )
 }

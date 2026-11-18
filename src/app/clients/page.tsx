@@ -1,42 +1,25 @@
 import Link from 'next/link'
+import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
 
-import { Button, PageTitle, Muted } from '@/src/components/ui'
-import { ClientsSubnav } from '../../components/coach/ClientsSubnav'
-import { CoachAppShell } from '../../components/coach/CoachAppShell'
+import { AddClientDialog } from '../../components/coach/AddClientDialog'
+import { ClientsHubHeader } from '../../components/coach/ClientsHubHeader'
+import { ClientsListFilters } from '../../components/coach/ClientsListFilters'
+import { CoachQueryFlash } from '../../components/coach/CoachQueryFlash'
 import { canAccessCoachApp } from '../../lib/auth/roles'
-import { loadCoachShellContext } from '../../lib/coach/loadCoachShellContext'
+import {
+  clientListDisplayName,
+  clientListStatusLabel,
+  loadClientsListRows,
+} from '../../lib/coach/loadClientsListRows'
 import { createClient } from '../../lib/supabase/server'
-import { createClientAction } from './actions'
-
-export const dynamic = 'force-dynamic'
-
-function displayName(c: {
-  first_name: string | null
-  last_name: string | null
-  email: string
-}) {
-  const n = [c.first_name, c.last_name].filter(Boolean).join(' ').trim()
-  return n || c.email
-}
-
-function statusLabel(status: string) {
-  switch (status) {
-    case 'invited':
-      return 'Invité'
-    case 'active':
-      return 'Actif'
-    case 'archived':
-      return 'Archivé'
-    default:
-      return status
-  }
-}
 
 export default async function ClientsPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ error?: string; archived?: string }> | { error?: string; archived?: string }
+  searchParams?:
+    | Promise<{ error?: string; archived?: string; q?: string; status?: string; presta?: string }>
+    | { error?: string; archived?: string; q?: string; status?: string; presta?: string }
 }) {
   const params = await Promise.resolve(searchParams ?? {})
   const supabase = await createClient()
@@ -48,100 +31,131 @@ export default async function ClientsPage({
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
   if (!canAccessCoachApp(profile?.role)) redirect('/login')
 
-  const shell = await loadCoachShellContext(user.id)
+  let rows: Awaited<ReturnType<typeof loadClientsListRows>> = []
+  let loadError: string | null = null
+  try {
+    rows = await loadClientsListRows(supabase, user.id)
+  } catch (e) {
+    loadError = e instanceof Error ? e.message : 'Erreur chargement'
+  }
 
-  const { data: clients, error } = await supabase
-    .from('clients')
-    .select('id, email, first_name, last_name, phone, status, is_demo, created_at')
+  const { data: prestations } = await supabase
+    .from('prestations')
+    .select('id, name')
     .eq('coach_id', user.id)
+    .eq('status', 'active')
     .is('deleted_at', null)
-    .order('created_at', { ascending: false })
+    .order('name', { ascending: true })
+
+  const q = (params.q ?? '').trim().toLowerCase()
+  const statusFilter = params.status ?? ''
+  const prestaFilter = params.presta ?? ''
+
+  const filtered = rows
+    .filter((c) => {
+      if (statusFilter && c.status !== statusFilter) return false
+      if (prestaFilter && !c.prestationIds.includes(prestaFilter)) return false
+      if (q) {
+        const hay = `${clientListDisplayName(c)} ${c.email}`.toLowerCase()
+        if (!hay.includes(q)) return false
+      }
+      return true
+    })
+    .sort((a, b) => {
+      // Actifs en tête, puis dernière séance la plus récente
+      const aActive = a.status === 'active' ? 0 : 1
+      const bActive = b.status === 'active' ? 0 : 1
+      if (aActive !== bActive) return aActive - bActive
+      const aT = a.lastSessionAt ? new Date(a.lastSessionAt).getTime() : 0
+      const bT = b.lastSessionAt ? new Date(b.lastSessionAt).getTime() : 0
+      if (bT !== aT) return bT - aT
+      return clientListDisplayName(a).localeCompare(clientListDisplayName(b), 'fr')
+    })
 
   return (
-    <CoachAppShell appName={shell.branding?.app_name} trialLabel={shell.trialLabel} title="Clients" savUnread={shell.savUnread}>
-      <div className="mx-auto grid max-w-4xl gap-6">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <PageTitle className="text-2xl">Clients</PageTitle>
-            <Muted className="mt-1">CRM multi-tenant · {clients?.length ?? 0} client{(clients?.length ?? 0) > 1 ? 's' : ''}</Muted>
-          </div>
-          <ClientsSubnav />
-        </div>
+    <>
+      <Suspense fallback={null}>
+        <CoachQueryFlash
+          overrides={{
+            archived: { tone: 'success', message: 'Client archivé' },
+            created: { tone: 'success', message: 'Client créé' },
+          }}
+        />
+      </Suspense>
 
-        {params.error ? (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-            {params.error === 'email' ? 'Email invalide.' : params.error}
-          </div>
-        ) : null}
-        {params.archived ? (
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-            Client archivé.
-          </div>
-        ) : null}
-        {error ? (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{error.message}</div>
+      <div className="mx-auto grid max-w-5xl gap-5 sm:gap-6">
+        <ClientsHubHeader
+          title="Clients"
+          subtitle={
+            <>
+              {filtered.length}
+              {filtered.length !== rows.length ? ` / ${rows.length}` : ''} client
+              {filtered.length > 1 ? 's' : ''}
+            </>
+          }
+          actions={<AddClientDialog />}
+        />
+
+        {loadError ? (
+          <p className="text-sm font-semibold text-[var(--danger)]">{loadError}</p>
         ) : null}
 
-        <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-da-sm">
-          <h2 className="text-sm font-extrabold uppercase tracking-wide text-[color:var(--brand)]">Ajouter un client</h2>
-          <form action={createClientAction} className="mt-4 grid gap-3 sm:grid-cols-2">
-            <label className="grid gap-1 text-sm sm:col-span-2">
-              <span className="font-semibold">Email *</span>
-              <input
-                name="email"
-                type="email"
-                required
-                placeholder="client@email.com"
-                className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2"
-              />
-            </label>
-            <label className="grid gap-1 text-sm">
-              <span className="font-semibold">Prénom</span>
-              <input name="first_name" className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2" />
-            </label>
-            <label className="grid gap-1 text-sm">
-              <span className="font-semibold">Nom</span>
-              <input name="last_name" className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2" />
-            </label>
-            <label className="grid gap-1 text-sm sm:col-span-2">
-              <span className="font-semibold">Téléphone</span>
-              <input name="phone" className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2" />
-            </label>
-            <div className="sm:col-span-2">
-              <Button type="submit" className="!rounded-lg !px-4 !py-2 text-sm font-bold">Créer</Button>
-            </div>
-          </form>
-        </section>
+        <Suspense fallback={null}>
+          <ClientsListFilters
+            prestations={(prestations ?? []).map((p) => ({ id: p.id, name: p.name }))}
+          />
+        </Suspense>
 
         <section className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-da-sm">
           <div className="border-b border-[var(--border)] bg-[var(--surface)] px-5 py-3">
             <h2 className="text-sm font-extrabold uppercase tracking-wide text-[color:var(--brand)]">Liste</h2>
           </div>
-          {!clients?.length ? (
-            <p className="px-5 py-8 text-sm text-[color:var(--muted)]">Aucun client pour l’instant.</p>
+          {!filtered.length ? (
+            <p className="px-5 py-8 text-sm text-[color:var(--muted)]">
+              {rows.length ? 'Aucun client ne correspond aux filtres.' : 'Aucun client pour l’instant. Utilise + pour en ajouter.'}
+            </p>
           ) : (
-            <ul className="divide-y divide-[var(--border)]">
-              {clients.map((c) => (
-                <li key={c.id}>
-                  <Link
-                    href={`/clients/${c.id}`}
-                    className="flex flex-wrap items-center justify-between gap-2 px-5 py-3 hover:bg-[color-mix(in_srgb,var(--brand)_6%,transparent)]"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate font-semibold text-[color:var(--brand)]">{displayName(c)}</p>
-                      <p className="truncate text-xs text-[color:var(--muted)]">{c.email}</p>
-                    </div>
-                    <span className="rounded-full bg-[var(--accent)] px-2.5 py-1 text-[11px] font-semibold text-[color:var(--muted)]">
-                      {statusLabel(c.status)}
-                      {c.is_demo ? ' · démo' : ''}
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[640px] text-left text-sm">
+                <thead>
+                  <tr className="border-b border-[var(--border)] text-[11px] font-extrabold uppercase tracking-wide text-[color:var(--muted)]">
+                    <th className="px-5 py-2.5 font-extrabold">Client</th>
+                    <th className="px-3 py-2.5 font-extrabold">Prestation(s)</th>
+                    <th className="px-3 py-2.5 font-extrabold">Dernier bilan</th>
+                    <th className="px-3 py-2.5 font-extrabold">Dernière séance</th>
+                    <th className="px-5 py-2.5 font-extrabold">Statut</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[var(--border)]">
+                  {filtered.map((c) => (
+                    <tr key={c.id} className="hover:bg-[color-mix(in_srgb,var(--brand)_6%,transparent)]">
+                      <td className="px-5 py-3">
+                        <Link href={`/clients/${c.id}`} className="block min-w-0">
+                          <p className="truncate font-semibold text-[color:var(--brand)]">
+                            {clientListDisplayName(c)}
+                          </p>
+                          <p className="truncate text-xs text-[color:var(--muted)]">{c.email}</p>
+                        </Link>
+                      </td>
+                      <td className="px-3 py-3 text-[color:var(--fg)]">
+                        {c.prestationNames.length ? c.prestationNames.join(' · ') : '—'}
+                      </td>
+                      <td className="px-3 py-3 text-[color:var(--fg)]">{c.lastBilanLabel}</td>
+                      <td className="px-3 py-3 text-[color:var(--muted)]">{c.lastSessionLabel}</td>
+                      <td className="px-5 py-3">
+                        <span className="rounded-full bg-[var(--accent)] px-2.5 py-1 text-[11px] font-semibold text-[color:var(--muted)]">
+                          {clientListStatusLabel(c.status)}
+                          {c.is_demo ? ' · démo' : ''}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </section>
       </div>
-    </CoachAppShell>
+    </>
   )
 }

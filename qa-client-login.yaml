@@ -1,0 +1,14 @@
+- generic [active] [ref=e1]:
+  - main [ref=e2]:
+    - generic [ref=e6]:
+      - generic [ref=e7]:
+        - heading "Connexion client" [level=1] [ref=e8]
+        - paragraph [ref=e9]
+      - generic [ref=e12]:
+        - generic [ref=e13]
+        - generic [ref=e16]
+        - button "Se connecter" [ref=e19]
+        - link "Mot de passe oublié ?" [ref=e21] [cursor=pointer]:
+          - /url: /auth/forgot-password?audience=client
+  - button "Open Next.js Dev Tools" [ref=e27] [cursor=pointer]
+  - alert [ref=e31]

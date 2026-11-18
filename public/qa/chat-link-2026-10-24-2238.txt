@@ -1,0 +1,10 @@
+# Chat link QA 2026-10-24-2238
+[OK] Client inbox
+[OK] Thread DM — 85f8789a-ca29-4da6-b92c-8989abb7be74 | RS
+[OK] Coach même thread — 85f8789a-ca29-4da6-b92c-8989abb7be74
+[OK] Realtime Coach→Client — 5039 ms
+[OK] Realtime Client→Coach — 3019 ms
+[OK] Ticks coach — Lu=14 Reçu=0
+[OK] Pas de filtre Archivées — count=0
+
+Assets: /qa/assets-link-2026-10-24-2238/

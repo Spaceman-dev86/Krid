@@ -99,6 +99,7 @@ function revalidateAfterPay(slug: string, clientId: string) {
   revalidatePath('/payments')
   revalidatePath('/payments/suivi-clients')
   revalidatePath(`/clients/${clientId}`)
+  revalidatePath('/profile/codes')
   revalidatePath('/clients/codes')
   revalidatePath('/programs')
   revalidatePath('/nutrition')

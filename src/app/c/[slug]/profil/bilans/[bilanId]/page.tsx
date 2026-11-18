@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
 import { ClientPortalShell } from '../../../../../../components/client-portal/ClientPortalShell'
-import { requireClientPortal } from '../../../../../../lib/client-portal/context'
+import { portalShellProps, requireClientPortal } from '../../../../../../lib/client-portal/context'
 import {
   getInstance,
   isClientEditable,
@@ -72,7 +72,7 @@ export default async function ClientBilanDetailPage({ params, searchParams }: Pr
   )
 
   return (
-    <ClientPortalShell slug={ctx.slug} appName={ctx.appName} primaryColor={ctx.primaryColor} logoUrl={ctx.logoUrl}>
+    <ClientPortalShell {...portalShellProps(ctx)}>
       <div className="grid gap-5">
         <div>
           <Link

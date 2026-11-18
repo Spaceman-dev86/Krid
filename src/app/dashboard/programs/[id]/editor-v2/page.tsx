@@ -1,11 +1,10 @@
 import { redirect } from 'next/navigation'
 
-type PageProps = {
-  params: Promise<{ id: string }>
-}
+export const dynamic = 'force-dynamic'
 
-/** Ancienne URL — redirige vers l’éditeur principal. */
-export default async function ProgramEditorV2LegacyRouteRedirect({ params }: PageProps) {
-  const { id } = await params
-  redirect(`/dashboard/programs/${id}`)
+type Props = { params: Promise<{ id: string }> | { id: string } }
+
+export default async function LegacyDashboardProgramEditorPage({ params }: Props) {
+  const { id } = await Promise.resolve(params)
+  redirect(`/programs/${id}`)
 }

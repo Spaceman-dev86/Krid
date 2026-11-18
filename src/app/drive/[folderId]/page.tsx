@@ -1,19 +1,10 @@
 import { redirect } from 'next/navigation'
 
-import { PageTitle, Muted } from '@/src/components/ui'
-import { CoachAppShell } from '../../../components/coach/CoachAppShell'
+import { DaBanner, Eyebrow, Muted } from '@/src/components/ui'
 import { DriveBrowser } from '../../../components/drive/DriveBrowser'
-import { canAccessCoachApp } from '../../../lib/auth/roles'
-import { clientDisplayName } from '../../../lib/chat/chat'
-import { loadCoachShellContext } from '../../../lib/coach/loadCoachShellContext'
-import {
-  getFolder,
-  listAllFoldersForMove,
-  listFiles,
-  listFolders,
-  listSharesForCoach,
-} from '../../../lib/drive/drive'
-import { createClient } from '../../../lib/supabase/server'
+import { DriveRenameControl } from '../../../components/drive/DriveRenameControl'
+import { requireCoachAppUser } from '../../../lib/auth/requireCoachAppUser'
+import { loadCoachDrivePageData } from '../../../lib/drive/loadCoachDrivePageData'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,118 +13,66 @@ type Props = {
   searchParams?:
     | Promise<{
         error?: string
-        created?: string
-        uploaded?: string
-        shared?: string
-        deleted?: string
-        moved?: string
-        unshared?: string
+        q?: string
       }>
     | {
         error?: string
-        created?: string
-        uploaded?: string
-        shared?: string
-        deleted?: string
-        moved?: string
-        unshared?: string
+        q?: string
       }
 }
 
 export default async function DriveFolderPage({ params, searchParams }: Props) {
   const { folderId } = await Promise.resolve(params)
   const q = await Promise.resolve(searchParams ?? {})
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  const { supabase, userId } = await requireCoachAppUser()
 
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
-  if (!canAccessCoachApp(profile?.role)) redirect('/login')
-
-  const shell = await loadCoachShellContext(user.id)
-  const folder = await getFolder(supabase, folderId)
-  if (!folder || folder.coach_id !== user.id) {
-    redirect('/drive?error=' + encodeURIComponent('Dossier introuvable'))
-  }
-
-  const { data: clients } = await supabase
-    .from('clients')
-    .select('id, first_name, last_name, email')
-    .eq('coach_id', user.id)
-    .is('deleted_at', null)
-    .neq('status', 'archived')
-
-  const clientOpts = (clients ?? []).map((c) => ({
-    id: c.id,
-    label: clientDisplayName({
-      first_name: c.first_name,
-      last_name: c.last_name,
-      email: c.email,
-    }),
-  }))
-  const clientLabelById = new Map(clientOpts.map((c) => [c.id, c.label]))
-
-  let folders: Awaited<ReturnType<typeof listFolders>> = []
-  let files: Awaited<ReturnType<typeof listFiles>> = []
-  let moveTargets: Awaited<ReturnType<typeof listAllFoldersForMove>> = []
-  let sharesByFile: Awaited<ReturnType<typeof listSharesForCoach>>['byFile'] = {}
-  let sharesByFolder: Awaited<ReturnType<typeof listSharesForCoach>>['byFolder'] = {}
-
+  const searchNeedle = (q.q ?? '').trim()
+  let data: Awaited<ReturnType<typeof loadCoachDrivePageData>>
   try {
-    folders = await listFolders(supabase, user.id, folderId)
-    files = await listFiles(supabase, user.id, folderId)
-    moveTargets = await listAllFoldersForMove(supabase, user.id)
-    const shares = await listSharesForCoach(supabase, user.id, clientLabelById)
-    sharesByFile = shares.byFile
-    sharesByFolder = shares.byFolder
+    data = await loadCoachDrivePageData(supabase, userId, folderId, searchNeedle)
   } catch (e) {
     redirect('/drive?error=' + encodeURIComponent(e instanceof Error ? e.message : 'Erreur'))
   }
 
+  const folder = data.folder!
   return (
-    <CoachAppShell appName={shell.branding?.app_name} trialLabel={shell.trialLabel} title={folder.name} savUnread={shell.savUnread}>
-      <div className="mx-auto grid max-w-3xl gap-5">
-        <div>
-          <PageTitle className="text-2xl">{folder.name}</PageTitle>
-          <Muted className="mt-1">Dossier Drive</Muted>
+    <div className="mx-auto grid min-w-0 max-w-4xl gap-4 pb-4 sm:gap-5 sm:pb-6">
+      <div>
+        <Eyebrow>Drive</Eyebrow>
+        <div className="mt-2 flex min-w-0 items-center gap-2">
+          <DriveRenameControl
+            kind="folder"
+            id={folder.id}
+            name={folder.name}
+            listFolderId={folder.id}
+            size="lg"
+          />
         </div>
-
-        {q.error ? (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
-            {q.error}
-          </div>
-        ) : null}
-        {q.uploaded || q.created || q.shared || q.deleted || q.moved || q.unshared ? (
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-            {q.shared
-              ? 'Partagé avec le client.'
-              : q.unshared
-                ? 'Partage retiré.'
-                : q.uploaded
-                  ? 'Fichier(s) ajouté(s).'
-                  : q.created
-                    ? 'Dossier créé — tu es dedans.'
-                    : q.moved
-                      ? 'Déplacé.'
-                      : 'Élément archivé.'}
-          </div>
-        ) : null}
-
-        <DriveBrowser
-          folders={folders}
-          files={files}
-          folderId={folderId}
-          parentId={folder.parent_id}
-          folderName={folder.name}
-          clients={clientOpts}
-          moveTargets={moveTargets}
-          sharesByFile={sharesByFile}
-          sharesByFolder={sharesByFolder}
-          breadcrumb={[{ id: null, name: 'Drive' }]}
-        />
+        <Muted className="mt-2 text-[12px] leading-relaxed sm:text-[13px] md:text-sm">
+          Dossier · fichiers · partage client/groupe
+        </Muted>
       </div>
-    </CoachAppShell>
+
+      {q.error ? <DaBanner tone="danger">{q.error}</DaBanner> : null}
+
+      <DriveBrowser
+        folders={data.folders}
+        files={data.files}
+        folderId={folderId}
+        parentId={folder.parent_id}
+        folderName={folder.name}
+        clients={data.clients}
+        groups={data.groups}
+        moveTargets={data.moveTargets}
+        sharesByFile={data.sharesByFile}
+        sharesByFolder={data.sharesByFolder}
+        fileCountsByFolder={data.fileCountsByFolder}
+        sizeBytesByFolder={data.sizeBytesByFolder}
+        fileNamesByFolder={data.fileNamesByFolder}
+        searchActive={false}
+        initialQuery={searchNeedle}
+        breadcrumb={data.breadcrumb}
+      />
+    </div>
   )
 }

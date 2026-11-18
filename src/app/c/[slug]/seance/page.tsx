@@ -2,7 +2,7 @@ import Link from 'next/link'
 
 import { ClientPortalShell } from '../../../../components/client-portal/ClientPortalShell'
 import { ClientProgramSessionsList } from '../../../../components/client-portal/ClientProgramSessionsList'
-import { requireClientPortal } from '../../../../lib/client-portal/context'
+import { portalShellProps, requireClientPortal } from '../../../../lib/client-portal/context'
 import {
   isActivePlanStatus,
   pickActiveFitnessPlan,
@@ -99,7 +99,7 @@ export default async function ClientSeancePage({ params, searchParams }: Props) 
     : null
 
   return (
-    <ClientPortalShell slug={ctx.slug} appName={ctx.appName} primaryColor={ctx.primaryColor} logoUrl={ctx.logoUrl}>
+    <ClientPortalShell {...portalShellProps(ctx)}>
       <div className="grid gap-5">
         <div>
           <h1 className="text-2xl font-extrabold" style={{ color: ctx.primaryColor }}>

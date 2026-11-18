@@ -1,6 +1,14 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+} from 'react'
 
 import { BlockTimerDialog } from '@/src/components/admin/BlockTimerDialog'
 import { CreateUnitDialog } from '@/src/components/admin/CreateUnitDialog'
@@ -8,7 +16,12 @@ import {
   PrescriptionListSelect,
   PrescriptionValueControl,
 } from '@/src/components/admin/PrescriptionValueControl'
-import { daFieldClass, daSelectClass } from '@/src/components/ui'
+import {
+  CompositionInsertMarker,
+  useCompositionDndEnabled,
+  useCompositionLongPressReorder,
+} from '@/src/components/admin/useCompositionLongPressReorder'
+import { IconGrip, IconTrash, daFieldClass, daSelectClass } from '@/src/components/ui'
 import {
   unitIsTextLocked,
   type ExercisePrescription,
@@ -119,6 +132,9 @@ function ExoRow({
   onMove,
   onChangePrescriptions,
   onRequestCreateUnit,
+  reorderProps,
+  handleProps,
+  showHandle,
 }: {
   slot: Slot
   index: number
@@ -129,6 +145,20 @@ function ExoRow({
   onMove: (dir: -1 | 1) => void
   onChangePrescriptions: (next: ExercisePrescription[]) => void
   onRequestCreateUnit: (prescriptionIdx: number) => void
+  reorderProps: {
+    'data-composition-reorder': string
+    className: string
+  }
+  handleProps?: {
+    'data-composition-drag-handle'?: string
+    onPointerDown?: (e: ReactPointerEvent<HTMLElement>) => void
+    className: string
+    title?: string
+    'aria-label'?: string
+    role?: 'button'
+    tabIndex?: number
+  }
+  showHandle?: boolean
 }) {
   function updateRow(idx: number, patch: Partial<ExercisePrescription>) {
     onChangePrescriptions(
@@ -164,26 +194,36 @@ function ExoRow({
   ]
 
   return (
-    <li className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--page-bg)] p-2.5">
+    <li
+      data-composition-reorder={reorderProps['data-composition-reorder']}
+      className={`rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--page-bg)] p-2.5 transition ${reorderProps.className}`}
+    >
       <div className="flex items-start gap-2">
-        <div className="flex shrink-0 flex-col gap-0.5 pt-0.5">
+        {showHandle && handleProps ? (
+          <span {...handleProps} className={`${handleProps.className} mt-0.5`}>
+            <IconGrip size={16} />
+          </span>
+        ) : null}
+        <div className="flex shrink-0 flex-col pt-0.5 max-[767px]:hidden" data-no-reorder="">
           <button
             type="button"
             disabled={index === 0}
             onClick={() => onMove(-1)}
-            className="h-6 w-7 rounded text-[11px] font-bold text-[color:var(--fg)] ring-1 ring-[var(--border)] hover:bg-[var(--accent)] disabled:opacity-30"
+            className="inline-flex h-3.5 w-6 items-center justify-center text-[9px] leading-none text-[color:var(--muted)] hover:text-[color:var(--fg)] disabled:opacity-30 max-[1099px]:h-6 max-[1099px]:w-10 max-[1099px]:text-[13px]"
+            title="Monter"
             aria-label="Monter"
           >
-            ↑
+            ▲
           </button>
           <button
             type="button"
             disabled={index >= total - 1}
             onClick={() => onMove(1)}
-            className="h-6 w-7 rounded text-[11px] font-bold text-[color:var(--fg)] ring-1 ring-[var(--border)] hover:bg-[var(--accent)] disabled:opacity-30"
+            className="inline-flex h-3.5 w-6 items-center justify-center text-[9px] leading-none text-[color:var(--muted)] hover:text-[color:var(--fg)] disabled:opacity-30 max-[1099px]:h-6 max-[1099px]:w-10 max-[1099px]:text-[13px]"
+            title="Descendre"
             aria-label="Descendre"
           >
-            ↓
+            ▼
           </button>
         </div>
 
@@ -196,9 +236,12 @@ function ExoRow({
             <button
               type="button"
               onClick={onRemove}
-              className="shrink-0 text-[11px] font-semibold text-red-500 hover:underline"
+              data-no-reorder=""
+              className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--radius-sm)] text-[color:var(--muted)] hover:bg-[var(--accent)] hover:text-[var(--danger)] max-[1099px]:h-11 max-[1099px]:w-11"
+              title="Retirer"
+              aria-label="Retirer"
             >
-              Retirer
+              <IconTrash size={14} />
             </button>
           </div>
 
@@ -208,11 +251,17 @@ function ExoRow({
                 const kind = prescriptionUiKind(unit.key, unit.value_mode)
                 const listOpts = listOptionsForUnit(unit)
                 return (
-                  <div key={key} className="flex min-w-0 items-center gap-0">
-                    <span className="mr-1 shrink-0 text-[9px] font-bold uppercase tracking-wide text-[color:var(--muted)]">
+                  <div
+                    key={key}
+                    className="flex min-w-0 items-center gap-0 max-[767px]:grid max-[767px]:grid-cols-[3.5rem_minmax(0,1fr)] max-[767px]:gap-x-1.5"
+                  >
+                    <span
+                      className="mr-1 shrink-0 text-[9px] font-bold uppercase tracking-wide text-[color:var(--muted)] max-[767px]:mr-0 max-[767px]:truncate max-[767px]:text-center"
+                      title={unitShortLabel(unit)}
+                    >
                       {unitShortLabel(unit)}
                     </span>
-                    <div className="min-w-0 flex-1">
+                    <div className="min-w-0 flex-1 max-[767px]:flex-none">
                       {kind === 'list' ? (
                         <PrescriptionListSelect
                           value={row.value}
@@ -309,7 +358,7 @@ function ExoRow({
 
                   <button
                     type="button"
-                    className="inline-flex h-9 w-7 shrink-0 items-center justify-center text-sm font-semibold text-red-500 hover:bg-[var(--accent)]"
+                    className="inline-flex h-9 w-7 shrink-0 items-center justify-center text-base font-semibold text-red-500 hover:bg-[var(--accent)] max-[1099px]:h-11 max-[1099px]:w-11"
                     aria-label="Retirer l’unité"
                     onClick={() =>
                       onChangePrescriptions(slot.prescriptions.filter((_, i) => i !== idx))
@@ -374,11 +423,27 @@ export function BlockFicheEditor({
     parseTimerConfig(initial.timer_note),
   )
   const [timerOpen, setTimerOpen] = useState(false)
+  const exoListRef = useRef<HTMLUListElement>(null)
+  const compositionDndEnabled = useCompositionDndEnabled()
+  const canDragExoKey = useCallback(() => true, [])
+  const {
+    getItemProps: getExoReorderProps,
+    getHandleProps: getExoHandleProps,
+    showInsertMarkerAt: showExoInsertAt,
+    showHandles: showExoHandles,
+  } = useCompositionLongPressReorder({
+    enabled: compositionDndEnabled,
+    items: slots,
+    onReorder: setSlots,
+    canDragKey: canDragExoKey,
+    listRef: exoListRef,
+  })
   const [filterSportId, setFilterSportId] = useState('')
   const [filterTypeId, setFilterTypeId] = useState('')
   const [q, setQ] = useState('')
   const [searchOpen, setSearchOpen] = useState(false)
   const searchWrapRef = useRef<HTMLDivElement>(null)
+  const resultsRef = useRef<HTMLUListElement>(null)
 
   useEffect(() => {
     setUnitsState((prev) => {
@@ -444,6 +509,14 @@ export function BlockFicheEditor({
   const showSearchList =
     searchOpen && (q.trim().length > 0 || Boolean(filterSportId) || Boolean(filterTypeId))
 
+  useEffect(() => {
+    if (!showSearchList) return
+    window.requestAnimationFrame(() => {
+      searchWrapRef.current?.scrollIntoView({ behavior: 'auto', block: 'nearest' })
+      resultsRef.current?.scrollTo({ top: 0 })
+    })
+  }, [showSearchList, q, filterSportId, filterTypeId])
+
   function addExo(exerciseId: string) {
     setSlots((prev) => {
       const next = [
@@ -488,7 +561,7 @@ export function BlockFicheEditor({
         <input name="name" required defaultValue={initial.name ?? ''} className={daFieldClass} />
       </label>
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid items-start gap-3 sm:grid-cols-2">
         <label className="grid gap-1">
           <span className="text-xs font-semibold text-[color:var(--muted)]">Sport *</span>
           <select
@@ -520,7 +593,7 @@ export function BlockFicheEditor({
 
         <label className="grid gap-1">
           <span className="text-xs font-semibold text-[color:var(--muted)]">
-            Résultat attendu *
+            Résultat que le client saisit en fin de bloc *
           </span>
           <select
             name="expected_result_unit_id"
@@ -537,9 +610,6 @@ export function BlockFicheEditor({
               </option>
             ))}
           </select>
-          <span className="text-[11px] text-[color:var(--muted)]">
-            Score que le client saisit en fin de bloc (ex. rounds, temps, reps).
-          </span>
         </label>
       </div>
 
@@ -584,57 +654,64 @@ export function BlockFicheEditor({
 
       {/* Exos — centre */}
       <section className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-da-sm">
-        <div className="mb-2 flex items-baseline justify-between gap-2">
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--muted)]">
             Exercices ({slots.length}){requireComplete ? ' *' : ''}
           </p>
-          {inheritedTypes.length ? (
-            <div className="flex flex-wrap justify-end gap-1">
-              {inheritedTypes.map((t) => (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() =>
-                    setHiddenTypeIds((prev) =>
-                      prev.includes(t.id) ? prev.filter((x) => x !== t.id) : [...prev, t.id],
-                    )
-                  }
-                  className={`rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 ${
-                    t.hidden
-                      ? 'bg-[var(--accent)] text-[color:var(--muted)] ring-[var(--border)] line-through opacity-70'
-                      : 'bg-[var(--brand)] text-[var(--brand-fg)] ring-[var(--border)]'
-                  }`}
-                  title={t.hidden ? 'Réafficher le type' : 'Masquer le type'}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
-          ) : null}
+          <div className="flex min-w-0 flex-wrap items-center justify-end gap-1.5">
+            <span className="text-[11px] font-semibold text-[color:var(--brand)]">
+              Le type de bloc est indexé sur les exercices ajoutés
+            </span>
+            {inheritedTypes.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() =>
+                  setHiddenTypeIds((prev) =>
+                    prev.includes(t.id) ? prev.filter((x) => x !== t.id) : [...prev, t.id],
+                  )
+                }
+                className={`rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 ${
+                  t.hidden
+                    ? 'bg-[var(--accent)] text-[color:var(--muted)] ring-[var(--border)] line-through opacity-70'
+                    : 'bg-[var(--brand)] text-[var(--brand-fg)] ring-[var(--border)]'
+                }`}
+                title={t.hidden ? 'Réafficher le type' : 'Masquer le type'}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <ul className="space-y-2">
+        <ul ref={exoListRef} className="space-y-2">
           {selected.map(({ slot, exo }, index) => (
-            <ExoRow
-              key={slot.key}
-              slot={slot}
-              index={index}
-              total={slots.length}
-              name={exo.name}
-              units={unitsState}
-              onRemove={() => setSlots((prev) => prev.filter((s) => s.key !== slot.key))}
-              onMove={(dir) => moveSlot(slot.key, dir)}
-              onChangePrescriptions={(prescriptions) =>
-                setSlots((prev) =>
-                  prev.map((s) => (s.key === slot.key ? { ...s, prescriptions } : s)),
-                )
-              }
-              onRequestCreateUnit={(idx) => {
-                setCreateUnitTarget({ slotKey: slot.key, idx })
-                setCreateUnitOpen(true)
-              }}
-            />
+            <Fragment key={slot.key}>
+              {showExoInsertAt(index) ? <CompositionInsertMarker /> : null}
+              <ExoRow
+                slot={slot}
+                index={index}
+                total={slots.length}
+                name={exo.name}
+                units={unitsState}
+                onRemove={() => setSlots((prev) => prev.filter((s) => s.key !== slot.key))}
+                onMove={(dir) => moveSlot(slot.key, dir)}
+                onChangePrescriptions={(prescriptions) =>
+                  setSlots((prev) =>
+                    prev.map((s) => (s.key === slot.key ? { ...s, prescriptions } : s)),
+                  )
+                }
+                onRequestCreateUnit={(idx) => {
+                  setCreateUnitTarget({ slotKey: slot.key, idx })
+                  setCreateUnitOpen(true)
+                }}
+                reorderProps={getExoReorderProps(slot.key)}
+                handleProps={getExoHandleProps(slot.key)}
+                showHandle={showExoHandles}
+              />
+            </Fragment>
           ))}
+          {showExoInsertAt(slots.length) ? <CompositionInsertMarker /> : null}
           {!slots.length ? (
             <li className="rounded-[var(--radius-md)] border border-dashed border-[var(--border)] py-8 text-center text-[12px] text-[color:var(--muted)]">
               Ajoute des exercices via la recherche ci-dessous
@@ -642,7 +719,7 @@ export function BlockFicheEditor({
           ) : null}
         </ul>
 
-        <div ref={searchWrapRef} className="relative mt-3 grid gap-2">
+        <div ref={searchWrapRef} className="mt-3 grid gap-2">
           <div className="grid gap-2 sm:grid-cols-2">
             <label className="grid gap-1">
               <span className="text-[11px] font-semibold text-[color:var(--muted)]">Sport</span>
@@ -695,30 +772,43 @@ export function BlockFicheEditor({
             placeholder="Rechercher un exercice…"
             className={`${daFieldClass} w-full`}
             autoComplete="off"
+            enterKeyHint="search"
           />
           {showSearchList ? (
-            <ul className="absolute inset-x-0 top-full z-20 mt-1 max-h-56 overflow-y-auto rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] shadow-da-md">
-              {searchHits.map((c) => (
-                <li key={c.id}>
-                  <button
-                    type="button"
-                    className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left hover:bg-[var(--accent)]"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => addExo(c.id)}
-                  >
-                    <span className="truncate text-sm font-semibold text-[color:var(--fg)]">
-                      {c.name}
-                    </span>
-                    <span className="shrink-0 text-[10px] text-[color:var(--muted)]">
-                      {[c.sport_label, c.exercise_type_label].filter(Boolean).join(' · ')}
-                    </span>
-                  </button>
-                </li>
-              ))}
-              {!searchHits.length ? (
-                <li className="px-3 py-2 text-[12px] text-[color:var(--muted)]">Aucun résultat</li>
-              ) : null}
-            </ul>
+            <div className="overflow-hidden rounded-[var(--radius-md)] border border-[var(--brand)]/50 bg-[var(--surface)] shadow-da-md ring-1 ring-[var(--brand)]/20">
+              <p className="border-b border-[var(--border)] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide text-[color:var(--brand)]">
+                {searchHits.length
+                  ? `${searchHits.length} résultat${searchHits.length > 1 ? 's' : ''}`
+                  : 'Aucun résultat'}
+              </p>
+              <ul
+                ref={resultsRef}
+                className="da-scrollbar max-h-52 overflow-y-auto overscroll-contain"
+              >
+                {searchHits.map((c) => (
+                  <li key={c.id}>
+                    <button
+                      type="button"
+                      className="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left hover:bg-[var(--accent)]"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => addExo(c.id)}
+                    >
+                      <span className="truncate text-sm font-semibold text-[color:var(--fg)]">
+                        {c.name}
+                      </span>
+                      <span className="shrink-0 text-[10px] text-[color:var(--muted)]">
+                        {[c.sport_label, c.exercise_type_label].filter(Boolean).join(' · ')}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+                {!searchHits.length ? (
+                  <li className="px-3 py-3 text-[12px] text-[color:var(--muted)]">
+                    Affiner la recherche ou les filtres
+                  </li>
+                ) : null}
+              </ul>
+            </div>
           ) : null}
         </div>
       </section>

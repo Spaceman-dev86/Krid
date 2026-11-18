@@ -13,13 +13,14 @@ type Props = {
 
 export default async function SpecSectionPage({ params }: Props) {
   const { section } = await params
-  if (!isSpecSectionId(section) || section === 'home') notFound()
+  // `prompt` a sa propre page dédiée (/admin/spec/prompt)
+  if (!isSpecSectionId(section) || section === 'home' || section === 'prompt') notFound()
 
   const loaded = await loadSpecSectionFile(section)
 
   if (!loaded) {
     return (
-      <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-sm text-red-800">
+      <div className="rounded-lg border border-[var(--danger-border)] bg-[var(--danger-bg)] p-6 text-sm text-[var(--danger)]">
         <p className="font-extrabold">Impossible de charger la section « {section} ».</p>
         <p className="mt-2">
           Vérifie <code>plans/workspace/{section}.json</code>.

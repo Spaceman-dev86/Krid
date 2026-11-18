@@ -20,12 +20,6 @@ const TABS = [
     match: (p: string) => p.startsWith('/payments/factures'),
   },
   {
-    href: '/payments/prestations',
-    label: 'Prestations',
-    match: (p: string) =>
-      p.startsWith('/payments/prestations') || /^\/payments\/[^/]+$/.test(p),
-  },
-  {
     href: '/payments/stats',
     label: 'Stats',
     match: (p: string) => p.startsWith('/payments/stats'),

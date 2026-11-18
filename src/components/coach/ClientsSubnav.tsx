@@ -1,66 +1,104 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { Suspense, useTransition } from 'react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 
-const TABS = [
-  { href: '/clients', label: 'Liste', match: (p: string) => p === '/clients' || /^\/clients\/[^/]+$/.test(p) },
-  {
-    href: '/clients/groupes',
-    label: 'Groupes',
-    match: (p: string) => p === '/clients/groupes' || p.startsWith('/clients/groupes/'),
-  },
-  {
-    href: '/clients/bilans',
-    label: 'Bilans',
-    match: (p: string) => p === '/clients/bilans' || p.startsWith('/clients/bilans'),
-  },
-  {
-    href: '/clients/codes',
-    label: 'Codes',
-    match: (p: string) => p === '/clients/codes' || p.startsWith('/clients/codes/'),
-  },
-  {
-    href: '/clients/notifications',
-    label: 'Notifications',
-    match: (p: string) => p.startsWith('/clients/notifications'),
-    disabled: true,
-  },
-] as const
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-export function ClientsSubnav() {
+function isClientFichePath(p: string) {
+  if (p === '/clients') return true
+  if (!p.startsWith('/clients/')) return false
+  const seg = p.split('/')[2] ?? ''
+  return !['groupes', 'bilans', 'codes'].includes(seg)
+}
+
+/** Détail d’une instance bilan (pas hub / batch / templates). */
+function isBilanInstancePath(p: string) {
+  const parts = p.split('/').filter(Boolean)
+  return parts.length === 3 && parts[0] === 'clients' && parts[1] === 'bilans' && UUID_RE.test(parts[2])
+}
+
+function tabClass(active: boolean) {
+  return active
+    ? 'shrink-0 whitespace-nowrap rounded-lg bg-[var(--surface)] px-2.5 py-1.5 text-xs font-bold text-[color:var(--brand)] shadow-da-sm sm:px-3 sm:text-sm'
+    : 'shrink-0 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs font-semibold text-[color:var(--muted)] hover:text-[color:var(--brand)] sm:px-3 sm:text-sm'
+}
+
+function ClientsSubnavInner() {
   const pathname = usePathname() || '/clients'
+  const fromHub = useSearchParams().get('from') === 'hub'
+  const router = useRouter()
+  const [pending, startTransition] = useTransition()
+
+  const listeActive = isClientFichePath(pathname) || (isBilanInstancePath(pathname) && !fromHub)
+  const bilansActive =
+    pathname === '/clients/bilans' ||
+    pathname.startsWith('/clients/bilans/batch') ||
+    pathname.startsWith('/clients/bilans/templates') ||
+    (isBilanInstancePath(pathname) && fromHub)
+
+  const tabs: Array<{ href: string; label: string; active: boolean }> = [
+    { href: '/clients', label: 'Clients', active: listeActive },
+    {
+      href: '/clients/groupes',
+      label: 'Groupes',
+      active: pathname === '/clients/groupes' || pathname.startsWith('/clients/groupes/'),
+    },
+    { href: '/clients/bilans', label: 'Bilans', active: bilansActive },
+  ]
 
   return (
-    <div className="flex gap-1 rounded-xl bg-[var(--accent)] p-1">
-      {TABS.map((tab) => {
-        const disabled = 'disabled' in tab && tab.disabled
-        const active = tab.match(pathname)
-        if (disabled) {
-          return (
-            <span
-              key={tab.href}
-              title="Hors V1"
-              className="cursor-not-allowed rounded-lg px-3 py-1.5 text-sm font-semibold text-[color:var(--muted)]"
-            >
-              {tab.label}
-            </span>
-          )
-        }
-        return (
-          <Link
-            key={tab.href}
-            href={tab.href}
-            className={
-              active
-                ? 'rounded-lg bg-[var(--surface)] px-3 py-1.5 text-sm font-bold text-[color:var(--brand)] shadow-da-sm'
-                : 'rounded-lg px-3 py-1.5 text-sm font-semibold text-[color:var(--muted)] hover:text-[color:var(--brand)]'
-            }
-          >
-            {tab.label}
-          </Link>
-        )
-      })}
-    </div>
+    <nav
+      className={`inline-flex max-w-full gap-0.5 overflow-x-auto rounded-xl bg-[var(--accent)] p-1 ${
+        pending ? 'opacity-70' : ''
+      }`}
+      aria-label="Section Clients"
+      data-builder-chrome
+    >
+      {tabs.map((tab) => (
+        <Link
+          key={tab.href}
+          href={tab.href}
+          prefetch
+          className={tabClass(tab.active)}
+          aria-current={tab.active ? 'page' : undefined}
+          onClick={(e) => {
+            e.preventDefault()
+            if (tab.active) return
+            startTransition(() => router.push(tab.href))
+          }}
+        >
+          {tab.label}
+        </Link>
+      ))}
+    </nav>
+  )
+}
+
+function ClientsSubnavFallback() {
+  return (
+    <nav
+      className="inline-flex max-w-full gap-0.5 overflow-x-auto rounded-xl bg-[var(--accent)] p-1"
+      aria-label="Section Clients"
+    >
+      {['Clients', 'Groupes', 'Bilans'].map((label) => (
+        <span
+          key={label}
+          className="shrink-0 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs font-semibold text-[color:var(--muted)] sm:px-3 sm:text-sm"
+        >
+          {label}
+        </span>
+      ))}
+    </nav>
+  )
+}
+
+/** Même fluidité que ProgramsPrimaryNav — pas de beginNav / skeleton page. */
+export function ClientsSubnav() {
+  return (
+    <Suspense fallback={<ClientsSubnavFallback />}>
+      <ClientsSubnavInner />
+    </Suspense>
   )
 }

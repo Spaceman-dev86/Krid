@@ -26,7 +26,7 @@ export default async function PaymentsStatsPage() {
       appName={shell.branding?.app_name}
       trialLabel={shell.trialLabel}
       title="Statistiques"
-      savUnread={shell.savUnread}
+      savUnread={shell.savUnread} chatUnread={shell.chatUnread}
     >
       <div className="mx-auto grid max-w-3xl gap-6">
         <div className="flex flex-wrap items-end justify-between gap-3">

@@ -85,7 +85,7 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
   const { data: profileData } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
   const profile = profileData as unknown as { role: string | null } | null
   if (profile?.role !== 'admin') {
-    redirect('/dashboard')
+    redirect('/admin')
   }
 
   const openWeek = Array.isArray(searchParams?.openWeek) ? searchParams?.openWeek[0] : searchParams?.openWeek
@@ -153,7 +153,7 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
     const { data: profileData } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
     const profile = profileData as unknown as { role: string | null } | null
     if (profile?.role !== 'admin') {
-      redirect('/dashboard')
+      redirect('/admin')
     }
 
     const nextTitle = String(formData.get('title') ?? '').trim()
@@ -200,7 +200,7 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
     const { data: profileData } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
     const profile = profileData as unknown as { role: string | null } | null
     if (profile?.role !== 'admin') {
-      redirect('/dashboard')
+      redirect('/admin')
     }
 
     const client = String(formData.get('client') ?? '')
@@ -293,7 +293,7 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
     const { data: profileData } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
     const profile = profileData as unknown as { role: string | null } | null
     if (profile?.role !== 'admin') {
-      redirect('/dashboard')
+      redirect('/admin')
     }
 
     const title = String(formData.get('title') ?? '').trim() || 'Semaine'
@@ -334,7 +334,7 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
     const { data: profileData } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
     const profile = profileData as unknown as { role: string | null } | null
     if (profile?.role !== 'admin') {
-      redirect('/dashboard')
+      redirect('/admin')
     }
 
     const weekId = String(formData.get('week_id') ?? '')
@@ -366,7 +366,7 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
     const { data: profileData } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
     const profile = profileData as unknown as { role: string | null } | null
     if (profile?.role !== 'admin') {
-      redirect('/dashboard')
+      redirect('/admin')
     }
 
     const weekId = String(formData.get('week_id') ?? '')
@@ -451,7 +451,7 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
     const { data: profileData } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
     const profile = profileData as unknown as { role: string | null } | null
     if (profile?.role !== 'admin') {
-      redirect('/dashboard')
+      redirect('/admin')
     }
 
     const weekId = String(formData.get('week_id') ?? '')
@@ -497,7 +497,7 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
     const { data: profileData } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
     const profile = profileData as unknown as { role: string | null } | null
     if (profile?.role !== 'admin') {
-      redirect('/dashboard')
+      redirect('/admin')
     }
 
     const weekId = String(formData.get('week_id') ?? '')
@@ -530,7 +530,7 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
     const { data: profileData } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
     const profile = profileData as unknown as { role: string | null } | null
     if (profile?.role !== 'admin') {
-      redirect('/dashboard')
+      redirect('/admin')
     }
 
     const weekId = String(formData.get('week_id') ?? '')
@@ -601,7 +601,7 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
     const { data: profileData } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
     const profile = profileData as unknown as { role: string | null } | null
     if (profile?.role !== 'admin') {
-      redirect('/dashboard')
+      redirect('/admin')
     }
 
     const weekId = String(formData.get('week_id') ?? '')
@@ -635,7 +635,7 @@ export default async function AdminTemplateMuscuDetailPage({ params, searchParam
     const { data: profileData } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
     const profile = profileData as unknown as { role: string | null } | null
     if (profile?.role !== 'admin') {
-      redirect('/dashboard')
+      redirect('/admin')
     }
 
     const sessionId = String(formData.get('session_id') ?? '')

@@ -14,6 +14,7 @@ type Body = {
   timer_note?: string | null
   expected_result_unit_id?: string | null
   allow_duplicate?: boolean
+  status?: 'draft' | 'published' | string
   exercise_ids?: string[]
   exercise_prescriptions?: unknown[]
   hidden_type_ids?: string[]
@@ -99,6 +100,7 @@ export async function PATCH(req: Request, { params }: Props) {
     }
   }
 
+  const status = body.status === 'published' ? 'published' : undefined
   const { error: updErr } = await supabase
     .from('block_library' as never)
     .update({
@@ -111,6 +113,8 @@ export async function PATCH(req: Request, { params }: Props) {
       free_constraints: [],
       allow_duplicate: body.allow_duplicate !== false,
       allow_download: false,
+      ...(status ? { status } : {}),
+      deleted_at: null,
       updated_at: new Date().toISOString(),
     } as never)
     .eq('id' as never, id as never)

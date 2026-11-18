@@ -1,24 +1,46 @@
+import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
 
-import { PageTitle, Muted } from '@/src/components/ui'
-import { CoachAppShell } from '../../../components/coach/CoachAppShell'
+import { CoachQueryFlash } from '../../../components/coach/CoachQueryFlash'
+import { ExercisesHubHeader } from '../../../components/exercises/ExercisesHubHeader'
 import { ExercisesList } from '../../../components/exercises/ExercisesList'
-import { ExercisesSubnav } from '../../../components/exercises/ExercisesSubnav'
+import { ExercisesZoneBar } from '../../../components/exercises/ExercisesZoneBar'
 import { canAccessCoachApp } from '../../../lib/auth/roles'
-import { loadCoachShellContext } from '../../../lib/coach/loadCoachShellContext'
-import { listCoachExercises } from '../../../lib/exercises/library'
+import {
+  collectExerciseFilterOptions,
+  filterExerciseRows,
+} from '../../../lib/exercises/filterExercises'
+import { listCoachExercises, withExerciseMediaUrls } from '../../../lib/exercises/library'
+import {
+  attachExerciseUsages,
+  loadExerciseTemplateUsages,
+} from '../../../lib/exercises/templateUsage'
 import { createClient } from '../../../lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
 
 type Props = {
   searchParams?:
-    | Promise<{ error?: string; deleted?: string }>
-    | { error?: string; deleted?: string }
+    | Promise<{
+        error?: string
+        deleted?: string
+        saved?: string
+        q?: string
+        type?: string
+        sport?: string
+      }>
+    | {
+        error?: string
+        deleted?: string
+        saved?: string
+        q?: string
+        type?: string
+        sport?: string
+      }
 }
 
 export default async function ExercisesMinePage({ searchParams }: Props) {
-  const q = await Promise.resolve(searchParams ?? {})
+  const params = await Promise.resolve(searchParams ?? {})
   const supabase = await createClient()
   const {
     data: { user },
@@ -28,8 +50,6 @@ export default async function ExercisesMinePage({ searchParams }: Props) {
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
   if (!canAccessCoachApp(profile?.role)) redirect('/login')
 
-  const shell = await loadCoachShellContext(user.id)
-
   let items: Awaited<ReturnType<typeof listCoachExercises>> = []
   let loadError: string | null = null
   try {
@@ -38,33 +58,64 @@ export default async function ExercisesMinePage({ searchParams }: Props) {
     loadError = e instanceof Error ? e.message : 'Erreur'
   }
 
+  const { typeOptions, sportOptions } = collectExerciseFilterOptions(items)
+  const filtered = await withExerciseMediaUrls(
+    supabase,
+    filterExerciseRows(items, {
+      q: params.q,
+      type: params.type,
+      sport: params.sport,
+    }),
+  )
+  const usages = await loadExerciseTemplateUsages(
+    supabase,
+    user.id,
+    filtered.map((ex) => ex.id),
+  )
+  const withUsage = attachExerciseUsages(filtered, usages)
+
   return (
-    <CoachAppShell appName={shell.branding?.app_name} trialLabel={shell.trialLabel} title="Ma biblio" savUnread={shell.savUnread}>
-      <div className="mx-auto grid max-w-3xl gap-5">
-        <div>
-          <PageTitle className="text-2xl">Ma bibliothèque</PageTitle>
-          <Muted className="mt-1">Exercices publiés · utilisables dans le builder</Muted>
-        </div>
-
-        <ExercisesSubnav pathname="/exercises/mine" />
-
-        {q.error || loadError ? (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
-            {q.error || loadError}
-          </div>
-        ) : null}
-        {q.deleted ? (
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-            Exercice archivé.
-          </div>
-        ) : null}
-
-        <ExercisesList
-          items={items}
-          mode="mine"
-          emptyHint="Aucun exercice publié — crée-en un ou transfère depuis Trainly."
+    <div className="mx-auto grid max-w-5xl gap-5 sm:gap-6">
+      <Suspense fallback={null}>
+        <CoachQueryFlash
+          overrides={{
+            deleted: { tone: 'success', message: 'Exercice archivé' },
+          }}
         />
-      </div>
-    </CoachAppShell>
+      </Suspense>
+
+      <ExercisesHubHeader
+        title="Exercices"
+        subtitle={
+          <>
+            {filtered.length}
+            {filtered.length !== items.length ? ` / ${items.length}` : ''} publié
+            {filtered.length > 1 ? 's' : ''} · prêts pour tes programmes
+          </>
+        }
+      />
+
+      <ExercisesZoneBar
+        kind="exercises"
+        basePath="/exercises/mine"
+        typeOptions={typeOptions}
+        sportOptions={sportOptions}
+      />
+
+      {loadError ? (
+        <p className="text-sm font-semibold text-[var(--danger)]">{loadError}</p>
+      ) : null}
+
+      <ExercisesList
+        items={withUsage}
+        mode="mine"
+        returnTo="/exercises/mine"
+        emptyHint={
+          items.length
+            ? 'Aucun exercice ne correspond aux filtres.'
+            : 'Ta biblio est vide — crée un exercice (+) ou Ajoute depuis Catalogue Krid.'
+        }
+      />
+    </div>
   )
 }

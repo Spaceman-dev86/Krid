@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 
 import { ClientPortalShell } from '../../../../../../components/client-portal/ClientPortalShell'
 import { ClientSessionPlayerClient } from '../../../../../../components/client-portal/ClientSessionPlayerClient'
-import { requireClientPortal } from '../../../../../../lib/client-portal/context'
+import { portalShellProps, requireClientPortal } from '../../../../../../lib/client-portal/context'
 import {
   emptyRealized,
   type SessionRunRealized,
@@ -43,7 +43,7 @@ export default async function ClientLibreRunPage({ params, searchParams }: Props
 
   if (run.style !== 'en_cours') {
     return (
-      <ClientPortalShell slug={ctx.slug} appName={ctx.appName} primaryColor={ctx.primaryColor} logoUrl={ctx.logoUrl}>
+      <ClientPortalShell {...portalShellProps(ctx)}>
         <Link
           href={`/c/${ctx.slug}/historique/seance/${run.id}`}
           className="text-sm font-bold"
@@ -66,7 +66,7 @@ export default async function ClientLibreRunPage({ params, searchParams }: Props
   const returnTo = `/c/${ctx.slug}/seance/run/${run.id}`
 
   return (
-    <ClientPortalShell slug={ctx.slug} appName={ctx.appName} primaryColor={ctx.primaryColor} logoUrl={ctx.logoUrl}>
+    <ClientPortalShell {...portalShellProps(ctx)}>
       <div className="grid gap-4">
         <div>
           <Link

@@ -2,7 +2,7 @@ import Link from 'next/link'
 
 import { ClientDiySessionEditor } from '../../../../../components/client-portal/ClientDiySessionEditor'
 import { ClientPortalShell } from '../../../../../components/client-portal/ClientPortalShell'
-import { requireClientPortal } from '../../../../../lib/client-portal/context'
+import { portalShellProps, requireClientPortal } from '../../../../../lib/client-portal/context'
 import type { DiyExerciseInput } from '../../../../../lib/client-portal/diySessions'
 import type { SessionRunSnapshot } from '../../../../../lib/client-portal/sessionRuns'
 import { chatDb } from '../../../../../lib/chat/chat'
@@ -75,7 +75,7 @@ export default async function ClientSeanceNewPage({ params, searchParams }: Prop
   }
 
   return (
-    <ClientPortalShell slug={ctx.slug} appName={ctx.appName} primaryColor={ctx.primaryColor} logoUrl={ctx.logoUrl}>
+    <ClientPortalShell {...portalShellProps(ctx)}>
       <div className="mb-3">
         <Link
           href={`/c/${ctx.slug}/seance`}

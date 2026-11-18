@@ -4,16 +4,36 @@ import { attachClearAuthNextCookie, readAuthNextPath } from '../../../../lib/aut
 import { canAccessCoachApp, isPlatformAdmin } from '../../../../lib/auth/roles'
 import { completeAuthCallback } from '../../../../lib/auth/completeAuthCallback'
 
+function rewriteLegacyCoachPath(path: string): string {
+  if (path === '/dashboard' || path.startsWith('/dashboard/')) return '/home'
+  return path
+}
+
 function isCoachAppPath(path: string): boolean {
+  const p = rewriteLegacyCoachPath(path)
   return (
-    path === '/home' ||
-    path.startsWith('/home/') ||
-    path === '/clients' ||
-    path.startsWith('/clients/') ||
-    path === '/payments' ||
-    path.startsWith('/payments/') ||
-    path === '/dashboard' ||
-    path.startsWith('/dashboard/')
+    p === '/home' ||
+    p.startsWith('/home/') ||
+    p === '/clients' ||
+    p.startsWith('/clients/') ||
+    p === '/payments' ||
+    p.startsWith('/payments/') ||
+    p === '/programs' ||
+    p.startsWith('/programs/') ||
+    p === '/chat' ||
+    p.startsWith('/chat/') ||
+    p === '/calendar' ||
+    p.startsWith('/calendar/') ||
+    p === '/nutrition' ||
+    p.startsWith('/nutrition/') ||
+    p === '/exercises' ||
+    p.startsWith('/exercises/') ||
+    p === '/drive' ||
+    p.startsWith('/drive/') ||
+    p === '/profile' ||
+    p.startsWith('/profile/') ||
+    p === '/settings' ||
+    p.startsWith('/settings/')
   )
 }
 
@@ -39,7 +59,8 @@ export async function GET(request: Request) {
 
   const storedNext = await readAuthNextPath()
   if (storedNext && isCoachAppPath(storedNext)) {
-    return attachClearAuthNextCookie(NextResponse.redirect(new URL(storedNext, url.origin)))
+    const dest = rewriteLegacyCoachPath(storedNext)
+    return attachClearAuthNextCookie(NextResponse.redirect(new URL(dest, url.origin)))
   }
 
   if (isPlatformAdmin(role)) {

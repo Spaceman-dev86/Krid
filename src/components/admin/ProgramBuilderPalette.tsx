@@ -1,8 +1,13 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
-import { SessionLibraryPreviewModal } from '@/src/components/admin/SessionLibraryPreviewModal'
+import {
+  CatalogLibraryPreviewModal,
+  prefetchCatalogPreview,
+  prefetchCatalogPreviewBatch,
+  type CatalogPreviewTarget,
+} from '@/src/components/admin/SessionLibraryPreviewModal'
 import { IconPlus, IconSearch } from '@/src/components/ui'
 
 export type CatalogFilterOption = { id: string; label: string }
@@ -94,7 +99,7 @@ export function ProgramBuilderPalette({
   const [q, setQ] = useState('')
   const [sportId, setSportId] = useState('')
   const [typeId, setTypeId] = useState('')
-  const [previewId, setPreviewId] = useState<string | null>(null)
+  const [previewTarget, setPreviewTarget] = useState<CatalogPreviewTarget>(null)
 
   const needle = q.trim().toLowerCase()
 
@@ -112,6 +117,7 @@ export function ProgramBuilderPalette({
 
   const filteredBlocks = useMemo(() => {
     return blocks.filter((it) => {
+      if (it.status && it.status !== 'published') return false
       if (sportId && it.sport_id !== sportId) return false
       if (!needle) return true
       return it.name.toLowerCase().includes(needle)
@@ -126,6 +132,33 @@ export function ProgramBuilderPalette({
       return it.name.toLowerCase().includes(needle)
     })
   }, [exercises, sportId, typeId, needle])
+
+  useEffect(() => {
+    if (open.sessions) {
+      prefetchCatalogPreviewBatch(
+        'session',
+        filteredSessions.map((it) => it.id),
+      )
+    }
+  }, [open.sessions, filteredSessions])
+
+  useEffect(() => {
+    if (open.blocks) {
+      prefetchCatalogPreviewBatch(
+        'block',
+        filteredBlocks.map((it) => it.id),
+      )
+    }
+  }, [open.blocks, filteredBlocks])
+
+  useEffect(() => {
+    if (open.exercises) {
+      prefetchCatalogPreviewBatch(
+        'exercise',
+        filteredExercises.map((it) => it.id),
+      )
+    }
+  }, [open.exercises, filteredExercises])
 
   const selectClass =
     'h-7 w-full rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--page-bg)] px-1.5 text-[10px] font-semibold text-[color:var(--fg)]'
@@ -207,7 +240,7 @@ export function ProgramBuilderPalette({
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="da-scrollbar flex-1 overflow-y-auto">
           <div className="border-b border-[var(--border)]">
             <AccordionHeader
               open={open.sessions}
@@ -237,8 +270,18 @@ export function ProgramBuilderPalette({
                       <button
                         type="button"
                         className="h-5 w-5 rounded text-[10px] font-bold text-[color:var(--muted)] hover:bg-[var(--accent)]"
-                        onClick={() => setPreviewId(it.id)}
+                        onPointerEnter={() => prefetchCatalogPreview('session', it.id)}
+                        onFocus={() => prefetchCatalogPreview('session', it.id)}
+                        onPointerDown={() => prefetchCatalogPreview('session', it.id)}
+                        onClick={() =>
+                          setPreviewTarget({
+                            kind: 'session',
+                            id: it.id,
+                            nameHint: it.name?.trim() || 'Sans titre',
+                          })
+                        }
                         title="Aperçu"
+                        aria-label="Aperçu séance"
                       >
                         i
                       </button>
@@ -285,9 +328,28 @@ export function ProgramBuilderPalette({
                     </p>
                     <button
                       type="button"
+                      className="h-5 w-5 rounded text-[10px] font-bold text-[color:var(--muted)] hover:bg-[var(--accent)]"
+                      onPointerEnter={() => prefetchCatalogPreview('block', it.id)}
+                      onFocus={() => prefetchCatalogPreview('block', it.id)}
+                      onPointerDown={() => prefetchCatalogPreview('block', it.id)}
+                      onClick={() =>
+                        setPreviewTarget({
+                          kind: 'block',
+                          id: it.id,
+                          nameHint: it.name,
+                        })
+                      }
+                      title="Aperçu"
+                      aria-label="Aperçu bloc"
+                    >
+                      i
+                    </button>
+                    <button
+                      type="button"
                       disabled={addDisabled}
                       className="inline-flex h-5 w-5 items-center justify-center rounded bg-[var(--brand)] text-[var(--brand-fg)] disabled:opacity-40"
                       onClick={() => onAddBlock?.(it.id)}
+                      title="Ajouter"
                     >
                       <IconPlus size={11} />
                     </button>
@@ -324,9 +386,28 @@ export function ProgramBuilderPalette({
                     </p>
                     <button
                       type="button"
+                      className="h-5 w-5 rounded text-[10px] font-bold text-[color:var(--muted)] hover:bg-[var(--accent)]"
+                      onPointerEnter={() => prefetchCatalogPreview('exercise', it.id)}
+                      onFocus={() => prefetchCatalogPreview('exercise', it.id)}
+                      onPointerDown={() => prefetchCatalogPreview('exercise', it.id)}
+                      onClick={() =>
+                        setPreviewTarget({
+                          kind: 'exercise',
+                          id: it.id,
+                          nameHint: it.name,
+                        })
+                      }
+                      title="Aperçu"
+                      aria-label="Aperçu exercice"
+                    >
+                      i
+                    </button>
+                    <button
+                      type="button"
                       disabled={addDisabled}
                       className="inline-flex h-5 w-5 items-center justify-center rounded bg-[var(--brand)] text-[var(--brand-fg)] disabled:opacity-40"
                       onClick={() => onAddExercise?.(it.id)}
+                      title="Ajouter"
                     >
                       <IconPlus size={11} />
                     </button>
@@ -341,15 +422,20 @@ export function ProgramBuilderPalette({
         </div>
       </aside>
 
-      <SessionLibraryPreviewModal
-        sessionId={previewId}
-        onClose={() => setPreviewId(null)}
+      <CatalogLibraryPreviewModal
+        target={previewTarget}
+        onClose={() => setPreviewTarget(null)}
         insertLabel={selectedTargetLabel}
         insertDisabled={addDisabled}
         onInsert={
-          previewId && onAddSession
+          previewTarget &&
+          ((previewTarget.kind === 'session' && onAddSession) ||
+            (previewTarget.kind === 'block' && onAddBlock) ||
+            (previewTarget.kind === 'exercise' && onAddExercise))
             ? () => {
-                onAddSession(previewId)
+                if (previewTarget.kind === 'session') onAddSession?.(previewTarget.id)
+                else if (previewTarget.kind === 'block') onAddBlock?.(previewTarget.id)
+                else onAddExercise?.(previewTarget.id)
               }
             : undefined
         }

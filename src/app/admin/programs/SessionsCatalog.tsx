@@ -12,7 +12,11 @@ import {
 } from '@/src/components/ui'
 import { coachDisplayName, type CoachProfileEmbed } from '@/src/lib/catalog/coachScope'
 import { catalogListHref, sanitizeSearch } from '@/src/lib/catalog/search'
-import { CATALOG_STATUS_LABEL, parseCatalogStatus } from '@/src/lib/catalog/workflow'
+import {
+  CATALOG_STATUS_LABEL,
+  SESSION_ADMIN_PUBLISHED_LABEL,
+  parseCatalogStatus,
+} from '@/src/lib/catalog/workflow'
 import { requirePlatformAdmin } from '@/src/lib/auth/requirePlatformAdmin'
 import { setSessionCatalogStatusAction, deleteTrainlySessionAction } from '../sessions/sessionFicheActions'
 
@@ -278,7 +282,7 @@ export async function AdminSessionsCatalog({
   const tabs = [
     { key: 'all', label: 'Tous' },
     { key: 'draft', label: 'Brouillons' },
-    { key: 'published', label: 'Publiés' },
+    { key: 'published', label: 'Publié admin' },
     { key: 'coach', label: 'Coach' },
   ] as const
 
@@ -294,7 +298,7 @@ export async function AdminSessionsCatalog({
   const flash = searchParams.error
     ? decodeURIComponent(String(searchParams.error))
     : searchParams.ok === 'published'
-      ? 'Séance publiée.'
+      ? 'Séance publiée admin.'
       : searchParams.ok === 'draft'
         ? 'Séance en brouillon.'
         : searchParams.ok === 'deleted'
@@ -310,7 +314,7 @@ export async function AdminSessionsCatalog({
           <Muted className="mt-1">
             {isCoachScope
               ? 'Contenu coaches — lecture.'
-              : 'Catalogue plateforme — Brouillon → Publié.'}
+              : 'Catalogue plateforme admin — Brouillon → Publié admin (invisible coaches).'}
           </Muted>
         </div>
         {!isCoachScope ? (
@@ -413,7 +417,7 @@ export async function AdminSessionsCatalog({
                           className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${statusBadgeClass(status)}`}
                         >
                           {status === 'published'
-                            ? CATALOG_STATUS_LABEL.published
+                            ? SESSION_ADMIN_PUBLISHED_LABEL
                             : CATALOG_STATUS_LABEL.draft}
                         </span>
                       </div>
@@ -434,8 +438,8 @@ export async function AdminSessionsCatalog({
                               <input type="hidden" name="id" value={s.id} />
                               <input type="hidden" name="status" value="published" />
                               <input type="hidden" name="return_to" value={returnTo} />
-                              <ConfirmSubmitButton confirmMessage="Publier cette séance ?">
-                                Publier
+                              <ConfirmSubmitButton confirmMessage="Passer cette séance en publié admin ?">
+                                Publié admin
                               </ConfirmSubmitButton>
                             </form>
                           ) : (

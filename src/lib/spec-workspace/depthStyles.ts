@@ -1,4 +1,4 @@
-/** Couleurs partagées arbre des routes ↔ timeline (même niveau = même teinte). */
+/** Couleurs partagées arbre des routes ↔ timeline — lisibles dark + light. */
 
 export type SpecLevelStyle = {
   badgeClass: string
@@ -10,39 +10,39 @@ export type SpecLevelStyle = {
 
 export const SPEC_MENU_STYLE = {
   badge: 'Menu',
-  badgeClass: 'bg-[var(--brand)] text-white',
+  badgeClass: 'bg-[var(--brand)] text-[var(--brand-fg)]',
   border: 'border-l-[var(--brand)]',
   rail: 'border-l-4 border-[var(--brand)]',
 } as const
 
-/** Index 0 = N1, 1 = N2, … — aligné arbre + timeline */
+/** Index 0 = N1, 1 = N2, … — teintes saturées + fond translucide (pas de pastel clair). */
 const FEATURE_LEVELS: SpecLevelStyle[] = [
   {
     badgeClass: 'bg-orange-500 text-white',
     border: 'border-l-orange-500',
     rail: 'border-l-4 border-orange-500',
-    card: 'rounded-xl border-2 border-orange-300 bg-orange-50/40 p-4 shadow-sm',
+    card: 'rounded-xl border-2 border-orange-500/35 bg-orange-500/10 p-4 shadow-da-sm',
     label: 'N1 · Action',
   },
   {
     badgeClass: 'bg-sky-500 text-white',
     border: 'border-l-sky-500',
     rail: 'border-l-4 border-sky-500',
-    card: 'rounded-lg border-2 border-sky-300 bg-sky-50/40 p-3',
+    card: 'rounded-lg border-2 border-sky-500/35 bg-sky-500/10 p-3 shadow-da-sm',
     label: 'N2 · Sous-action',
   },
   {
     badgeClass: 'bg-violet-500 text-white',
     border: 'border-l-violet-500',
     rail: 'border-l-4 border-violet-500',
-    card: 'rounded-lg border-2 border-violet-300 bg-violet-50/40 p-3',
+    card: 'rounded-lg border-2 border-violet-500/35 bg-violet-500/10 p-3 shadow-da-sm',
     label: 'N3 · Détail',
   },
   {
     badgeClass: 'bg-emerald-600 text-white',
     border: 'border-l-emerald-600',
     rail: 'border-l-4 border-emerald-600',
-    card: 'rounded-lg border-2 border-emerald-300 bg-emerald-50/40 p-3',
+    card: 'rounded-lg border-2 border-emerald-500/35 bg-emerald-500/10 p-3 shadow-da-sm',
     label: 'N4+',
   },
 ]

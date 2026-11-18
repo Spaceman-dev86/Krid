@@ -2,19 +2,21 @@ import { headers } from 'next/headers'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
-import { Button, PageTitle, Muted } from '@/src/components/ui'
+import { Button } from '@/src/components/ui'
 import { CoachBrandingLogoField } from '../../../components/coach/CoachBrandingLogoField'
+import { CoachBrandingThemeFields } from '../../../components/coach/CoachBrandingThemeFields'
+import { CoachCustomRequestBanner } from '../../../components/coach/CoachCustomRequestBanner'
 import { CopyCodeButton } from '../../../components/coach/CopyCodeButton'
-import { CoachAppShell } from '../../../components/coach/CoachAppShell'
-import { ProfileChromeActions } from '../../../components/coach/ProfileChromeActions'
-import { ProfileSubnav } from '../../../components/coach/ProfileSubnav'
+import { MonAppBrandingSaveBar } from '../../../components/coach/MonAppBrandingSaveBar'
+import { ProfileHubHeader } from '../../../components/coach/ProfileHubHeader'
 import { canAccessCoachApp } from '../../../lib/auth/roles'
 import { listCoachOnboardingQuestions } from '../../../lib/client-portal/onboarding'
 import { DEFAULT_CLIENT_PRIMARY_COLOR } from '../../../lib/coach/defaultClientPrimaryColor'
 import { loadCoachShellContext } from '../../../lib/coach/loadCoachShellContext'
 import { createClient } from '../../../lib/supabase/server'
 import { selectFieldClass, selectFieldStyle } from '../../../lib/ui/selectField'
-import { clearCoachLogoAction, saveCoachBrandingAction } from '../../home/actions'
+import { InstallQrCard } from '../../../components/coach/InstallQrCard'
+import { clearCoachLogoAction } from '../../home/actions'
 import {
   createOnboardingQuestionAction,
   deleteOnboardingQuestionAction,
@@ -31,12 +33,14 @@ export default async function ProfileMonAppPage({
         saved?: string
         question_saved?: string
         question_deleted?: string
+        request_sent?: string
       }>
     | {
         error?: string
         saved?: string
         question_saved?: string
         question_deleted?: string
+        request_sent?: string
       }
 }) {
   const params = await Promise.resolve(searchParams ?? {})
@@ -68,106 +72,119 @@ export default async function ProfileMonAppPage({
   const installUrl = slug ? `${origin}/c/${slug}/install` : null
 
   return (
-    <CoachAppShell appName={branding?.app_name} trialLabel={shell.trialLabel} title="Mon app" savUnread={shell.savUnread}>
-      <div className="mx-auto grid max-w-4xl gap-6">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <PageTitle className="text-2xl">Profil public</PageTitle>
-            <Muted className="mt-1">Identité PWA / portail · onboarding · lien d’installation</Muted>
+    <div className="mx-auto grid max-w-4xl gap-6">
+        <ProfileHubHeader
+          title="Mon app"
+          subtitle={
+            <>
+              Logo &amp; couleurs de l’app · présentation showroom dans{' '}
+              <Link href="/profile" className="font-semibold text-[color:var(--brand)] hover:underline">
+                Showroom
+              </Link>
+            </>
+          }
+          actions={
+            slug ? (
+              <Button href="/profile/rendu" className="!rounded-lg !px-3 !py-1.5 text-xs font-bold">
+                Voir le rendu
+              </Button>
+            ) : null
+          }
+          showChromeActions={false}
+        />
+
+        {params.request_sent ? (
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--accent)] px-3 py-2 text-xs font-semibold text-[color:var(--fg)]">
+            Demande envoyée — l’équipe Krid te répond bientôt.
           </div>
-          <div className="flex flex-col items-end gap-2">
-            <ProfileChromeActions />
-            <ProfileSubnav />
-          </div>
-        </div>
+        ) : null}
 
         {params.error ? (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          <div className="rounded-xl border border-[var(--danger-border)] bg-[var(--danger-bg)] px-3 py-2 text-xs font-semibold text-[var(--danger)]">
             {params.error === 'slug' ? 'Slug invalide.' : params.error}
           </div>
         ) : null}
-        {params.saved || params.question_saved || params.question_deleted ? (
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-            {params.question_deleted
-              ? 'Question supprimée.'
-              : params.question_saved
-                ? 'Question ajoutée.'
-                : 'Branding enregistré.'}
-          </div>
-        ) : null}
 
-        <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-da-sm">
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <div>
-              <h2 className="text-sm font-extrabold uppercase tracking-wide text-[color:var(--brand)]">
-                Branding
-              </h2>
-              <p className="mt-1 text-xs text-[color:var(--muted)]">
-                Plan {plan} · couleurs showroom / chrome portail
-              </p>
-            </div>
-            {branding?.primary_color ? (
-              <span
-                className="h-8 w-8 rounded-full border border-[var(--border)] bg-[var(--surface)]"
-                style={{ background: branding.primary_color }}
-                title={branding.primary_color}
-              />
-            ) : null}
+        <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 shadow-da-sm sm:p-4">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+            <h2 className="text-sm font-extrabold uppercase tracking-wide text-[color:var(--brand)]">
+              DA de l’app
+            </h2>
+            <p className="text-[11px] text-[color:var(--muted)]">
+              Plan {plan} · showroom &amp; portail
+              {branding?.primary_color ? (
+                <span
+                  className="ml-2 inline-block h-3 w-3 translate-y-0.5 rounded-full border border-[var(--border)] align-middle"
+                  style={{ background: branding.primary_color }}
+                  title={branding.primary_color}
+                />
+              ) : null}
+            </p>
           </div>
 
-          <form action={saveCoachBrandingAction} className="mt-4 grid gap-3 sm:grid-cols-2">
+          <form id="coach-branding-form" className="mt-3">
             <input type="hidden" name="return_to" value="/profile/mon-app" />
-            <label className="grid gap-1 text-sm">
-              <span className="font-semibold">Nom de l’app</span>
-              <input
-                name="app_name"
-                defaultValue={branding?.app_name ?? ''}
-                placeholder="Studio Remi"
-                className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2"
-              />
-            </label>
-            <label className="grid gap-1 text-sm">
-              <span className="font-semibold">Slug (URL publique)</span>
-              <input
-                name="slug"
-                defaultValue={branding?.slug ?? ''}
-                placeholder="studio-remi"
-                className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 font-mono text-xs"
-              />
-              <span className="text-[11px] text-[color:var(--muted)]">
-                Identifiant dans l’URL : /c/<span className="font-mono">{slug || 'votre-slug'}</span>
-                /showroom
-              </span>
-            </label>
-            <label className="grid gap-1 text-sm">
-              <span className="font-semibold">Couleur principale</span>
-              <input
-                name="primary_color"
-                type="color"
-                defaultValue={branding?.primary_color?.trim() || DEFAULT_CLIENT_PRIMARY_COLOR}
-                className="h-10 w-full cursor-pointer rounded-lg border border-[var(--border)] bg-[var(--surface)] p-1"
-              />
-            </label>
-            <CoachBrandingLogoField
-              logoUrl={branding?.logo_url ?? null}
-              appName={branding?.app_name?.trim() || 'T'}
-              primaryColor={branding?.primary_color?.trim() || DEFAULT_CLIENT_PRIMARY_COLOR}
+            <CoachBrandingThemeFields
+              initialThemeMode={branding?.theme_mode}
+              initialBgStyle={branding?.bg_style}
+              initialPrimaryColor={branding?.primary_color}
+              initialSecondaryColor={branding?.secondary_color}
+              appName={branding?.app_name}
+              logoUrl={branding?.logo_url}
+              leadingFields={
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <label className="grid gap-0.5 text-sm">
+                    <span className="text-xs font-semibold text-[color:var(--fg)]">Nom de l’app</span>
+                    <input
+                      name="app_name"
+                      defaultValue={branding?.app_name ?? ''}
+                      placeholder="Studio Remi"
+                      className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2.5 py-1.5 text-sm"
+                    />
+                  </label>
+                  <label className="grid gap-0.5 text-sm">
+                    <span className="text-xs font-semibold text-[color:var(--fg)]">Slug</span>
+                    <input
+                      name="slug"
+                      defaultValue={branding?.slug ?? ''}
+                      placeholder="studio-remi"
+                      className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2.5 py-1.5 font-mono text-xs"
+                    />
+                    <span className="text-[10px] text-[color:var(--muted)]">
+                      /c/<span className="font-mono">{slug || 'slug'}</span>/showroom
+                      {slug ? (
+                        <>
+                          {' · '}
+                          <Link
+                            href={`/c/${slug}/showroom`}
+                            className="font-semibold text-[color:var(--brand)] hover:underline"
+                          >
+                            ouvrir
+                          </Link>
+                        </>
+                      ) : null}
+                    </span>
+                  </label>
+                </div>
+              }
+              trailingFields={
+                <>
+                  <CoachBrandingLogoField
+                    logoUrl={branding?.logo_url ?? null}
+                    appName={branding?.app_name?.trim() || 'T'}
+                    primaryColor={
+                      branding?.primary_color?.trim() || DEFAULT_CLIENT_PRIMARY_COLOR
+                    }
+                  />
+                  <CoachCustomRequestBanner kind="logo" returnTo="/profile/mon-app" />
+                  <MonAppBrandingSaveBar />
+                </>
+              }
             />
-            <div className="sm:col-span-2">
-              <Button type="submit" className="!rounded-lg !px-4 !py-2 text-sm font-bold">Enregistrer</Button>
-            </div>
           </form>
           <form id="clear-coach-logo" action={clearCoachLogoAction} className="hidden">
             <input type="hidden" name="return_to" value="/profile/mon-app" />
           </form>
-          {slug ? (
-            <p className="mt-3 text-sm text-[color:var(--muted)]">
-              Showroom :{' '}
-              <Link href={`/c/${slug}/showroom`} className="font-semibold text-[color:var(--brand)] underline">
-                /c/{slug}/showroom
-              </Link>
-            </p>
-          ) : null}
         </section>
 
         <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-da-sm">
@@ -179,12 +196,15 @@ export default async function ProfileMonAppPage({
             portail.
           </p>
           {installUrl ? (
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <code className="max-w-full truncate rounded bg-[var(--accent)] px-2 py-1 text-xs text-[color:var(--fg)]">
-                {installUrl}
-              </code>
-              <CopyCodeButton code={installUrl} label="Copier" />
-            </div>
+            <>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <code className="max-w-full truncate rounded bg-[var(--accent)] px-2 py-1 text-xs text-[color:var(--fg)]">
+                  {installUrl}
+                </code>
+                <CopyCodeButton code={installUrl} label="Copier" />
+              </div>
+              <InstallQrCard installUrl={installUrl} />
+            </>
           ) : (
             <p className="mt-3 text-sm text-[color:var(--muted)]">Définis un slug pour activer le lien.</p>
           )}
@@ -261,6 +281,5 @@ export default async function ProfileMonAppPage({
           </form>
         </section>
       </div>
-    </CoachAppShell>
   )
 }

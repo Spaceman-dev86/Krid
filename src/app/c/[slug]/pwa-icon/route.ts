@@ -4,6 +4,9 @@ import { createClient } from '@/src/lib/supabase/server'
 
 type Ctx = { params: Promise<{ slug: string }> | { slug: string } }
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 /** Icône SVG fallback (lettre + couleur branding). */
 export async function GET(_req: Request, ctx: Ctx) {
   const { slug } = await Promise.resolve(ctx.params)
@@ -11,7 +14,7 @@ export async function GET(_req: Request, ctx: Ctx) {
 
   const { data: branding } = await supabase
     .from('coach_branding')
-    .select('app_name, primary_color')
+    .select('app_name, primary_color, updated_at')
     .eq('slug', slug)
     .maybeSingle()
 
@@ -29,7 +32,8 @@ export async function GET(_req: Request, ctx: Ctx) {
   return new NextResponse(svg, {
     headers: {
       'Content-Type': 'image/svg+xml; charset=utf-8',
-      'Cache-Control': 'public, max-age=3600',
+      'Cache-Control': 'no-store, max-age=0, must-revalidate',
+      ETag: `"${branding?.updated_at ?? color}-${letter}"`,
     },
   })
 }
