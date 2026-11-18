@@ -1,4 +1,5 @@
 import { chatDb } from '../chat/chat'
+import { isSchemaCacheError } from '../supabase/errors'
 import { parseTimerConfig, summarizeTimerConfig } from './timerConfig'
 
 export type BlockStatus = 'draft' | 'published'
@@ -83,7 +84,7 @@ const SELECT_MIN =
   'id, coach_id, name, notes, timer_note, sport_id, status, created_at, updated_at'
 
 function isMissingSportsEmbedError(message: string) {
-  return /sports|schema cache|relationship/i.test(message)
+  return isSchemaCacheError(message) || /sports|relationship/i.test(message)
 }
 
 /** Enrichit les types hérités (exos − hidden) pour une liste de blocs. */

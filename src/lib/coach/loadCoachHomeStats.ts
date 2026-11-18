@@ -3,6 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { isHomeKpiRdv, listCoachEvents, rdvDateIso } from '@/src/lib/calendar/rdv'
 import { clientDisplayName } from '@/src/lib/chat/chat'
 import { toIsoDate } from '@/src/lib/client-portal/weekCalendar'
+import { isSchemaCacheError } from '@/src/lib/supabase/errors'
 
 export type DashboardRdvItem = {
   id: string
@@ -153,8 +154,12 @@ export async function loadCoachHomeStats(
       .is('deleted_at', null),
   ])
 
-  const clients = clientsRes.data ?? []
-  const grantRows = grantsRes.data ?? []
+  // Schema cache / table introuvable côté PostgREST → stats vides, pas d’erreur UI
+  if (clientsRes.error && !isSchemaCacheError(clientsRes.error.message) && process.env.NODE_ENV !== 'production') {
+    console.warn('[loadCoachHomeStats] clients', clientsRes.error.message)
+  }
+  const clients = clientsRes.error ? [] : (clientsRes.data ?? [])
+  const grantRows = grantsRes.error ? [] : (grantsRes.data ?? [])
   const grantClientIds = new Set(grantRows.map((g) => g.client_id))
   const statusActiveIds = new Set(
     clients.filter((c) => c.status === 'active' || c.status === 'invited').map((c) => c.id),

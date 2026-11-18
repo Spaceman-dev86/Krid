@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { signExerciseMediaUrl } from '../exerciseMedia'
 import { chatDb } from '../chat/chat'
+import { isSchemaCacheError } from '../supabase/errors'
 
 export type ExerciseStatus = 'draft' | 'review' | 'published'
 export type ExerciseSourceKind = 'own' | 'krid' | 'network'
@@ -76,7 +77,7 @@ function isMissingColumnError(message: string) {
 }
 
 function isMissingSportsEmbedError(message: string) {
-  return /sports|schema cache|relationship/i.test(message)
+  return isSchemaCacheError(message) || /sports|relationship/i.test(message)
 }
 
 const SELECT_FULL_NO_SPORT =

@@ -15,6 +15,7 @@ import {
   listTrainlyExercises,
   withExerciseMediaUrls,
 } from '../../../lib/exercises/library'
+import { isSchemaCacheError } from '../../../lib/supabase/errors'
 import { createClient } from '../../../lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
@@ -45,7 +46,8 @@ export default async function ExercisesKridCataloguePage({ searchParams }: Props
     const forked = await listCoachForkedKridSourceIds(supabase, user.id)
     forkedIds = [...forked]
   } catch (e) {
-    loadError = e instanceof Error ? e.message : 'Erreur'
+    const msg = e instanceof Error ? e.message : 'Erreur'
+    loadError = isSchemaCacheError(msg) ? null : msg
   }
 
   const { typeOptions, sportOptions } = collectExerciseFilterOptions(items)

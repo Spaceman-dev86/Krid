@@ -1,3 +1,5 @@
+import { isSchemaCacheError } from '@/src/lib/supabase/errors'
+
 export type ClientListRow = {
   id: string
   email: string
@@ -64,7 +66,10 @@ export async function loadClientsListRows(
 
   const { data: clients, error } = await q
 
-  if (error) throw new Error(error.message)
+  if (error) {
+    if (isSchemaCacheError(error.message)) return []
+    throw new Error(error.message)
+  }
   const list = (clients ?? []) as Array<{
     id: string
     email: string

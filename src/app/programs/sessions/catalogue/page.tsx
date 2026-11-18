@@ -14,6 +14,7 @@ import {
   filterCoachSessions,
   listCoachSessions,
 } from '@/src/lib/sessions/coachSessionLibrary'
+import { isSchemaCacheError } from '@/src/lib/supabase/errors'
 import { createClient } from '@/src/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
@@ -55,7 +56,8 @@ export default async function SessionCataloguePage({ searchParams }: Props) {
       ),
     ]
   } catch (e) {
-    loadError = e instanceof Error ? e.message : 'Erreur'
+    const msg = e instanceof Error ? e.message : 'Erreur'
+    loadError = isSchemaCacheError(msg) ? null : msg
   }
 
   const { sportIds, typeIds } = collectSessionFilterOptions(items)

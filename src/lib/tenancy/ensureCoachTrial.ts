@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 
+import { isSchemaCacheError } from '../supabase/errors'
 import type { Database } from '../supabase/database.types'
 
 export const TRIAL_DAYS = 15
@@ -30,6 +31,10 @@ export async function ensureCoachTrial(
     .maybeSingle()
 
   if (selectError) {
+    // Infra PostgREST : ne pas afficher « schema cache » aux coachs
+    if (isSchemaCacheError(selectError.message)) {
+      return { subscription: null, created: false }
+    }
     return { subscription: null, created: false, error: selectError.message }
   }
 
@@ -53,6 +58,9 @@ export async function ensureCoachTrial(
     .maybeSingle()
 
   if (insertError) {
+    if (isSchemaCacheError(insertError.message)) {
+      return { subscription: null, created: false }
+    }
     return { subscription: null, created: false, error: insertError.message }
   }
 

@@ -12,6 +12,7 @@ import {
   listCoachForkedKridBlockSourceIds,
   listKridBlocks,
 } from '../../../../lib/blocks/library'
+import { isSchemaCacheError } from '../../../../lib/supabase/errors'
 import { createClient } from '../../../../lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
@@ -41,7 +42,8 @@ export default async function BlocksKridCataloguePage({ searchParams }: Props) {
     items = await listKridBlocks(supabase)
     forkedIds = [...(await listCoachForkedKridBlockSourceIds(supabase, user.id))]
   } catch (e) {
-    loadError = e instanceof Error ? e.message : 'Erreur'
+    const msg = e instanceof Error ? e.message : 'Erreur'
+    loadError = isSchemaCacheError(msg) ? null : msg
   }
 
   const { sportOptions, typeOptions } = collectBlockFilterOptions(items)

@@ -12,6 +12,7 @@ import {
   clientListStatusLabel,
   loadClientsListRows,
 } from '../../lib/coach/loadClientsListRows'
+import { isSchemaCacheError } from '../../lib/supabase/errors'
 import { createClient } from '../../lib/supabase/server'
 
 export default async function ClientsPage({
@@ -36,7 +37,8 @@ export default async function ClientsPage({
   try {
     rows = await loadClientsListRows(supabase, user.id)
   } catch (e) {
-    loadError = e instanceof Error ? e.message : 'Erreur chargement'
+    const msg = e instanceof Error ? e.message : 'Erreur chargement'
+    loadError = isSchemaCacheError(msg) ? null : msg
   }
 
   const { data: prestations } = await supabase

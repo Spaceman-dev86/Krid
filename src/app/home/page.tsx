@@ -9,6 +9,7 @@ import { TodayPanel } from '../../components/coach/dashboard/TodayPanel'
 import { requireCoachAppUser } from '../../lib/auth/requireCoachAppUser'
 import { loadCoachHomeStats } from '../../lib/coach/loadCoachHomeStats'
 import { loadCoachShellContext } from '../../lib/coach/loadCoachShellContext'
+import { isSchemaCacheError } from '../../lib/supabase/errors'
 import { TRIAL_DAYS } from '../../lib/tenancy/ensureCoachTrial'
 
 export const dynamic = 'force-dynamic'
@@ -73,7 +74,9 @@ export default async function HomePage({
           </DaBanner>
         ) : null}
 
-        {shell.trialError ? <DaBanner tone="danger">Essai : {shell.trialError}</DaBanner> : null}
+        {shell.trialError && !isSchemaCacheError(shell.trialError) ? (
+          <DaBanner tone="danger">Essai : {shell.trialError}</DaBanner>
+        ) : null}
 
         {params.error ? <DaBanner tone="danger">{params.error}</DaBanner> : null}
 
