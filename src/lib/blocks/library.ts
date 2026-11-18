@@ -215,9 +215,13 @@ export async function listKridBlocks(supabase: unknown) {
       .eq('status', 'published')
       .is('deleted_at', null)
       .order('name', { ascending: true })
-    if (fallback.error) throw new Error(fallback.error.message)
+    if (fallback.error) {
+      if (isSchemaCacheError(fallback.error.message)) return []
+      throw new Error(fallback.error.message)
+    }
     rows = ((fallback.data ?? []) as RawBlock[]).map(mapBlock)
   } else if (res.error) {
+    if (isSchemaCacheError(res.error.message)) return []
     const fallback = await db
       .from('block_library')
       .select(SELECT_MIN)
@@ -225,7 +229,10 @@ export async function listKridBlocks(supabase: unknown) {
       .eq('status', 'published')
       .is('deleted_at', null)
       .order('name', { ascending: true })
-    if (fallback.error) throw new Error(fallback.error.message)
+    if (fallback.error) {
+      if (isSchemaCacheError(fallback.error.message)) return []
+      throw new Error(fallback.error.message)
+    }
     rows = ((fallback.data ?? []) as RawBlock[]).map(mapBlock)
   } else {
     rows = ((res.data ?? []) as RawBlock[]).map(mapBlock)
@@ -268,9 +275,13 @@ export async function listCoachBlocks(
       .eq('status', status)
       .is('deleted_at', null)
       .order('name', { ascending: true })
-    if (fallback.error) throw new Error(fallback.error.message)
+    if (fallback.error) {
+      if (isSchemaCacheError(fallback.error.message)) return []
+      throw new Error(fallback.error.message)
+    }
     rows = ((fallback.data ?? []) as RawBlock[]).map(mapBlock)
   } else if (res.error) {
+    if (isSchemaCacheError(res.error.message)) return []
     const fallback = await db
       .from('block_library')
       .select(SELECT_MIN)
@@ -278,7 +289,10 @@ export async function listCoachBlocks(
       .eq('status', status)
       .is('deleted_at', null)
       .order('name', { ascending: true })
-    if (fallback.error) throw new Error(fallback.error.message)
+    if (fallback.error) {
+      if (isSchemaCacheError(fallback.error.message)) return []
+      throw new Error(fallback.error.message)
+    }
     rows = ((fallback.data ?? []) as RawBlock[]).map(mapBlock)
   } else {
     rows = ((res.data ?? []) as RawBlock[]).map(mapBlock)

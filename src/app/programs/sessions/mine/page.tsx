@@ -18,6 +18,7 @@ import {
   attachSessionUsages,
   loadSessionTemplateUsages,
 } from '@/src/lib/sessions/templateUsage'
+import { isSchemaCacheError } from '@/src/lib/supabase/errors'
 import { createClient } from '@/src/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
@@ -44,7 +45,8 @@ export default async function SessionMinePage({ searchParams }: Props) {
   try {
     items = await listCoachSessions(supabase, user.id, 'mine')
   } catch (e) {
-    loadError = e instanceof Error ? e.message : 'Erreur'
+    const msg = e instanceof Error ? e.message : 'Erreur'
+    loadError = isSchemaCacheError(msg) ? null : msg
   }
 
   const { sportIds, typeIds } = collectSessionFilterOptions(items)

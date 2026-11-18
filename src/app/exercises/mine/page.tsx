@@ -15,6 +15,7 @@ import {
   attachExerciseUsages,
   loadExerciseTemplateUsages,
 } from '../../../lib/exercises/templateUsage'
+import { isSchemaCacheError } from '../../../lib/supabase/errors'
 import { createClient } from '../../../lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
@@ -55,7 +56,8 @@ export default async function ExercisesMinePage({ searchParams }: Props) {
   try {
     items = await listCoachExercises(supabase, user.id, 'published')
   } catch (e) {
-    loadError = e instanceof Error ? e.message : 'Erreur'
+    const msg = e instanceof Error ? e.message : 'Erreur'
+    loadError = isSchemaCacheError(msg) ? null : msg
   }
 
   const { typeOptions, sportOptions } = collectExerciseFilterOptions(items)

@@ -73,7 +73,8 @@ function mapRow(row: Record<string, unknown>): CoachExerciseRow {
 }
 
 function isMissingColumnError(message: string) {
-  return /status|exercise_type|source_kind|source_exercise_id|column/i.test(message)
+  // Ne pas matcher « column … does not exist » générique (schema cache PostgREST).
+  return /status|exercise_type|source_kind|source_exercise_id/i.test(message)
 }
 
 function isMissingSportsEmbedError(message: string) {
@@ -132,7 +133,10 @@ export async function listTrainlyExercises(supabase: unknown) {
       .is('deleted_at', null)
       .order('name', { ascending: true })
   }
-  if (res.error) throw new Error(res.error.message)
+  if (res.error) {
+    if (isSchemaCacheError(res.error.message)) return []
+    throw new Error(res.error.message)
+  }
   return (res.data ?? []).map((r: Record<string, unknown>) => mapRow(r))
 }
 
@@ -188,7 +192,10 @@ export async function listCoachExercises(
       .is('deleted_at', null)
       .order('name', { ascending: true })
   }
-  if (res.error) throw new Error(res.error.message)
+  if (res.error) {
+    if (isSchemaCacheError(res.error.message)) return []
+    throw new Error(res.error.message)
+  }
   return (res.data ?? []).map((r: Record<string, unknown>) => mapRow(r))
 }
 

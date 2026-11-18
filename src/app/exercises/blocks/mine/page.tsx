@@ -15,6 +15,7 @@ import {
   attachBlockUsages,
   loadBlockTemplateUsages,
 } from '../../../../lib/blocks/templateUsage'
+import { isSchemaCacheError } from '../../../../lib/supabase/errors'
 import { createClient } from '../../../../lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
@@ -41,7 +42,8 @@ export default async function BlocksMinePage({ searchParams }: Props) {
   try {
     items = await listCoachBlocks(supabase, user.id, 'published')
   } catch (e) {
-    loadError = e instanceof Error ? e.message : 'Erreur'
+    const msg = e instanceof Error ? e.message : 'Erreur'
+    loadError = isSchemaCacheError(msg) ? null : msg
   }
 
   const { sportOptions, typeOptions } = collectBlockFilterOptions(items)

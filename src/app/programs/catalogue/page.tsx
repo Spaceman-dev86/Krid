@@ -9,6 +9,7 @@ import { ProgramsCatalogueList } from '@/src/components/programs/ProgramsCatalog
 import { ProgramsHubHeader } from '@/src/components/programs/ProgramsHubHeader'
 import { ProgramsZoneBar } from '@/src/components/programs/ProgramsZoneBar'
 import { loadProgramsCatalogue } from '@/src/lib/programs/loadProgramsHub'
+import { isSchemaCacheError } from '@/src/lib/supabase/errors'
 import { createClient } from '@/src/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
@@ -25,7 +26,8 @@ export default async function ProgramsCataloguePage() {
   try {
     rows = await loadProgramsCatalogue(supabase)
   } catch (e) {
-    loadError = e instanceof Error ? e.message : 'Erreur'
+    const msg = e instanceof Error ? e.message : 'Erreur'
+    loadError = isSchemaCacheError(msg) ? null : msg
   }
 
   return (
