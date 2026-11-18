@@ -1,5 +1,3 @@
-import { redirect } from 'next/navigation'
-
 import { DaBanner } from '@/src/components/ui'
 import { CoachAppShell } from '../../components/coach/CoachAppShell'
 import { ActivityWeekBars } from '../../components/coach/dashboard/ActivityWeekBars'
@@ -8,11 +6,10 @@ import { DashboardHero } from '../../components/coach/dashboard/DashboardHero'
 import { DashboardKpiRow } from '../../components/coach/dashboard/DashboardKpiRow'
 import { ProgramsSnap } from '../../components/coach/dashboard/ProgramsSnap'
 import { TodayPanel } from '../../components/coach/dashboard/TodayPanel'
-import { canAccessCoachApp } from '../../lib/auth/roles'
+import { requireCoachAppUser } from '../../lib/auth/requireCoachAppUser'
 import { loadCoachHomeStats } from '../../lib/coach/loadCoachHomeStats'
 import { loadCoachShellContext } from '../../lib/coach/loadCoachShellContext'
 import { TRIAL_DAYS } from '../../lib/tenancy/ensureCoachTrial'
-import { createClient } from '../../lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,32 +19,24 @@ export default async function HomePage({
   searchParams?: Promise<{ error?: string }> | { error?: string }
 }) {
   const params = await Promise.resolve(searchParams ?? {})
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) redirect('/login')
+  // getSession d’abord (cookie) — getUser() seul renvoyait à /login alors que la session client était OK
+  const { supabase, userId } = await requireCoachAppUser()
 
   const { data: profile } = await supabase
     .from('profiles')
     .select('role, email, full_name')
-    .eq('id', user.id)
+    .eq('id', userId)
     .maybeSingle()
 
-  if (!canAccessCoachApp(profile?.role)) {
-    redirect('/login')
-  }
-
-  const shell = await loadCoachShellContext(user.id)
+  const shell = await loadCoachShellContext(userId)
 
   const [{ data: publicProfile }, stats] = await Promise.all([
     supabase
       .from('coach_public_profile')
       .select('public_name')
-      .eq('coach_id', user.id)
+      .eq('coach_id', userId)
       .maybeSingle(),
-    loadCoachHomeStats(supabase, user.id),
+    loadCoachHomeStats(supabase, userId),
   ])
 
   const greetName =

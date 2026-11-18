@@ -378,12 +378,25 @@ export default function LoginClient({ variant, entry = 'default' }: Props) {
               ) : null}
               <div className="mt-4 flex flex-wrap gap-3">
                 {!redirectTo && (userRole === 'coach' || (!isAdmin && isPlatformAdmin(userRole))) ? (
-                  <Button href="/home" className="h-11 px-5 text-sm">
+                  <Button
+                    type="button"
+                    className="h-11 px-5 text-sm"
+                    onClick={() => {
+                      window.location.assign('/home')
+                    }}
+                  >
                     Aller à l’app coach
                   </Button>
                 ) : null}
                 {!redirectTo && isPlatformAdmin(userRole) ? (
-                  <Button href="/admin" variant="secondary" className="h-11 px-5 text-sm">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="h-11 px-5 text-sm"
+                    onClick={() => {
+                      window.location.assign('/admin')
+                    }}
+                  >
                     Aller à l’admin
                   </Button>
                 ) : null}

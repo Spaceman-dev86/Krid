@@ -7,9 +7,27 @@ import { createClient } from '../supabase/server'
 /** Une seule auth + profile par requête RSC (layout + page). */
 export const requirePlatformAdmin = cache(async () => {
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+
+  let user: { id: string; email?: string | null } | null = null
+  try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+    user = session?.user ?? null
+  } catch {
+    user = null
+  }
+
+  if (!user) {
+    try {
+      const {
+        data: { user: u },
+      } = await supabase.auth.getUser()
+      user = u
+    } catch {
+      user = null
+    }
+  }
 
   if (!user) {
     redirect('/loginadmin')
