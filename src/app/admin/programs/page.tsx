@@ -178,7 +178,7 @@ export default async function AdminProgramsPage({
           .limit(200)
         if (search) legacy = legacy.ilike('title', `%${search}%`)
         const res = await legacy
-        progData = res.data
+        progData = res.data as typeof progData
         error = res.error
           ? res.error
           : ({
@@ -197,7 +197,7 @@ export default async function AdminProgramsPage({
           .limit(200)
         if (search) legacy = legacy.ilike('title', `%${search}%`)
         const res = await legacy
-        progData = res.data
+        progData = res.data as typeof progData
         error = res.error
       }
     } else {
@@ -210,7 +210,7 @@ export default async function AdminProgramsPage({
         .limit(200)
       if (search) legacy = legacy.ilike('title', `%${search}%`)
       const res = await legacy
-      progData = res.data
+      progData = res.data as typeof progData
       error = res.error
         ? res.error
         : ({
