@@ -169,7 +169,15 @@ export default function LoginClient({ variant, entry = 'default' }: Props) {
     }
 
     if (role === 'client') {
-      window.location.replace('/login/client?error=client_sur_coach_login')
+      // Ne pas envoyer vers /login/client : le message y était inversé et
+      // renvoyait en boucle. Rester sur la page coach avec un vrai feedback.
+      await supabase.auth.signOut()
+      setError(
+        fromSite
+          ? 'Ce compte est un compte client, pas coach. Connecte-toi avec ton email coach pour l’app Krid (ou ouvre la connexion client pour le portail).'
+          : 'Ce compte est un client — pas l’app coach. Utilise la connexion client, ou un email coach.',
+      )
+      setLoading(false)
       return
     }
 

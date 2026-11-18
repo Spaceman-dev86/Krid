@@ -212,11 +212,12 @@ export default function ClientLoginClient() {
                 </div>
               ) : authError === 'client_sur_coach_login' ? (
                 <div className="mt-4 rounded-[var(--radius-md)] bg-amber-50 p-4 text-sm text-amber-900 ring-1 ring-amber-100">
-                  Compte coach — utilise{' '}
-                  <Link href="/login" className="font-semibold underline">
-                    /login
-                  </Link>
-                  .
+                  Tu es arrivé ici depuis la connexion <strong>coach</strong> avec un compte{' '}
+                  <strong>client</strong>. Tu peux te connecter ici pour le portail, ou revenir à{' '}
+                  <Link href="/signup?mode=login" className="font-semibold underline">
+                    la connexion coach
+                  </Link>{' '}
+                  avec l’email coach.
                 </div>
               ) : authError === 'no_portal' ? (
                 <div className="mt-4 rounded-[var(--radius-md)] bg-amber-50 p-4 text-sm text-amber-900 ring-1 ring-amber-100">
