@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import { redirect } from 'next/navigation'
 
 import {
   Button,
@@ -12,9 +11,9 @@ import {
 import { CoachAppShell } from '../../../components/coach/CoachAppShell'
 import { SettingsSubnav } from '../../../components/coach/SettingsSubnav'
 import { CATEGORY_LABEL, STATUS_LABEL } from '../../../lib/admin/supportLabels'
-import { canAccessCoachApp, isPlatformAdmin } from '../../../lib/auth/roles'
+import { isPlatformAdmin } from '../../../lib/auth/roles'
+import { requireCoachAppUser } from '../../../lib/auth/requireCoachAppUser'
 import { loadCoachShellContext } from '../../../lib/coach/loadCoachShellContext'
-import { createClient } from '../../../lib/supabase/server'
 import {
   createSupportTicketAction,
   openSupportAttachmentAction,
@@ -31,21 +30,15 @@ type Props = {
 
 export default async function CoachSupportPage({ searchParams }: Props) {
   const q = await Promise.resolve(searchParams ?? {})
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  const { supabase, userId } = await requireCoachAppUser()
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', userId).maybeSingle()
 
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
-  if (!canAccessCoachApp(profile?.role)) redirect('/login')
-
-  const shell = await loadCoachShellContext(user.id)
+  const shell = await loadCoachShellContext(userId)
 
   const { data: tickets, error } = await supabase
     .from('support_tickets')
     .select('id, subject, status, category, created_at')
-    .eq('coach_id', user.id)
+    .eq('coach_id', userId)
     .order('created_at', { ascending: false })
 
   const focusId = q.ticket || q.created || null
@@ -54,7 +47,7 @@ export default async function CoachSupportPage({ searchParams }: Props) {
       .from('support_tickets')
       .update({ coach_last_read_at: new Date().toISOString() })
       .eq('id', focusId)
-      .eq('coach_id', user.id)
+      .eq('coach_id', userId)
   }
 
   const { data: messages } = focusId

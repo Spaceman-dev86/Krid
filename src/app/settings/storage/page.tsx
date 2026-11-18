@@ -1,5 +1,3 @@
-import { redirect } from 'next/navigation'
-
 import {
   PageTitle,
   Muted,
@@ -9,12 +7,12 @@ import {
 } from '@/src/components/ui'
 import { CoachAppShell } from '../../../components/coach/CoachAppShell'
 import { SettingsSubnav } from '../../../components/coach/SettingsSubnav'
-import { canAccessCoachApp, isPlatformAdmin } from '../../../lib/auth/roles'
+import { isPlatformAdmin } from '../../../lib/auth/roles'
+import { requireCoachAppUser } from '../../../lib/auth/requireCoachAppUser'
 import { chatDb } from '../../../lib/chat/chat'
 import { loadCoachShellContext } from '../../../lib/coach/loadCoachShellContext'
 import { formatBytes } from '../../../lib/drive/drive'
 import { getCoachDriveQuota } from '../../../lib/drive/quota'
-import { createClient } from '../../../lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
 
@@ -44,18 +42,12 @@ const BUCKET_LABEL: Record<BucketKey, string> = {
 }
 
 export default async function SettingsStoragePage() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
-  if (!canAccessCoachApp(profile?.role)) redirect('/login')
+  const { supabase, userId } = await requireCoachAppUser()
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', userId).maybeSingle()
   const adminGateway = isPlatformAdmin(profile?.role)
 
-  const shell = await loadCoachShellContext(user.id)
-  const quotaSnap = await getCoachDriveQuota(supabase, user.id)
+  const shell = await loadCoachShellContext(userId)
+  const quotaSnap = await getCoachDriveQuota(supabase, userId)
   const tier = quotaSnap.planTier
   const quotaGo = quotaSnap.quotaGo
   const usedBytes = quotaSnap.usedBytes
@@ -70,7 +62,7 @@ export default async function SettingsStoragePage() {
   const { data: files } = await db
     .from('drive_files')
     .select('size_bytes, mime_type')
-    .eq('coach_id', user.id)
+    .eq('coach_id', userId)
     .is('deleted_at', null)
     .limit(5000)
 

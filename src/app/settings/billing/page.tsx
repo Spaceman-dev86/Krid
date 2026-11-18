@@ -1,5 +1,3 @@
-import { redirect } from 'next/navigation'
-
 import {
   PageTitle,
   Muted,
@@ -9,9 +7,9 @@ import {
 } from '@/src/components/ui'
 import { CoachAppShell } from '../../../components/coach/CoachAppShell'
 import { SettingsSubnav } from '../../../components/coach/SettingsSubnav'
-import { canAccessCoachApp, isPlatformAdmin } from '../../../lib/auth/roles'
+import { isPlatformAdmin } from '../../../lib/auth/roles'
+import { requireCoachAppUser } from '../../../lib/auth/requireCoachAppUser'
 import { loadCoachShellContext } from '../../../lib/coach/loadCoachShellContext'
-import { createClient } from '../../../lib/supabase/server'
 import { isTrialExpired, trialDaysRemaining, TRIAL_DAYS } from '../../../lib/tenancy/ensureCoachTrial'
 
 export const dynamic = 'force-dynamic'
@@ -32,16 +30,10 @@ const STATUS_LABEL: Record<string, string> = {
 }
 
 export default async function SettingsBillingPage() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  const { supabase, userId } = await requireCoachAppUser()
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', userId).maybeSingle()
 
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
-  if (!canAccessCoachApp(profile?.role)) redirect('/login')
-
-  const shell = await loadCoachShellContext(user.id)
+  const shell = await loadCoachShellContext(userId)
   const sub = shell.subscription
   const days = trialDaysRemaining(sub)
   const expired = isTrialExpired(sub)

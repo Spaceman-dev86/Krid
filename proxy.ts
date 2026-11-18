@@ -52,6 +52,8 @@ export async function proxy(request: NextRequest) {
   const isCoachNutrition = pathname === '/nutrition' || pathname.startsWith('/nutrition/')
   const isCoachExercises = pathname === '/exercises' || pathname.startsWith('/exercises/')
   const isCoachDrive = pathname === '/drive' || pathname.startsWith('/drive/')
+  const isCoachSettings = pathname === '/settings' || pathname.startsWith('/settings/')
+  const isCoachProfile = pathname === '/profile' || pathname.startsWith('/profile/')
 
   // 1) Cookie session locale (pas d’aller-retour Auth API)
   let user: { id: string } | null = null
@@ -121,7 +123,9 @@ export async function proxy(request: NextRequest) {
     isCoachCalendar ||
     isCoachNutrition ||
     isCoachExercises ||
-    isCoachDrive
+    isCoachDrive ||
+    isCoachSettings ||
+    isCoachProfile
 
   // Kick coach area seulement si on a lu un rôle et qu’il est refusé
   if (isCoachArea && profileOk && role != null && !canAccessCoachApp(role)) {
@@ -171,6 +175,10 @@ export const config = {
     '/exercises/:path*',
     '/drive',
     '/drive/:path*',
+    '/settings',
+    '/settings/:path*',
+    '/profile',
+    '/profile/:path*',
     '/c/:slug/home',
     '/c/:slug/profil',
     '/c/:slug/profil/:path*',

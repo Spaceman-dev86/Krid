@@ -88,7 +88,7 @@ export function CoachAppShell({
   savUnread = 0,
   chatUnread = 0,
   notifUnread = 0,
-  notifHref = '/calendar',
+  notifHref = '/chat',
 }: {
   children: ReactNode
   appName?: string | null

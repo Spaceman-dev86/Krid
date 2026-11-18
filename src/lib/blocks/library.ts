@@ -76,6 +76,16 @@ function mapBlock(row: RawBlock): CoachBlockRow {
 const SELECT =
   'id, coach_id, name, notes, timer_note, sport_id, status, source_kind, source_block_id, created_at, updated_at, sports(label), block_library_exercises(id)'
 
+const SELECT_NO_SPORT =
+  'id, coach_id, name, notes, timer_note, sport_id, status, source_kind, source_block_id, created_at, updated_at, block_library_exercises(id)'
+
+const SELECT_MIN =
+  'id, coach_id, name, notes, timer_note, sport_id, status, created_at, updated_at'
+
+function isMissingSportsEmbedError(message: string) {
+  return /sports|schema cache|relationship/i.test(message)
+}
+
 /** Enrichit les types hérités (exos − hidden) pour une liste de blocs. */
 async function withBlockInheritedTypes(
   supabase: unknown,
@@ -196,10 +206,20 @@ export async function listKridBlocks(supabase: unknown) {
     .order('name', { ascending: true })
 
   let rows: CoachBlockRow[]
-  if (res.error) {
+  if (res.error && isMissingSportsEmbedError(res.error.message)) {
     const fallback = await db
       .from('block_library')
-      .select('id, coach_id, name, notes, timer_note, sport_id, status, created_at, updated_at, sports(label)')
+      .select(SELECT_NO_SPORT)
+      .is('coach_id', null)
+      .eq('status', 'published')
+      .is('deleted_at', null)
+      .order('name', { ascending: true })
+    if (fallback.error) throw new Error(fallback.error.message)
+    rows = ((fallback.data ?? []) as RawBlock[]).map(mapBlock)
+  } else if (res.error) {
+    const fallback = await db
+      .from('block_library')
+      .select(SELECT_MIN)
       .is('coach_id', null)
       .eq('status', 'published')
       .is('deleted_at', null)
@@ -239,10 +259,20 @@ export async function listCoachBlocks(
   }
 
   let rows: CoachBlockRow[]
-  if (res.error) {
+  if (res.error && isMissingSportsEmbedError(res.error.message)) {
     const fallback = await db
       .from('block_library')
-      .select('id, coach_id, name, notes, timer_note, sport_id, status, created_at, updated_at, sports(label)')
+      .select(SELECT_NO_SPORT)
+      .eq('coach_id', coachId)
+      .eq('status', status)
+      .is('deleted_at', null)
+      .order('name', { ascending: true })
+    if (fallback.error) throw new Error(fallback.error.message)
+    rows = ((fallback.data ?? []) as RawBlock[]).map(mapBlock)
+  } else if (res.error) {
+    const fallback = await db
+      .from('block_library')
+      .select(SELECT_MIN)
       .eq('coach_id', coachId)
       .eq('status', status)
       .is('deleted_at', null)

@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import { redirect } from 'next/navigation'
 
 import {
   PageTitle,
@@ -12,9 +11,9 @@ import {
 import { CoachAppShell } from '../../components/coach/CoachAppShell'
 import { SettingsSubnav } from '../../components/coach/SettingsSubnav'
 import { ShellThemeToggle } from '../../components/design/ThemeToggle'
-import { canAccessCoachApp, isPlatformAdmin } from '../../lib/auth/roles'
+import { isPlatformAdmin } from '../../lib/auth/roles'
+import { requireCoachAppUser } from '../../lib/auth/requireCoachAppUser'
 import { loadCoachShellContext } from '../../lib/coach/loadCoachShellContext'
-import { createClient } from '../../lib/supabase/server'
 import { trialDaysRemaining } from '../../lib/tenancy/ensureCoachTrial'
 import {
   requestCoachEmailChangeAction,
@@ -32,20 +31,15 @@ type Props = {
 
 export default async function SettingsAccountPage({ searchParams }: Props) {
   const q = await Promise.resolve(searchParams ?? {})
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  const { supabase, userId, user } = await requireCoachAppUser()
 
   const { data: profile } = await supabase
     .from('profiles')
     .select('role, email, full_name')
-    .eq('id', user.id)
+    .eq('id', userId)
     .maybeSingle()
-  if (!canAccessCoachApp(profile?.role)) redirect('/login')
 
-  const shell = await loadCoachShellContext(user.id)
+  const shell = await loadCoachShellContext(userId)
   const days = trialDaysRemaining(shell.subscription)
   const pendingEmail = (user as { new_email?: string | null }).new_email || null
   const adminGateway = isPlatformAdmin(profile?.role)

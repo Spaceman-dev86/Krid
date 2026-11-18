@@ -40,7 +40,7 @@ export const loadCoachShellContext = cache(async function loadCoachShellContext(
   let savUnread = 0
   let chatUnread = 0
   let notifUnread = 0
-  let notifHref = '/calendar'
+  let notifHref = '/chat'
 
   try {
     const trial = await ensureCoachTrial(supabase, userId)

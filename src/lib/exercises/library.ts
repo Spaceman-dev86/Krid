@@ -75,6 +75,16 @@ function isMissingColumnError(message: string) {
   return /status|exercise_type|source_kind|source_exercise_id|column/i.test(message)
 }
 
+function isMissingSportsEmbedError(message: string) {
+  return /sports|schema cache|relationship/i.test(message)
+}
+
+const SELECT_FULL_NO_SPORT =
+  'id, coach_id, name, description, muscle_group, difficulty, video_url, demo_media_path, replacement_exercise_id, status, exercise_type, sport_id, source_kind, source_exercise_id, created_at, updated_at'
+
+const SELECT_NO_PROVENANCE_NO_SPORT =
+  'id, coach_id, name, description, muscle_group, difficulty, video_url, demo_media_path, replacement_exercise_id, status, exercise_type, sport_id, created_at, updated_at'
+
 /** Catalogue Krid publié (coach_id null · status published). */
 export async function listTrainlyExercises(supabase: unknown) {
   const db = chatDb(supabase)
@@ -86,10 +96,28 @@ export async function listTrainlyExercises(supabase: unknown) {
     .is('deleted_at', null)
     .order('name', { ascending: true })
 
+  if (res.error && isMissingSportsEmbedError(res.error.message)) {
+    res = await db
+      .from('exercise_library')
+      .select(SELECT_FULL_NO_SPORT)
+      .is('coach_id', null)
+      .eq('status', 'published')
+      .is('deleted_at', null)
+      .order('name', { ascending: true })
+  }
   if (res.error && isMissingColumnError(res.error.message)) {
     res = await db
       .from('exercise_library')
       .select(SELECT_NO_PROVENANCE)
+      .is('coach_id', null)
+      .eq('status', 'published')
+      .is('deleted_at', null)
+      .order('name', { ascending: true })
+  }
+  if (res.error && isMissingSportsEmbedError(res.error.message)) {
+    res = await db
+      .from('exercise_library')
+      .select(SELECT_NO_PROVENANCE_NO_SPORT)
       .is('coach_id', null)
       .eq('status', 'published')
       .is('deleted_at', null)
@@ -121,6 +149,15 @@ export async function listCoachExercises(
     .is('deleted_at', null)
     .order('name', { ascending: true })
 
+  if (res.error && isMissingSportsEmbedError(res.error.message)) {
+    res = await db
+      .from('exercise_library')
+      .select(SELECT_FULL_NO_SPORT)
+      .eq('coach_id', coachId)
+      .eq('status', status)
+      .is('deleted_at', null)
+      .order('name', { ascending: true })
+  }
   if (res.error && isMissingColumnError(res.error.message)) {
     if (/source_kind|source_exercise_id/i.test(res.error.message)) {
       res = await db
@@ -131,6 +168,15 @@ export async function listCoachExercises(
         .is('deleted_at', null)
         .order('name', { ascending: true })
     }
+  }
+  if (res.error && isMissingSportsEmbedError(res.error.message)) {
+    res = await db
+      .from('exercise_library')
+      .select(SELECT_NO_PROVENANCE_NO_SPORT)
+      .eq('coach_id', coachId)
+      .eq('status', status)
+      .is('deleted_at', null)
+      .order('name', { ascending: true })
   }
   if (res.error && isMissingColumnError(res.error.message)) {
     if (status === 'draft') return []
@@ -177,10 +223,26 @@ export async function getExercise(supabase: unknown, id: string) {
     .is('deleted_at', null)
     .maybeSingle()
 
+  if (res.error && isMissingSportsEmbedError(res.error.message)) {
+    res = await db
+      .from('exercise_library')
+      .select(SELECT_FULL_NO_SPORT)
+      .eq('id', id)
+      .is('deleted_at', null)
+      .maybeSingle()
+  }
   if (res.error && isMissingColumnError(res.error.message)) {
     res = await db
       .from('exercise_library')
       .select(SELECT_NO_PROVENANCE)
+      .eq('id', id)
+      .is('deleted_at', null)
+      .maybeSingle()
+  }
+  if (res.error && isMissingSportsEmbedError(res.error.message)) {
+    res = await db
+      .from('exercise_library')
+      .select(SELECT_NO_PROVENANCE_NO_SPORT)
       .eq('id', id)
       .is('deleted_at', null)
       .maybeSingle()
