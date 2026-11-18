@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 
 import { createClient } from '../../../lib/supabase/client'
+import { appUrl } from '../../../lib/urls'
 import { Button, Card, Container, Input } from '../../../components/ui'
 
 type Audience = 'coach' | 'client' | 'admin'
@@ -32,9 +33,8 @@ export default function ForgotPasswordClient() {
     setError(null)
     setMessage(null)
 
-    const origin = window.location.origin
     const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: `${origin}/auth/callback/recovery`,
+      redirectTo: appUrl('/auth/callback/recovery'),
     })
 
     setLoading(false)

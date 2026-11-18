@@ -11,6 +11,21 @@ import { canAccessCoachApp, isPlatformAdmin } from './src/lib/auth/roles'
  *   (erreur réseau / timeout profil ≠ déconnexion)
  */
 export async function proxy(request: NextRequest) {
+  const pathname = request.nextUrl.pathname
+
+  // Legacy Auth emails sometimes land on Site URL `/` with ?code= / token_hash.
+  // Exchange must happen on /auth/callback/coach, not the product root.
+  if (pathname === '/') {
+    const hasAuthCode = request.nextUrl.searchParams.has('code')
+    const hasTokenHash = request.nextUrl.searchParams.has('token_hash')
+    if (hasAuthCode || hasTokenHash) {
+      const redirectUrl = request.nextUrl.clone()
+      redirectUrl.pathname = '/auth/callback/coach'
+      return NextResponse.redirect(redirectUrl, 307)
+    }
+    return NextResponse.next()
+  }
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
@@ -36,8 +51,6 @@ export async function proxy(request: NextRequest) {
       },
     },
   })
-
-  const pathname = request.nextUrl.pathname
 
   const isClientPortalPath =
     /^\/c\/[^/]+\/(home|profil|coach|historique|seance|programme|messages|calendrier|drive)(\/|$)/.test(
@@ -154,6 +167,7 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
+    '/',
     '/dashboard/:path*',
     '/admin/:path*',
     '/home',

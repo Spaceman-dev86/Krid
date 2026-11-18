@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation'
 import { isPlatformAdmin } from '../../../lib/auth/roles'
 import { markPasswordSet } from '../../../lib/auth/password'
 import { createClient } from '../../../lib/supabase/client'
-import { siteUrl } from '../../../lib/urls'
+import { appUrl, siteUrl } from '../../../lib/urls'
 import { Button, Input } from '../../../components/ui'
 
 type LoginVariant = 'coach' | 'admin'
@@ -46,14 +46,13 @@ export default function LoginClient({ variant, entry = 'default' }: Props) {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [userEmail, setUserEmail] = useState<string | null>(null)
-  const [userRole, setUserRole] = useState<'admin' | 'coach' | 'platform_admin' | 'client' | null>(null)
 
   const redirectTo = searchParams.get('redirectTo')
   const authError = searchParams.get('error')
   const isAdmin = variant === 'admin'
   const fromSite = entry === 'signup'
   const showBusinessBadge = fromSite && (planParam === 'business' || !planParam)
+  const signOutHref = `/auth/signout?next=${encodeURIComponent(isAdmin ? '/loginadmin' : '/login')}`
 
   useEffect(() => {
     if (isAdmin) return
@@ -61,96 +60,34 @@ export default function LoginClient({ variant, entry = 'default' }: Props) {
     else if (modeParam === 'login') setCoachMode('login')
   }, [modeParam, isAdmin])
 
-  async function resolveClientHome(userId: string) {
-    const { data: client } = await supabase
-      .from('clients')
-      .select('coach_id')
-      .eq('user_id', userId)
-      .is('deleted_at', null)
-      .maybeSingle()
-    if (!client) return null
-    const { data: branding } = await supabase
-      .from('coach_branding')
-      .select('slug')
-      .eq('coach_id', client.coach_id)
-      .maybeSingle()
-    return branding?.slug ? `/c/${branding.slug}/home` : null
-  }
-
-  const [clientPortalHref, setClientPortalHref] = useState<string | null>(null)
-
+  // Filet : session déjà ouverte → hard nav (admin → /admin, coach → /home). Pas de carte.
   useEffect(() => {
-    let mounted = true
-    let loadSeq = 0
-
-    async function loadFromUser(user: { id: string; email?: string | null } | null) {
-      const seq = ++loadSeq
-      if (!mounted) return
-      setUserEmail(user?.email ?? null)
-
-      if (!user) {
-        setUserRole(null)
-        setClientPortalHref(null)
-        return
-      }
-
-      try {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', user.id)
-          .maybeSingle()
-        if (!mounted || seq !== loadSeq) return
-
-        const typedProfile = profile as unknown as { role: string | null } | null
-        const role = typedProfile?.role
-        const normalizedRole =
-          role === 'admin' || role === 'platform_admin' || role === 'coach' || role === 'client'
-            ? role
-            : null
-        setUserRole(normalizedRole as 'admin' | 'coach' | 'platform_admin' | 'client' | null)
-
-        if (normalizedRole === 'client') {
-          const home = await resolveClientHome(user.id)
-          if (mounted && seq === loadSeq) setClientPortalHref(home)
-        } else {
-          setClientPortalHref(null)
-        }
-      } catch {
-        if (mounted && seq === loadSeq) {
-          setUserRole(null)
-          setClientPortalHref(null)
-        }
-      }
-    }
-
+    let cancelled = false
     void (async () => {
       try {
         const { data } = await supabase.auth.getSession()
-        if (!mounted) return
-        await loadFromUser(data.session?.user ?? null)
-      } catch {
-        if (mounted) {
-          setUserEmail(null)
-          setUserRole(null)
-          setClientPortalHref(null)
+        const user = data.session?.user
+        if (!user || cancelled) return
+        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
+        if (cancelled) return
+        const role = (profile as { role?: string } | null)?.role ?? null
+        const next =
+          redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : null
+        if (isPlatformAdmin(role)) {
+          window.location.replace(next?.startsWith('/admin') ? next : '/admin')
+          return
         }
+        if (role === 'coach' && !isAdmin) {
+          window.location.replace(next ?? '/home')
+        }
+      } catch {
+        // ignore — formulaire reste utilisable
       }
     })()
-
-    const { data: subscription } = supabase.auth.onAuthStateChange((_event, session) => {
-      void loadFromUser(session?.user ?? null)
-    })
-
     return () => {
-      mounted = false
-      subscription.subscription.unsubscribe()
+      cancelled = true
     }
-  }, [supabase])
-
-  async function onSignOut() {
-    window.location.href = `/auth/signout?next=${isAdmin ? '/loginadmin' : '/login'}`
-  }
+  }, [supabase, redirectTo, isAdmin])
 
   async function redirectAfterCoachAuth(userId: string) {
     const { data: profile } = await supabase
@@ -185,15 +122,7 @@ export default function LoginClient({ variant, entry = 'default' }: Props) {
       redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : null
 
     if (isPlatformAdmin(role)) {
-      if (isAdmin) {
-        window.location.replace(next?.startsWith('/admin') ? next : '/admin')
-        return
-      }
-      if (next?.startsWith('/admin')) {
-        window.location.replace(next)
-        return
-      }
-      window.location.replace(next ?? '/home')
+      window.location.replace(next?.startsWith('/admin') ? next : '/admin')
       return
     }
 
@@ -254,12 +183,11 @@ export default function LoginClient({ variant, entry = 'default' }: Props) {
         return
       }
 
-      const origin = window.location.origin
       const { data, error: signUpError } = await supabase.auth.signUp({
         email: email.trim(),
         password,
         options: {
-          emailRedirectTo: `${origin}/auth/callback/coach`,
+          emailRedirectTo: appUrl('/auth/callback/coach'),
           data: { role: 'coach', password_set: true, accepted_terms_at: new Date().toISOString() },
         },
       })
@@ -356,6 +284,11 @@ export default function LoginClient({ variant, entry = 'default' }: Props) {
           {authError === 'client_sur_coach_login' ? (
             <div className="mt-5 rounded-xl bg-amber-500/10 p-4 text-sm font-semibold text-amber-200 ring-1 ring-amber-500/30">
               Ce compte est un client — pas l’app coach. Déconnecte-toi puis reconnecte-toi avec l’email coach.
+              <div className="mt-3">
+                <a href={signOutHref} className="font-semibold underline underline-offset-2">
+                  Se déconnecter
+                </a>
+              </div>
             </div>
           ) : authError === 'magic_link_disabled' ? (
             <div className="mt-5 rounded-xl bg-amber-500/10 p-4 text-sm font-semibold text-amber-200 ring-1 ring-amber-500/30">
@@ -367,190 +300,150 @@ export default function LoginClient({ variant, entry = 'default' }: Props) {
             </div>
           ) : null}
 
-          {userEmail ? (
-            <div className="mt-8 rounded-xl bg-white/5 p-5 ring-1 ring-white/10">
-              <div className="text-sm font-semibold text-[var(--brand)]">Session active</div>
-              <div className="mt-1 text-sm text-white">{userEmail}</div>
-              {userRole ? (
-                <div className="mt-1 text-xs font-semibold uppercase tracking-wide text-white/45">
-                  Rôle : {userRole}
-                </div>
-              ) : null}
-              <div className="mt-4 flex flex-wrap gap-3">
-                {!redirectTo && (userRole === 'coach' || (!isAdmin && isPlatformAdmin(userRole))) ? (
-                  <Button
-                    type="button"
-                    className="h-11 px-5 text-sm"
-                    onClick={() => {
-                      window.location.assign('/home')
-                    }}
-                  >
-                    Aller à l’app coach
-                  </Button>
-                ) : null}
-                {!redirectTo && isPlatformAdmin(userRole) ? (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    className="h-11 px-5 text-sm"
-                    onClick={() => {
-                      window.location.assign('/admin')
-                    }}
-                  >
-                    Aller à l’admin
-                  </Button>
-                ) : null}
-                <Button type="button" variant="ghost" className="h-11 px-5 text-sm" onClick={onSignOut}>
-                  Se déconnecter
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <form onSubmit={onSubmit} className="mt-7 grid gap-4">
-              {!isAdmin ? (
-                <p className="text-sm text-white/50">
-                  {coachMode === 'signup' ? 'Déjà un compte ?' : 'Pas encore de compte ?'}{' '}
-                  <button
-                    type="button"
-                    className="font-semibold text-[var(--brand)] underline underline-offset-2"
-                    onClick={() => {
-                      setCoachMode(coachMode === 'signup' ? 'login' : 'signup')
-                      setError(null)
-                      setMessage(null)
-                    }}
-                  >
-                    {coachMode === 'signup' ? 'Connexion' : 'Inscription'}
-                  </button>
-                </p>
-              ) : null}
+          <form onSubmit={onSubmit} className="mt-7 grid gap-4">
+            {!isAdmin ? (
+              <p className="text-sm text-white/50">
+                {coachMode === 'signup' ? 'Déjà un compte ?' : 'Pas encore de compte ?'}{' '}
+                <button
+                  type="button"
+                  className="font-semibold text-[var(--brand)] underline underline-offset-2"
+                  onClick={() => {
+                    setCoachMode(coachMode === 'signup' ? 'login' : 'signup')
+                    setError(null)
+                    setMessage(null)
+                  }}
+                >
+                  {coachMode === 'signup' ? 'Connexion' : 'Inscription'}
+                </button>
+              </p>
+            ) : null}
 
-              <label className="grid gap-2">
+            <label className="grid gap-2">
+              <span className="text-sm font-semibold text-white">
+                Email <span className="text-[#f07178]">*</span>
+              </span>
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete="email"
+                placeholder="prenom@entreprise.com"
+                className="h-12 rounded-xl bg-[#0e0e10] px-4 ring-1 ring-white/10"
+              />
+            </label>
+
+            <label className="grid gap-2">
+              <div className="flex items-baseline justify-between gap-3">
                 <span className="text-sm font-semibold text-white">
-                  Email <span className="text-[#f07178]">*</span>
+                  Mot de passe <span className="text-[#f07178]">*</span>
                 </span>
+                <span className="text-xs text-white/40">{MIN_LEN} caractères minimum</span>
+              </div>
+              <div className="relative">
                 <Input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
-                  autoComplete="email"
-                  placeholder="prenom@entreprise.com"
-                  className="h-12 rounded-xl bg-[#0e0e10] px-4 ring-1 ring-white/10"
+                  minLength={MIN_LEN}
+                  autoComplete={coachMode === 'signup' && !isAdmin ? 'new-password' : 'current-password'}
+                  className="h-12 rounded-xl bg-[#0e0e10] px-4 pr-12 ring-1 ring-white/10"
                 />
-              </label>
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-white/45 hover:text-white"
+                  aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                >
+                  {showPassword ? 'Masquer' : 'Voir'}
+                </button>
+              </div>
+            </label>
 
-              <label className="grid gap-2">
-                <div className="flex items-baseline justify-between gap-3">
-                  <span className="text-sm font-semibold text-white">
-                    Mot de passe <span className="text-[#f07178]">*</span>
-                  </span>
-                  <span className="text-xs text-white/40">{MIN_LEN} caractères minimum</span>
-                </div>
-                <div className="relative">
+            {!isAdmin && coachMode === 'signup' ? (
+              <>
+                <label className="grid gap-2">
+                  <span className="text-sm font-semibold text-white">Confirmer le mot de passe</span>
                   <Input
                     type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    value={confirm}
+                    onChange={(e) => setConfirm(e.target.value)}
                     required
                     minLength={MIN_LEN}
-                    autoComplete={coachMode === 'signup' && !isAdmin ? 'new-password' : 'current-password'}
-                    className="h-12 rounded-xl bg-[#0e0e10] px-4 pr-12 ring-1 ring-white/10"
+                    autoComplete="new-password"
+                    className="h-12 rounded-xl bg-[#0e0e10] px-4 ring-1 ring-white/10"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-white/45 hover:text-white"
-                    aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
-                  >
-                    {showPassword ? 'Masquer' : 'Voir'}
-                  </button>
-                </div>
-              </label>
+                </label>
 
-              {!isAdmin && coachMode === 'signup' ? (
-                <>
-                  <label className="grid gap-2">
-                    <span className="text-sm font-semibold text-white">Confirmer le mot de passe</span>
-                    <Input
-                      type={showPassword ? 'text' : 'password'}
-                      value={confirm}
-                      onChange={(e) => setConfirm(e.target.value)}
-                      required
-                      minLength={MIN_LEN}
-                      autoComplete="new-password"
-                      className="h-12 rounded-xl bg-[#0e0e10] px-4 ring-1 ring-white/10"
-                    />
-                  </label>
+                <label className="flex items-start gap-3 pt-1">
+                  <input
+                    type="checkbox"
+                    checked={acceptedTerms}
+                    onChange={(e) => setAcceptedTerms(e.target.checked)}
+                    required
+                    className="mt-1 h-4 w-4 rounded accent-[var(--brand-mid)]"
+                  />
+                  <span className="text-sm leading-relaxed text-white/55">
+                    J’accepte les{' '}
+                    <Link href="/legal/cgu" target="_blank" className="font-semibold text-white underline underline-offset-2">
+                      conditions d’utilisation
+                    </Link>{' '}
+                    et la{' '}
+                    <Link
+                      href="/legal/politique-de-confidentialite"
+                      target="_blank"
+                      className="font-semibold text-white underline underline-offset-2"
+                    >
+                      politique de confidentialité
+                    </Link>
+                    .
+                  </span>
+                </label>
+              </>
+            ) : null}
 
-                  <label className="flex items-start gap-3 pt-1">
-                    <input
-                      type="checkbox"
-                      checked={acceptedTerms}
-                      onChange={(e) => setAcceptedTerms(e.target.checked)}
-                      required
-                      className="mt-1 h-4 w-4 rounded accent-[var(--brand-mid)]"
-                    />
-                    <span className="text-sm leading-relaxed text-white/55">
-                      J’accepte les{' '}
-                      <Link href="/legal/cgu" target="_blank" className="font-semibold text-white underline underline-offset-2">
-                        conditions d’utilisation
-                      </Link>{' '}
-                      et la{' '}
-                      <Link
-                        href="/legal/politique-de-confidentialite"
-                        target="_blank"
-                        className="font-semibold text-white underline underline-offset-2"
-                      >
-                        politique de confidentialité
-                      </Link>
-                      .
-                    </span>
-                  </label>
-                </>
-              ) : null}
+            <Button
+              type="submit"
+              disabled={loading || (!isAdmin && coachMode === 'signup' && !acceptedTerms)}
+              className="mt-1 h-12 w-full rounded-xl text-[15px] font-extrabold"
+            >
+              {loading
+                ? coachMode === 'signup' && !isAdmin
+                  ? 'Création…'
+                  : 'Connexion…'
+                : isAdmin
+                  ? 'Se connecter'
+                  : coachMode === 'signup'
+                    ? 'Créer mon compte'
+                    : 'Se connecter'}
+            </Button>
 
-              <Button
-                type="submit"
-                disabled={loading || (!isAdmin && coachMode === 'signup' && !acceptedTerms)}
-                className="mt-1 h-12 w-full rounded-xl text-[15px] font-extrabold"
-              >
-                {loading
-                  ? coachMode === 'signup' && !isAdmin
-                    ? 'Création…'
-                    : 'Connexion…'
-                  : isAdmin
-                    ? 'Se connecter'
-                    : coachMode === 'signup'
-                      ? 'Créer mon compte'
-                      : 'Se connecter'}
-              </Button>
+            {coachMode === 'signup' && !isAdmin ? (
+              <p className="text-center text-xs text-white/40">
+                Accès immédiat. Vérifie ton email pour confirmer le compte.
+              </p>
+            ) : (
+              <div className="text-sm text-white/45">
+                <Link
+                  href={`/auth/forgot-password?audience=${forgotAudience}`}
+                  className="font-semibold text-[var(--brand)] underline underline-offset-2"
+                >
+                  Mot de passe oublié ?
+                </Link>
+              </div>
+            )}
 
-              {coachMode === 'signup' && !isAdmin ? (
-                <p className="text-center text-xs text-white/40">
-                  Accès immédiat. Vérifie ton email pour confirmer le compte.
-                </p>
-              ) : (
-                <div className="text-sm text-white/45">
-                  <Link
-                    href={`/auth/forgot-password?audience=${forgotAudience}`}
-                    className="font-semibold text-[var(--brand)] underline underline-offset-2"
-                  >
-                    Mot de passe oublié ?
-                  </Link>
-                </div>
-              )}
-
-              {error ? (
-                <div className="rounded-xl bg-red-500/10 p-4 text-sm font-semibold text-red-300 ring-1 ring-red-500/30">
-                  {error}
-                </div>
-              ) : message ? (
-                <div className="rounded-xl bg-emerald-500/10 p-4 text-sm font-semibold text-emerald-300 ring-1 ring-emerald-500/30">
-                  {message}
-                </div>
-              ) : null}
-            </form>
-          )}
+            {error ? (
+              <div className="rounded-xl bg-red-500/10 p-4 text-sm font-semibold text-red-300 ring-1 ring-red-500/30">
+                {error}
+              </div>
+            ) : message ? (
+              <div className="rounded-xl bg-emerald-500/10 p-4 text-sm font-semibold text-emerald-300 ring-1 ring-emerald-500/30">
+                {message}
+              </div>
+            ) : null}
+          </form>
         </div>
       </section>
 

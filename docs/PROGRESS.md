@@ -21,9 +21,12 @@
 - Bloc depuis séance : Ajouter = usage (`hub_visible=false`) · → Ma biblio = modèle (slice 103) · **pas** de → Brouillon depuis le parent
 
 ## Now
+- Auth SaaS : billing simu / paywall trial (suite plan)
 - Code d’accès coach admin + garde signup (étape suivante)
 
 ## Done (récent)
+- Auth coach : plus de carte Session active · redirect serveur `/login` `/signup` `/loginadmin` si déjà connecté · `emailRedirectTo` via `appUrl` · filet `/?code=` → `/auth/callback/coach` · checklist Site URL dans `apps/README.md`
+- Schema cache PostgREST : env Vercel ychq… · `NOTIFY reload` · soft-fail UI (`isSchemaCacheError`) home/clients/catalogues/mine · smoke Remi `Spaceman_Coach` + catalogues Krid OK
 - Auth `/signup` split 50/50 DA Krid + legal CGU/privacy · copy Trainly → Krid (UI visible) · publish site/app
 - Séparation site/app Krid : Vercel projet `krid` (ex-trainly) + `krid-site` · CTAs site « Essai gratuit » / Connexion → `/signup` · bucket `home_page` OK
 - Catalogue programmes Krid : RLS SELECT coach (slice 107) · publié admin = preview lecture seule · édition = fork → brouillon (catalogue immuable)
